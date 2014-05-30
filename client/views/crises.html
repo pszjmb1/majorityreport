@@ -1,0 +1,15 @@
+<template name="crises">
+  <div class="crises">
+    {{#each crises}}
+      {{> crisis}}
+    {{/each}}
+  </div>
+</template>
+
+<template name="crisis">
+  <div class="crisis">
+    <div class="crisis-heading">
+      <h3>{{title}}<span>{{shortdescription}}</span></h3>
+    </div>
+  </div>
+</template>
