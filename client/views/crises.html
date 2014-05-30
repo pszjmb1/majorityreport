@@ -1,9 +1,34 @@
 <template name="crises">
+  {{#if currentUser}}<p><a href="{{pathFor 'newCrisis'}}" class="btn">Add a Crisis</a></p>{{/if}}
   <div class="crises">
     {{#each crises}}
       {{> crisisHeading}}
     {{/each}}
   </div>
+</template>
+
+<template name="newCrisis">
+  <form class="main">
+    <div class="control-group">
+        <label class="control-label" for="dctermsTitle">Title</label>
+        <div class="controls">
+            <input name="dctermsTitle" type="text" value="" placeholder="Title for this crisis"/>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="dctermsDescription">Description</label>
+        <div class="controls">
+            <textarea name="dctermsDescription" type="text" value="">Brief description of this crisis</textarea>
+        </div>
+    </div> 
+
+    <div class="control-group">
+        <div class="controls">
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+        </div>
+    </div>
+  </form>
 </template>
 
 <template name="crisisHeading">

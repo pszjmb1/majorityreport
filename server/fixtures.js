@@ -32,7 +32,8 @@ if (Provenance.find().count() === 0) {
     mrActivity:'Crisis Report Creation',
     provStartedAtTime: now - 6 * 3600 * 1000,
     provEndedAtTime: now - 6 * 3600 * 1000,
-    provWasStartedBy: jesseProv
+    provWasStartedBy: jesseProv,
+    provGenerated: reportId
   });
 
   // Example Media Insertion ///////////
