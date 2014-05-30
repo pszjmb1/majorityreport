@@ -1,9 +1,9 @@
-var crisisData = [
-  {
-    title: 'The death of Ian Tomlinson',
-    shortdescription: 'Lorem ipsum doler somet'
-  }
-];
+/**
+ * Majority Report crises helpers
+ */
+
 Template.crises.helpers({
-  crises: crisisData
+  crises: function() { 
+    return Provenance.find( {provType:'Crisis Report'} );
+  }
 });

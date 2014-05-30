@@ -1,15 +1,21 @@
 <template name="crises">
   <div class="crises">
     {{#each crises}}
-      {{> crisis}}
+      {{> crisisHeading}}
     {{/each}}
   </div>
 </template>
 
-<template name="crisis">
+<template name="crisisHeading">
   <div class="crisis">
     <div class="crisis-heading">
-      <h3>{{title}}<span>{{shortdescription}}</span></h3>
+      <h3>{{dctermsTitle}}<span>{{dctermsDescription }}</span></h3>
     </div>
+    <a href="{{pathFor 'crisisContainer'}}" class="discuss btn">Discuss</a>
   </div>
+</template>
+
+<template name="crisisContainer">
+  {{> crisisHeading}}
+  Here
 </template>
