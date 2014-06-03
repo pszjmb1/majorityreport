@@ -8,9 +8,10 @@
 Accounts.onCreateUser(function(options, user) {
   var now = new Date().getTime();
 
-  var jesseProv = Provenance.insert({
+  Provenance.insert({
     provClasses:['Agent', 'Person'],
     mrUserId: user._id,
+    mrUserName: user.username,
     agencyBegan: now
   });
 

@@ -16,6 +16,8 @@ if (Provenance.find().count() === 0) {
   var jesseProv = Provenance.insert({
     provClasses:['Agent', 'Person'],
     mrUserId: jesse._id,
+    foafGivenName: 'Jesse',
+    foafFamilyName: 'Blum',
     agencyBegan: now - 6 * 3600 * 1001,
   });
 

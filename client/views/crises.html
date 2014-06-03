@@ -31,10 +31,52 @@
   </form>
 </template>
 
+<template name="editCrisis">
+  <form class="main">
+    <div class="control-group">
+        <label class="control-label" for="dctermsTitle">Title</label>
+        <div class="controls">
+            <input name="dctermsTitle" type="text" value="" placeholder="{{dctermsTitle}}"/>
+        </div>
+    </div>
+
+    <div class="control-group">
+        <label class="control-label" for="dctermsDescription">Description</label>
+        <div class="controls">
+            <textarea name="dctermsDescription" type="text" value="">{{dctermsDescription}}</textarea>
+        </div>
+    </div> 
+
+    <div class="control-group">
+        <label class="control-label" for="reason">Reason for change</label>
+        <div class="controls">
+            <input name="reason" type="text" value="" />
+        </div>
+    </div>
+
+    <div class="control-group">
+        <div class="controls">
+            <input type="submit" value="Submit" class="btn btn-primary"/>
+        </div>
+    </div>
+
+    <hr/>
+    <div class="control-group">
+        <div class="controls">
+            <a class="btn btn-danger delete" href="#">Delete crisis</a>
+        </div>
+    </div>
+  </form>
+</template>
+
 <template name="crisisHeading">
   <div class="crisis">
     <div class="crisis-heading">
-      <h3>{{dctermsTitle}}<span>{{dctermsDescription }}</span></h3>
+      <h3>{{dctermsTitle}}<span>{{dctermsDescription}}</span></h3>
+       <p>
+          submitted by {{agentName}}
+          {{#if owner}}<a href="{{pathFor 'editCrisis'}}">Edit</a>{{/if}}      
+        </p>
     </div>
     <a href="{{pathFor 'crisisContainer'}}" class="discuss btn">Investigate</a>
   </div>
