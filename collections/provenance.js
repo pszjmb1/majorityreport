@@ -39,9 +39,11 @@ Meteor.methods({
       provGeneratedAtTime: now
     });
 
-    // Insert the crisis, assign the provenance ID
+    // Insert the crisis
     var crisisId = Provenance.insert(crisis);
-
+    
+    // Assign a provenance ID to be able properly track related revisions, 
+    //  remains the same across related revisions
     Provenance.update(crisisId, {$set: {provId: crisisId}});
 
     // Add a corresponding creation provenance activity ////////////////////
