@@ -39,7 +39,10 @@ Meteor.methods({
       provGeneratedAtTime: now
     });
 
+    // Insert the crisis, assign the provenance ID
     var crisisId = Provenance.insert(crisis);
+
+    Provenance.update(crisisId, {$set: {provId: crisisId}});
 
     // Add a corresponding creation provenance activity ////////////////////
 
@@ -110,20 +113,33 @@ Meteor.methods({
     var now = new Date().getTime(); 
     var currentUser = Provenance.findOne({mrUserId: user});
 
-    var revisionActivity = Provenance.insert({
-      provClasses:['Revision'],
+    var crisisProperties = {
+      dctermsTitle: provAttributes.dctermsTitle,
+      dctermsDescription: provAttributes.dctermsDescription,
+      provGeneratedAtTime: now
+    };
+
+    // Clone the current crisis record to retain the original provenance details    
+    var revisedCrisisId;
+    Provenance.find(currentCrisisId, {$limit: 1}).forEach(function(crisis){
+      delete crisis._id;
+      revisedCrisisId = Provenance.insert(crisis);
+      Provenance.update(revisedCrisisId, {$set: crisisProperties});
+    });
+          
+    // Add a corresponding revision provenance /////////////////////////////
+    var revisionActivity = {
+      provClasses:['Derivation'],
       mrReason: provAttributes.reason,
       provAtTime : now,
       provWasStartedBy: currentUser,
-      provEntity:currentCrisisId
-    });
+      provWasDerivedFrom: {
+        provEntity: revisedCrisisId, 
+        provDerivedFrom: currentCrisisId, 
+        provAttributes: [{provType: 'provRevision'}]
+      }
+    };
 
-    var crisisProperties = {
-      dctermsTitle: provAttributes.dctermsTitle,
-      dctermsDescription: provAttributes.dctermsDescription
-    }
-
-    // To do: Figure out how to keep old data
-    Provenance.update(currentCrisisId, {$set: crisisProperties});
+    Provenance.insert(revisionActivity);
   }
 });

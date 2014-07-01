@@ -7,6 +7,7 @@
  */
 Template.crises.helpers({
   crises: function() { 
+    // Get reports - sort by most recent - get the latest revision 
     return Provenance.find( {provType:'Crisis Report', wasInvalidatedBy: { $exists: false}}, {sort: {provGeneratedAtTime: -1}} );
   }
 });
