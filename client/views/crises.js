@@ -97,6 +97,7 @@ Template.crisisHeading.helpers({
     }
   },  
   agentName: function() { 
+    // TODO: Following doesn't work for Revisions
     currentCrisisId = this._id;
     var activity = Provenance.findOne({provGenerated:currentCrisisId})
     if(activity){

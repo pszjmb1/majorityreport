@@ -1,7 +1,6 @@
 /**
  * Majority Report provenance collection
  */
-
 Provenance = new Meteor.Collection('provenance');
 
 Meteor.methods({
@@ -113,7 +112,7 @@ Meteor.methods({
       throw new Meteor.Error(422, 'Please fill in the description');
 
     var now = new Date().getTime(); 
-    var currentUser = Provenance.findOne({mrUserId: user});
+    var currentUser = Provenance.findOne({mrUserId: user._id});
 
     var crisisProperties = {
       dctermsTitle: provAttributes.dctermsTitle,
@@ -134,7 +133,7 @@ Meteor.methods({
       provClasses:['Derivation'],
       mrReason: provAttributes.reason,
       provAtTime : now,
-      provWasStartedBy: currentUser,
+      provWasStartedBy: currentUser._id,
       provWasDerivedFrom: {
         provEntity: revisedCrisisId, 
         provDerivedFrom: currentCrisisId, 
