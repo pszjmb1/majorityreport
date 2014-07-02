@@ -1,0 +1,26 @@
+<template name='freeform'>
+	{{> entities}}
+	{{> stage }}
+</template>
+
+<template name="entities">
+	<form name="narreme">
+		<input type="textfield" placeholder="Narreme" name="narremeTitle" />
+		<button type="submit">Add Narreme</button>
+	</form>
+	<form name="media">
+		<input type="textfield" placeholder="Image URL" name="imageUrl" />
+		<button type="submit">Add Image</button>
+	</form>
+</template>
+
+<template name="stage">
+	<div id="stage">
+		<div class="draggable">
+			<img class="resizable" src="http://www.horizon.ac.uk/AppImages/swoosh_home.png" />
+		</div>
+		<div class="draggable">
+			<p class="resizable">Lorem ipsum dolor semet.</p>
+		</div>
+	</div>
+</template>
