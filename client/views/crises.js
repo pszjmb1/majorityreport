@@ -5,10 +5,29 @@
 /**
  * Crises helpers
  */
+
+Meteor.subscribe('latestCrises');
 Template.crises.helpers({
   crises: function() { 
-    // Get reports - sort by most recent - get the latest revision 
-    return Provenance.find( {provType:'Crisis Report', wasInvalidatedBy: { $exists: false}}, {sort: {provGeneratedAtTime: -1}} );
+
+    // Get crisis reports - sort by creation - get the latest revision    
+    var pipeline = [
+        {$match: {provType: 'Crisis Report'}},
+        {$sort: {provGeneratedAtTime: 1}},
+        {$group: {
+            _id: '$provId',
+             latest: {$max: {time: '$provGeneratedAtTime', id: '$_id', dctermsTitle: '$dctermsTitle', dctermsDescription: '$dctermsDescription'}}
+        }}
+    ];
+
+    Provenance.aggregate(pipeline, function(error, result){
+      if(error)
+          return alert(error.reason);
+      
+      Session.set('latestCrises', result);
+    });
+    
+    return Session.get('latestCrises');
   }
 });
 
