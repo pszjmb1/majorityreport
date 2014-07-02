@@ -8,7 +8,7 @@
 
 Template.crises.helpers({
   crises: function() { 
-    var set = Provenance.find({provType: 'Crisis Report'}).fetch();
+    var set = Provenance.find({provType: 'Crisis Report'}, {sort: {provGeneratedAtTime: -1}}).fetch();
     var list = _.groupBy(set, function(c){return c.provId});
     var output = _.map(list, function(c){ return _.max(c, function(prov){ return prov.provGeneratedAtTime; }); });
     return output;
@@ -102,7 +102,8 @@ Template.crisisHeading.helpers({
   agentName: function() { 
     // TODO: Following doesn't work for Revisions
     currentCrisisId = this._id;
-    var activity = Provenance.findOne({provGenerated:currentCrisisId})
+    var provId = this.provId,
+        activity = Provenance.findOne({provGenerated: provId});
     if(activity){
       var agent = Provenance.findOne(activity.provWasStartedBy);
       if(agent){
@@ -116,12 +117,19 @@ Template.crisisHeading.helpers({
   },
   owner: function() { 
     currentCrisisId = this._id;
-    var activity = Provenance.findOne({provGenerated:currentCrisisId})
+    var provId = this.provId,
+        activity = Provenance.findOne({provGenerated: provId})
     if(activity){
       var agent = Provenance.findOne(activity.provWasStartedBy);
       if(agent){
         return agent.mrUserId == Meteor.userId();
       }
     }
+  }, 
+  provLink: function() {
+    return "/crisis/" + this.provId;
+  },
+  provEditLink: function() {
+    return "/crisis/" + this.provId + '/edit';
   }
 });

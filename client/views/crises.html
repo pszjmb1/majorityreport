@@ -72,13 +72,14 @@
 <template name="crisisHeading">
   <div class="crisis">
     <div class="crisis-heading">
+      {{_id}} - Origin: {{ provId }}
       <h3>{{dctermsTitle}}<span>{{dctermsDescription}}</span></h3>
        <p>
           submitted by {{agentName}}
-          {{#if owner}}<a href="{{pathFor 'editCrisis'}}">Edit</a>{{/if}}      
+          {{#if owner}}<a href="{{provEditLink}}">Edit</a>{{/if}}      
         </p>
     </div>
-    <a href="{{pathFor 'crisisContainer'}}" class="discuss btn">Investigate</a>
+    <a href="{{provLink}}" class="discuss btn">Investigate</a>
   </div>
 </template>
 
