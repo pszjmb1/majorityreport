@@ -3,6 +3,7 @@
     "accounts-ui-bootstrap-dropdown": {},
     "iron-router": {},
     "spin": {},
-    "jquery-ui": {}
+    "jquery-ui": {},
+    "jquery-ui-bootstrap": {}
   }
 }

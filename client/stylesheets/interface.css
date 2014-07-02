@@ -1,0 +1,4 @@
+.draggable:hover,
+.draggable:active {
+	cursor: move;
+}

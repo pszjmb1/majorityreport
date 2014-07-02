@@ -5,7 +5,8 @@
       "accounts-ui-bootstrap-dropdown": {},
       "iron-router": {},
       "spin": {},
-      "jquery-ui": {}
+      "jquery-ui": {},
+      "jquery-ui-bootstrap": {}
     },
     "packages": {
       "accounts-ui-bootstrap-dropdown": {
@@ -27,6 +28,11 @@
         "git": "https://github.com/TimHeckel/meteor-jquery-ui.git",
         "tag": "v1.9.2",
         "commit": "c437d45edcf1367df8d5ffa8bad2867758030bd2"
+      },
+      "jquery-ui-bootstrap": {
+        "git": "https://github.com/TimHeckel/meteor-jquery-ui-bootstrap.git",
+        "tag": "v0.1.2",
+        "commit": "fa742a85639307003e105898e15b631394b63509"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",
