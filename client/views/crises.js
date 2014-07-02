@@ -100,7 +100,7 @@ Template.crisisHeading.helpers({
     }
   },  
   agentName: function() { 
-    // TODO: Following doesn't work for Revisions
+    // TODO: REVISE the following. Derivation and Activity do not share 'provGenerated'
     currentCrisisId = this._id;
     var provId = this.provId,
         activity = Provenance.findOne({provGenerated: provId});
