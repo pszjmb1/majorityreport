@@ -24,10 +24,8 @@ Template.freeform.rendered = function () {
 	mediaMetas.forEach(function (item) { mediaIds.push(item.provHadMember.provEntity); });
 	var mediaItems = Provenance.find({ _id: {$in: mediaIds} }).fetch();
 
-	console.log("mesd", mediaItems)
-
 	mediaItems.forEach(function (medium) {
-	insertMediaDOM(medium.provAtLocation, false)	;
+		insertMediaDOM(medium.provAtLocation, false);
 	});
 
 	attachHandlers('.resizable', '#stage div');
