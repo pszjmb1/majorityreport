@@ -96,14 +96,14 @@ Meteor.methods({
     var user = Meteor.user(),
     
     // Validate input ////////////////////////////////////////////////////////
-    mediaWithSameUrl = Provenance.findOne({mrMediaUrl: provAttributes.mrMediaUrl});
+    mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.mediaUrl});
 
     // ensure the user is logged in
     if (!user)
       throw new Meteor.Error(401, "Please login to add a new media");
 
-    // ensure the crisis has a mrMediaUrl
-    if (!provAttributes.mrMediaUrl)
+    // ensure the crisis has a mediaUrl
+    if (!provAttributes.mediaUrl)
       throw new Meteor.Error(422, 'Please fill in the media URL');
 
     // ensure the crisis has a dctermsFormat
@@ -111,7 +111,7 @@ Meteor.methods({
       throw new Meteor.Error(422, 'Please select a media format');
 
     // check that there are no previous crises with the same title
-    if (provAttributes.mrMediaUrl && mediaWithSameUrl) {
+    if (provAttributes.mediaUrl && mediaWithSameUrl) {
       throw new Meteor.Error(302, 
         'A media with the same URL already exists', 
         mediaWithSameUrl._id);
@@ -121,9 +121,10 @@ Meteor.methods({
     var now = new Date().getTime();
 
     // Extend the whitelisted attributes
-    var media = _.extend(_.pick(provAttributes, 'mrMediaUrl', 'dctermsFormat'), {
+    var media = _.extend(_.pick(provAttributes, 'dctermsFormat'), {
       provClasses: ['Entity'],
       provType: 'Media',
+      provAtLocation: provAttributes.mediaUrl,
       provGeneratedAtTime: now
     });
     var mediaId = Provenance.insert(media);
@@ -149,6 +150,7 @@ Meteor.methods({
       provHadMember: {
         provCollection: revisionId,
         provEntity: mediaId,
+        provGeneratedAtTime: now,
         mrAttributes: []
       }
     }

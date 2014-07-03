@@ -3,8 +3,25 @@ var attachHandlers = function(a, b) {
 	$(b).draggable({ stack: '#stage div' });
 }
 
-Template.stage.rendered = function () {
+Template.freeform.created = function () {
+};
+
+Template.freeform.rendered = function () {
+	// Load the related media items
+	var reportId = this.data._id;
+			mediaMetas = Provenance.find({ "provHadMember.provCollection": reportId }).fetch(),
+			mediaIds = [];
+
+
+	mediaMetas.forEach(function (item) { mediaIds.push(item.provHadMember.provEntity); });
+	var mediaItems = Provenance.find({ _id: {$in: mediaIds} }).fetch();
+
+	mediaItems.forEach(function (medium) {
+	insertMediaDOM(medium.provAtLocation, false)	;
+	});
+
 	attachHandlers('.resizable', '#stage div');
+
 };
 
 Template.entities.events({
@@ -13,31 +30,45 @@ Template.entities.events({
 		var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
 				mediaFormat = $(e.target).find('select[name=mediaFormat]').val() ;
 
-		// Insert the new element to the stage //////////////////////////////////
-		var wrapper = document.createElement('div'),
-				//TODO: decide which element to create based on media type
-				mediaElem = document.createElement('img'); 
-
-		$('#stage').append(
-			$(wrapper)
-				.attr('class', 'draggable')
-				.html($(mediaElem).attr('src', mediaUrl))
-		);
-		attachHandlers(mediaElem, wrapper);
+		// Insert Media to the DOM
+		insertMediaDOM(mediaUrl, true);
 
 		// Insert appropriate provenances for the entity and the activity: revision, entity, membership
 		var provAttributes = {
 			currentCrisisId: this._id,
+			mediaUrl: mediaUrl,
 			dctermsTitle: this.dctermsTitle,
 			dctermsDescription: this.dctermsDescription,
-			mrMediaUrl: mediaUrl,
 			dctermsFormat: mediaFormat // Mime type
 		}
 
+		var reportId = this.mrOriginProv;
 		Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
 	    if (error)
-        return alert(error.reason);  
+        return alert(error.reason);
+
+      Router.go('crisisContainer', {_id: reportId});
 	  });
 
 	}
 });
+
+function insertMediaDOM(url, attachHandler) {
+	// Insert the new element to the stage //////////////////////////////////
+	// TODO: decide which element to create based on media type
+	var wrapper = document.createElement('div'),
+		mediaElem = document.createElement('img'); 
+		
+	$('#stage').append(
+		$(wrapper)
+			.attr('class', 'draggable')
+			.html($(mediaElem).attr({
+				'src': url,
+				'class': 'resizable'
+			}))
+	);
+
+	if(attachHandler) {
+		attachHandlers(mediaElem, wrapper);	
+	}
+}
