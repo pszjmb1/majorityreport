@@ -142,5 +142,66 @@ Meteor.methods({
     };
 
     Provenance.insert(revisionActivity);
-  }
+  }, 
+
+  newMedia: function(provAttributes) {
+    var user = Meteor.user(),
+    
+    // Validate input ////////////////////////////////////////////////////////
+    mediaWithSameUrl = Provenance.findOne({mrMediaUrl: provAttributes.mrMediaUrl});
+
+    // ensure the user is logged in
+    if (!user)
+      throw new Meteor.Error(401, "Please login to add a new media");
+
+    // ensure the crisis has a mrMediaUrl
+    if (!provAttributes.mrMediaUrl)
+      throw new Meteor.Error(422, 'Please fill in the media URL');
+
+    // ensure the crisis has a dctermsFormat
+    if (!provAttributes.dctermsFormat)
+      throw new Meteor.Error(422, 'Please select a media format');
+
+    // check that there are no previous crises with the same title
+    if (provAttributes.mrMediaUrl && mediaWithSameUrl) {
+      throw new Meteor.Error(302, 
+        'A media with the same URL already exists', 
+        mediaWithSameUrl._id);
+    }
+
+
+
+    // Enter new media entity ///////////////////////////////////////////////
+    var now = new Date().getTime();
+
+    // Extend the whitelisted attributes
+    var media = _.extend(_.pick(provAttributes, 'mrMediaUrl', 'dctermsFormat'), {
+      provClasses: ['Entity'],
+      provType: 'Media',
+      provGeneratedAtTime: now
+    });
+
+    // Insert the media
+    // var mediaId = Provenance.insert(media);
+
+    // Add a corresponding creation provenance activity ////////////////////
+
+    var userProv = Provenance.findOne({mrUserId:user._id});
+    var activity = {
+      provClasses:['Activity'],
+      mrActivity:'Media Insertion',
+      provStartedAtTime: now,
+      provEndedAtTime: now,
+      provWasStartedBy: userProv._id,
+      provGenerated: mediaId
+    }
+
+    // Provenance.insert(activity);
+
+    // TODO: Add a revision for the related Crisis report
+
+
+  },
+
+
 });
