@@ -47,7 +47,6 @@ Meteor.methods({
     Provenance.update(crisisId, {$set: {mrOriginProv: crisisId}});
 
     // Add a corresponding creation provenance activity ////////////////////
-
     var userProv = Provenance.findOne({mrUserId:user._id});
     var activity = {
       provClasses:['Activity'],
@@ -143,12 +142,12 @@ Meteor.methods({
     Provenance.insert(activity);
 
     // Insert a new revision
-    reportRevision(provAttributes);
+    var revisionId = reportRevision(provAttributes);
 
     // Add a corresponding relationship between the media and the revision///
     var record = {
       provHadMember: {
-        provCollection: provAttributes.currentCrisisId,
+        provCollection: revisionId,
         provEntity: mediaId,
         mrAttributes: []
       }
@@ -156,7 +155,7 @@ Meteor.methods({
 
     Provenance.insert(record);
 
-    return mediaId;    
+    return mediaId;
   },
 
 });
