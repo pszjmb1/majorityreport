@@ -8,13 +8,23 @@ Template.freeform.created = function () {
 
 Template.freeform.rendered = function () {
 	// Load the related media items
-	var reportId = this.data._id;
-			mediaMetas = Provenance.find({ "provHadMember.provCollection": reportId }).fetch(),
-			mediaIds = [];
+	var reportId = this.data.mrOriginProv;
 
+	var revisionIds = [];
+	var revisions = Provenance.find( 
+    { provType: 'Collection', cldtermsItemType: 'Crisis Report', mrOriginProv: reportId }, 
+    { sort: { provGeneratedAtTime: -1 } } 
+  ).fetch().forEach(function (item) {
+  	revisionIds.push(item._id);
+  });
+
+	var mediaMetas = Provenance.find({ "provHadMember.provCollection": {$in: revisionIds} }).fetch();
+	var mediaIds = [];
 
 	mediaMetas.forEach(function (item) { mediaIds.push(item.provHadMember.provEntity); });
 	var mediaItems = Provenance.find({ _id: {$in: mediaIds} }).fetch();
+
+	console.log("mesd", mediaItems)
 
 	mediaItems.forEach(function (medium) {
 	insertMediaDOM(medium.provAtLocation, false)	;
