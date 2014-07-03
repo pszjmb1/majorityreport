@@ -25,27 +25,18 @@ Template.entities.events({
 		);
 		attachHandlers(mediaElem, wrapper);
 
-		// TODO: Create a new Revision
-
-		// Insert appropriate provenance for the entity and the activity
-		var media = {
+		// Insert appropriate provenances for the entity and the activity: revision, entity, membership
+		var provAttributes = {
 			currentCrisisId: this._id,
+			dctermsTitle: this.dctermsTitle,
+			dctermsDescription: this.dctermsDescription,
 			mrMediaUrl: mediaUrl,
 			dctermsFormat: mediaFormat // Mime type
 		}
-		Meteor.call('newMedia', media, function(error, id) {
+
+		Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
 	    if (error)
         return alert(error.reason);  
-
-      var membership = {
-      	currentCrisisId: this._id,
-      	mediaId: id
-      }
-
-      Meteor.call('collectionReportMedia', membership, function (error, result) {
-				if (error)
-        	return alert(error.reason);        	
-      });
 	  });
 
 	}

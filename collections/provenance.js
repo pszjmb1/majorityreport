@@ -93,8 +93,7 @@ Meteor.methods({
   crisisReportRevision: function (provAttributes) {
     reportRevision(provAttributes);
   }, 
-
-  newMedia: function(provAttributes) {
+  crisisReportMedia: function(provAttributes) {
     var user = Meteor.user(),
     
     // Validate input ////////////////////////////////////////////////////////
@@ -119,7 +118,7 @@ Meteor.methods({
         mediaWithSameUrl._id);
     }
 
-    // Enter new media entity ///////////////////////////////////////////////
+    // Insert new media entity ///////////////////////////////////////////////
     var now = new Date().getTime();
 
     // Extend the whitelisted attributes
@@ -128,8 +127,6 @@ Meteor.methods({
       provType: 'Media',
       provGeneratedAtTime: now
     });
-
-    // Insert the media
     var mediaId = Provenance.insert(media);
 
     // Add a corresponding creation provenance activity ////////////////////
@@ -145,20 +142,22 @@ Meteor.methods({
 
     Provenance.insert(activity);
 
-    return mediaId;    
+    // Insert a new revision
+    reportRevision(provAttributes);
 
-  },
-  collectionReportMedia: function(provAttributes) {
+    // Add a corresponding relationship between the media and the revision///
     var record = {
       provHadMember: {
         provCollection: provAttributes.currentCrisisId,
-        provEntity: provAttributes.mediaId,
+        provEntity: mediaId,
         mrAttributes: []
       }
     }
 
     Provenance.insert(record);
-  }
+
+    return mediaId;    
+  },
 
 });
 
@@ -195,11 +194,11 @@ function reportRevision(provAttributes) {
     };
 
     // Clone the current crisis record to retain the original provenance details    
-    var revisedCrisisId;
+    var revisionId;
     Provenance.find(currentCrisisId, {$limit: 1}).forEach(function(crisis){
       delete crisis._id;
-      revisedCrisisId = Provenance.insert(crisis);
-      Provenance.update(revisedCrisisId, {$set: crisisProperties});
+      revisionId = Provenance.insert(crisis);
+      Provenance.update(revisionId, {$set: crisisProperties});
     });
           
     // Add a corresponding revision provenance /////////////////////////////
@@ -209,14 +208,14 @@ function reportRevision(provAttributes) {
       provAtTime : now,
       provWasStartedBy: currentUser._id,
       provWasDerivedFrom: {
-        provEntity: revisedCrisisId, 
+        provEntity: revisionId, 
         provDerivedFrom: currentCrisisId, 
         provAttributes: [{provType: 'provRevision'}]
       }
     };
 
-    var revisionId = Provenance.insert(revisionActivity);
+    Provenance.insert(revisionActivity);
 
-    return revisedCrisisId;
+    return revisionId;
   }
 
