@@ -23,11 +23,14 @@ if (Provenance.find().count() === 0) {
 
   var reportId = Provenance.insert({
     provClasses:['Entity'],
-    provType:'Crisis Report',
+    provType:'Collection',
     provGeneratedAtTime: now - 6 * 3600 * 1000,
     dctermsTitle: "The death of Ian Tomlinson",
-    dctermsDescription: "An English newspaper vendor who collapsed and died in the City of London on his way home from work after being unlawfully struck by a police officer, Simon Harwood, during the 2009 G-20 summit protests."
+    dctermsDescription: "An English newspaper vendor who collapsed and died in the City of London on his way home from work after being unlawfully struck by a police officer, Simon Harwood, during the 2009 G-20 summit protests.",
+    cldtermsItemType: 'Crisis Report'
   });
+
+  Provenance.update(reportId, {$set: {mrOriginProv: reportId}});
 
   Provenance.insert({
     provClasses:['Activity'],

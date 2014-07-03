@@ -13,8 +13,7 @@ Template.entities.events({
 		var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
 				mediaFormat = $(e.target).find('select[name=mediaFormat]').val() ;
 
-		// Add the new element to the stage
-		// Make sure to attach the handlers
+		// Insert the new element to the stage //////////////////////////////////
 		var wrapper = document.createElement('div'),
 				//TODO: decide which element to create based on media type
 				mediaElem = document.createElement('img'); 
@@ -26,19 +25,28 @@ Template.entities.events({
 		);
 		attachHandlers(mediaElem, wrapper);
 
-		// Add appropriate provenance for the entity and the activity
+		// TODO: Create a new Revision
+
+		// Insert appropriate provenance for the entity and the activity
 		var media = {
 			currentCrisisId: this._id,
 			mrMediaUrl: mediaUrl,
 			dctermsFormat: mediaFormat // Mime type
 		}
+		Meteor.call('newMedia', media, function(error, id) {
+	    if (error)
+        return alert(error.reason);  
 
-		console.log(media);
+      var membership = {
+      	currentCrisisId: this._id,
+      	mediaId: id
+      }
 
-		// Meteor.call('newMedia', media, function(error, id) {
-	 //    if (error)
-  //       return alert(error.reason);    
-	 //  });
+      Meteor.call('collectionReportMedia', membership, function (error, result) {
+				if (error)
+        	return alert(error.reason);        	
+      });
+	  });
 
 	}
 });
