@@ -12,11 +12,11 @@ Template.freeform.rendered = function () {
 
 	var revisionIds = [];
 	var revisions = Provenance.find( 
-    { provType: 'Collection', cldtermsItemType: 'Crisis Report', mrOriginProv: reportId }, 
-    { sort: { provGeneratedAtTime: -1 } } 
-  ).fetch().forEach(function (item) {
-  	revisionIds.push(item._id);
-  });
+	    { provType: 'Collection', cldtermsItemType: 'Crisis Report', mrOriginProv: reportId }, 
+	    { sort: { provGeneratedAtTime: -1 } } 
+	  ).fetch().forEach(function (item) {
+	  	revisionIds.push(item._id);
+	  });
 
 	var mediaMetas = Provenance.find({ "provHadMember.provCollection": {$in: revisionIds} }).fetch();
 	var mediaIds = [];
