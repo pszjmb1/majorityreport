@@ -94,7 +94,7 @@ Template.crisisHeading.helpers({
   },  
   agentId: function() { 
     currentCrisisId = this._id;
-    var activity = Provenance.findOne({provGenerated:currentCrisisId})
+    var activity = Provenance.findOne({provGenerated:currentCrisisId});
     if(activity){
       return activity.provWasStartedBy;
     }
