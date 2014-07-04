@@ -3,21 +3,35 @@ var attachHandlers = function(a, b) {
 	$(b).draggable({ stack: '#stage div' });
 }
 
+var getReportMedia = function(reportId) {
+  Deps.autorun(function () {
+  	// Get all the media related to this report across all revisions
+  	var changed = Session.get(reportId),
+  			revisionIds = getRevisions(reportId).map(function(revision){ return revision._id; }),
+	  		revisionAndMedia = Provenance.find({'provHadMember.provCollection': {$in: revisionIds} }).fetch(),
+	      mediaIds = _(revisionAndMedia).map(function(prov){ return prov.provHadMember.provEntity; });
+	  		media = Provenance.find({_id: {$in: mediaIds} }).fetch();
+
+	  Session.set('reportMedia', media);
+  });
+ 
+
+}
+
 Template.freeform.created = function () {
+	getReportMedia(this.data.mrOriginProv);
 };
 
 Template.freeform.rendered = function () {
+	Deps.autorun(function () {
+		var media = Session.get('reportMedia');
 
-	var mediaItems = Provenance.find({ provType: 'Media' });
-
-	console.log(Provenance.find({ provType: 'Media' }).count(), mediaItems.count());
-
-	// mediaItems.forEach(function (medium) {
-	// 	insertMediaDOM(medium.provAtLocation, false);
-	// });
+		media.forEach(function (medium) {
+			insertMediaDOM(medium.provAtLocation, false);
+		});
+	});
 
 	attachHandlers('.resizable', '#stage div');
-
 };
 
 Template.entities.events({

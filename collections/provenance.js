@@ -5,13 +5,16 @@ Provenance = new Meteor.Collection('provenance');
 
 getRevisions = function(reportId) {
   return Provenance.find( 
-    { provType: 'Collection', cldtermsItemType: 'Crisis Report', mrOriginProv: reportId }, 
-    { sort: { provGeneratedAtTime: -1 } } 
+    { mrOriginProv: reportId }, 
+    { sort: { provGeneratedAtTime: -1 }}
   );
 };
 
 getLatestRevision = function(reportId) {
-  return _.first(getRevisions(reportId).fetch());
+  return Provenance.findOne( 
+    { mrOriginProv: reportId }, 
+    { sort: { provGeneratedAtTime: -1 }}
+  );
 }
 
 Meteor.methods({
