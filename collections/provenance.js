@@ -3,6 +3,17 @@
  */
 Provenance = new Meteor.Collection('provenance');
 
+getRevisions = function(reportId) {
+  return Provenance.find( 
+    { provType: 'Collection', cldtermsItemType: 'Crisis Report', mrOriginProv: reportId }, 
+    { sort: { provGeneratedAtTime: -1 } } 
+  );
+};
+
+getLatestRevision = function(reportId) {
+  return _.first(getRevisions(reportId).fetch());
+}
+
 Meteor.methods({
   crisisReport: function(provAttributes) {
     var user = Meteor.user(),

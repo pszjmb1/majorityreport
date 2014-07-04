@@ -7,26 +7,14 @@ Template.freeform.created = function () {
 };
 
 Template.freeform.rendered = function () {
-	// Load the related media items
-	var reportId = this.data.mrOriginProv;
 
-	var revisionIds = [];
-	var revisions = Provenance.find( 
-	    { provType: 'Collection', cldtermsItemType: 'Crisis Report', mrOriginProv: reportId }, 
-	    { sort: { provGeneratedAtTime: -1 } } 
-	  ).fetch().forEach(function (item) {
-	  	revisionIds.push(item._id);
-	  });
+	var mediaItems = Provenance.find({ provType: 'Media' });
 
-	var mediaMetas = Provenance.find({ "provHadMember.provCollection": {$in: revisionIds} }).fetch();
-	var mediaIds = [];
+	console.log(Provenance.find({ provType: 'Media' }).count(), mediaItems.count());
 
-	mediaMetas.forEach(function (item) { mediaIds.push(item.provHadMember.provEntity); });
-	var mediaItems = Provenance.find({ _id: {$in: mediaIds} }).fetch();
-
-	mediaItems.forEach(function (medium) {
-		insertMediaDOM(medium.provAtLocation, false);
-	});
+	// mediaItems.forEach(function (medium) {
+	// 	insertMediaDOM(medium.provAtLocation, false);
+	// });
 
 	attachHandlers('.resizable', '#stage div');
 
@@ -53,9 +41,10 @@ Template.entities.events({
 		var reportId = this.mrOriginProv;
 		Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
 	    if (error)
-        return alert(error.reason);
+      	return alert(error.reason);
 
       Router.go('crisisContainer', {_id: reportId});
+
 	  });
 
 	}
