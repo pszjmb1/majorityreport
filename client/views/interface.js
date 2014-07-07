@@ -1,12 +1,3 @@
-var attachHandlers = function(a, b) {
-	$(a).resizable();
-	$(b).draggable({ stack: '#stage div' });
-}
-
-var attach = function(some) {
-	console.log('att', some)
-}
-
 var getReportMedia = function(reportId) {
 	// Watch for any new revision and get the latest related media
   Deps.autorun(function () {
@@ -23,29 +14,35 @@ var getReportMedia = function(reportId) {
 
 Template.freeform.created = function () {
 	// Attempt to get the data as soon as the template is created
-	getReportMedia(this.data.mrOriginProv);
+	// getReportMedia(this.data.mrOriginProv);
 };
 
 Template.freeform.rendered = function () {
-	// Watch for any new media change and render it accordingly
-	Deps.autorun(function () {
-		var media = Session.get('reportMedia');
-		var stage = d3.selectAll('#stage').selectAll('div')
-			.data(media);
+	// // Watch for any new media change and render it accordingly
+	// Deps.autorun(function () {
+	// 	var media = Session.get('reportMedia');
+	// 	var stage = d3.selectAll('#stage').selectAll('div')
+	// 		.data(media);
 
-		var divs = stage.enter().append('xhtml:div')
-			.classed('draggable', true);
+	// 	var divs = stage.enter().append('xhtml:div')
+	// 		.classed('draggable', true);
 
-		var media = divs.append('xhtml:img')
-			.classed('resizable', true)
-			.attr({
-				src: function(d){ return d.provAtLocation; }
-			});
+	// 	var media = divs.append('xhtml:img')
+	// 		.classed('resizable', true)
+	// 		.attr({
+	// 			src: function(d){ return d.provAtLocation; }
+	// 		});
 
-		$('div.draggable').draggable();
-	});
+	// 	$('div.draggable').draggable();
+	// });
 	
 };
+
+Template.freeform.helpers({
+	media: function () {
+		// return all media
+	}
+});
 
 Template.entities.events({
 	'submit form[name=media]': function (e, tpl) {

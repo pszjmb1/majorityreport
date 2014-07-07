@@ -50,7 +50,8 @@ Meteor.methods({
       provClasses: ['Entity'],
       provType: 'Collection',
       provGeneratedAtTime: now, 
-      cldtermsItemType: 'Crisis Report'
+      cldtermsItemType: 'Crisis Report',
+      provHadMember: []
     });
 
     // Insert the crisis
@@ -64,7 +65,7 @@ Meteor.methods({
     var userProv = Provenance.findOne({mrUserId:user._id});
     var activity = {
       provClasses:['Activity'],
-      mrActivity:'Crisis Report Creation',
+      provType:'MR: Crisis Report Creation',
       provStartedAtTime: now,
       provEndedAtTime: now,
       provWasStartedBy: userProv._id,
@@ -94,11 +95,11 @@ Meteor.methods({
 
     var removalActivity = Provenance.insert({
       provClasses:['Activity'],
-      mrActivity:'Crisis Report Removal',
+      provType:'MR: Crisis Report Removal',
       provStartedAtTime: now,
       provEndedAtTime: now,
       provWasStartedBy: currentUser,
-      provInvalidated:currentCrisisId
+      provInvalidated: currentCrisisId
     });
 
     Provenance.update(currentCrisisId, {$set: {wasInvalidatedBy: removalActivity}});
@@ -137,17 +138,19 @@ Meteor.methods({
     // Extend the whitelisted attributes
     var media = _.extend(_.pick(provAttributes, 'dctermsFormat'), {
       provClasses: ['Entity'],
-      provType: 'Media',
+      provType: 'MR: Media',
       provAtLocation: provAttributes.mediaUrl,
       provGeneratedAtTime: now
     });
     var mediaId = Provenance.insert(media);
 
+    Provenance.update(mediaId, {$set: {mrOriginProv: mediaId}});
+
     // Add a corresponding creation provenance activity ////////////////////
     var userProv = Provenance.findOne({mrUserId:user._id});
     var activity = {
       provClasses:['Activity'],
-      mrActivity:'Media Insertion',
+      provType:'MR: Media Insertion',
       provStartedAtTime: now,
       provEndedAtTime: now,
       provWasStartedBy: userProv._id,
@@ -156,20 +159,34 @@ Meteor.methods({
 
     Provenance.insert(activity);
 
-    // Insert a new revision
-    var revisionId = reportRevision(provAttributes);
+    // Insert new entity for the properties of the media
+    var prop = {
+      provClasses: ['Entity'],
+      provType: 'MR: Media Properties',
+      provGeneratedAtTime: now,
+      mrProperties: []
+    }
+    var propId = Provenance.insert(prop);
+    Provenance.update(propId, {$set: {mrOriginProv: propId}});
 
-    // Add a corresponding relationship between the media and the revision///
-    var record = {
-      provHadMember: {
-        provCollection: revisionId,
-        provEntity: mediaId,
-        provGeneratedAtTime: now,
-        mrAttributes: []
-      }
+
+    // Add a corresponding creation provenance activity ////////////////////
+    var userProv = Provenance.findOne({mrUserId:user._id});
+    var activity = {
+      provClasses:['Activity'],
+      provType:'MR: Media Properties Insertion',
+      provStartedAtTime: now,
+      provEndedAtTime: now,
+      provWasStartedBy: userProv._id,
+      provGenerated: propId
     }
 
-    Provenance.insert(record);
+    // Create a new revision of the report
+    var revisionId = reportRevision(provAttributes);
+
+    // Add the media and properties reference to the revision collection
+    var collectionEntity = { mrMedia: mediaId, mrProperties: propId };
+    Provenance.update(revisionId, {$push: {provHadMember: collectionEntity }} );
 
     return mediaId;
   },

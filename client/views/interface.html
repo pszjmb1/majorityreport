@@ -1,6 +1,10 @@
 <template name='freeform'>
 	{{> entities}}
-	<div id="stage"></div>
+	<div id="board">
+		{{#each media}}
+			{{> media}}
+		{{/each}}
+	</div>
 </template>
 
 <template name="entities">
@@ -15,4 +19,12 @@
 		</select>
 		<button type="submit">Add media</button>
 	</form>
+</template>
+
+<template name="media">
+	{{#if typeImage}}
+		<div class="draggable">
+			<img src="{{provAtLocation}}" alt="" class="resizable">
+		</div>
+	{{/if}}
 </template>
