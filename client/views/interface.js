@@ -3,7 +3,12 @@ var attachHandlers = function(a, b) {
 	$(b).draggable({ stack: '#stage div' });
 }
 
+var attach = function(some) {
+	console.log('att', some)
+}
+
 var getReportMedia = function(reportId) {
+	// Watch for any new revision and get the latest related media
   Deps.autorun(function () {
   	// Get all the media related to this report across all revisions
   	var changed = Session.get(reportId),
@@ -14,34 +19,39 @@ var getReportMedia = function(reportId) {
 
 	  Session.set('reportMedia', media);
   });
- 
-
 }
 
 Template.freeform.created = function () {
+	// Attempt to get the data as soon as the template is created
 	getReportMedia(this.data.mrOriginProv);
 };
 
 Template.freeform.rendered = function () {
+	// Watch for any new media change and render it accordingly
 	Deps.autorun(function () {
 		var media = Session.get('reportMedia');
+		var stage = d3.selectAll('#stage').selectAll('div')
+			.data(media);
 
-		media.forEach(function (medium) {
-			insertMediaDOM(medium.provAtLocation, false);
-		});
+		var divs = stage.enter().append('xhtml:div')
+			.classed('draggable', true);
+
+		var media = divs.append('xhtml:img')
+			.classed('resizable', true)
+			.attr({
+				src: function(d){ return d.provAtLocation; }
+			});
+
+		$('div.draggable').draggable();
 	});
-
-	attachHandlers('.resizable', '#stage div');
+	
 };
 
 Template.entities.events({
 	'submit form[name=media]': function (e, tpl) {
 		e.preventDefault();
 		var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
-				mediaFormat = $(e.target).find('select[name=mediaFormat]').val() ;
-
-		// Insert Media to the DOM
-		insertMediaDOM(mediaUrl, true);
+				mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
 
 		// Insert appropriate provenances for the entity and the activity: revision, entity, membership
 		var provAttributes = {
@@ -50,7 +60,7 @@ Template.entities.events({
 			dctermsTitle: this.dctermsTitle,
 			dctermsDescription: this.dctermsDescription,
 			dctermsFormat: mediaFormat // Mime type
-		}
+		};
 
 		var reportId = this.mrOriginProv;
 		Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
@@ -58,28 +68,7 @@ Template.entities.events({
       	return alert(error.reason);
 
       Router.go('crisisContainer', {_id: reportId});
-
 	  });
 
 	}
 });
-
-function insertMediaDOM(url, attachHandler) {
-	// Insert the new element to the stage //////////////////////////////////
-	// TODO: decide which element to create based on media type
-	var wrapper = document.createElement('div'),
-		mediaElem = document.createElement('img'); 
-		
-	$('#stage').append(
-		$(wrapper)
-			.attr('class', 'draggable')
-			.html($(mediaElem).attr({
-				'src': url,
-				'class': 'resizable'
-			}))
-	);
-
-	if(attachHandler) {
-		attachHandlers(mediaElem, wrapper);	
-	}
-}
