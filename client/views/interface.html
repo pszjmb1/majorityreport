@@ -1,9 +1,9 @@
 <template name='freeform'>
 	{{> entities}}
 	<div id="board">
-		{{#each media}}
-			{{> media}}
-		{{/each}}
+	{{#each provHadMember}}
+		{{> media}}
+	{{/each}}
 	</div>
 </template>
 
@@ -23,8 +23,10 @@
 
 <template name="media">
 	{{#if typeImage}}
-		<div class="draggable">
-			<img src="{{provAtLocation}}" alt="" class="resizable">
-		</div>
+		{{#with medium}}
+			<div class="draggable">
+				<img src="{{provAtLocation}}" alt="" class="resizable">
+			</div>
+		{{/with}}
 	{{/if}}
 </template>

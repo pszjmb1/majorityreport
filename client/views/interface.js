@@ -38,12 +38,6 @@ Template.freeform.rendered = function () {
 	
 };
 
-Template.freeform.helpers({
-	media: function () {
-		// return all media
-	}
-});
-
 Template.entities.events({
 	'submit form[name=media]': function (e, tpl) {
 		e.preventDefault();
@@ -67,5 +61,19 @@ Template.entities.events({
       Router.go('crisisContainer', {_id: reportId});
 	  });
 
+	}
+});
+
+Template.media.rendered = function () {
+	$('.draggable').draggable();
+};
+
+Template.media.helpers({
+	typeImage: function () {
+		// check if the media is image
+		return true;
+	},
+	medium: function() {
+		return Provenance.findOne(this.mrMedia);
 	}
 });
