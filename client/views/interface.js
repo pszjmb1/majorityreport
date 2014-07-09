@@ -1,43 +1,3 @@
-var getReportMedia = function(reportId) {
-	// Watch for any new revision and get the latest related media
-  Deps.autorun(function () {
-  	// Get all the media related to this report across all revisions
-  	var changed = Session.get(reportId),
-  			revisionIds = getRevisions(reportId).map(function(revision){ return revision._id; }),
-	  		revisionAndMedia = Provenance.find({'provHadMember.provCollection': {$in: revisionIds} }).fetch(),
-	      mediaIds = _(revisionAndMedia).map(function(prov){ return prov.provHadMember.provEntity; });
-	  		media = Provenance.find({_id: {$in: mediaIds} }).fetch();
-
-	  Session.set('reportMedia', media);
-  });
-}
-
-Template.freeform.created = function () {
-	// Attempt to get the data as soon as the template is created
-	// getReportMedia(this.data.mrOriginProv);
-};
-
-Template.freeform.rendered = function () {
-	// // Watch for any new media change and render it accordingly
-	// Deps.autorun(function () {
-	// 	var media = Session.get('reportMedia');
-	// 	var stage = d3.selectAll('#stage').selectAll('div')
-	// 		.data(media);
-
-	// 	var divs = stage.enter().append('xhtml:div')
-	// 		.classed('draggable', true);
-
-	// 	var media = divs.append('xhtml:img')
-	// 		.classed('resizable', true)
-	// 		.attr({
-	// 			src: function(d){ return d.provAtLocation; }
-	// 		});
-
-	// 	$('div.draggable').draggable();
-	// });
-	
-};
-
 Template.entities.events({
 	'submit form[name=media]': function (e, tpl) {
 		e.preventDefault();
@@ -65,32 +25,43 @@ Template.entities.events({
 });
 
 Template.media.rendered = function() {
-		// Select the elements that are present only within this template instance
-		console.log(this);
-		var self = this,
-				wrapper = self.$('.wrapper-medium'),
-				item = self.$('.item-medium');
-		
-		// Attach the handler only when the item is loaded
-		item.load(function(){ $(this).resizable(); });
+	// Select the elements that are present only within this template instance
+	var self = this,
+		dragger = self.$('.draggable'),
+		resizer = self.$('.resizable');
 
-		wrapper.draggable({
-			stop: function() {
-				var provAttributes = {
-					mrMedia: self.data.mrMedia,
-					mrMediaProperties: self.data.mrMediaProperties,
-					mrProperties: {
-						top: $(this).css('top'),
-						left: $(this).css('left'),
-					}
+
+	resizer.resizable({
+		ghost: true,
+		stop: updateMediaProperties,
+		handles: "all",
+		resize: function(event, ui){
+	       reposition = ui.position;
+	     }
+	});
+
+	dragger.draggable({
+		stop: updateMediaProperties
+	});
+
+	function updateMediaProperties() {
+		var provAttributes = {
+				mrMedia: self.data.mrMedia,
+				mrMediaProperties: self.data.mrMediaProperties,
+				mrProperties: {
+					width: resizer.css('width'),
+					height: resizer.css('height'),
+					top: dragger.css('top'),
+					left: dragger.css('left')
 				}
+			};
+		// Update the properties in the db and create a new revision for the changes
+		Meteor.call('mediaPropertiesRevision', provAttributes, function(error, id) {
+		    if (error)
+		    	return alert(error.reason);
+	  });
+	}
 
-				Meteor.call('mediaPropertiesRevision', provAttributes, function(error, id) {
-			    if (error)
-		      	return alert(error.reason);
-			  });
-			}
-		});
 };
 
 Template.media.helpers({
@@ -100,5 +71,19 @@ Template.media.helpers({
 	},
 	medium: function() {
 		return Provenance.findOne(this.mrMedia);
+	},
+	properties: function() {
+		return getLatestRevision(this.mrMediaProperties)
+	},
+	assignStyles: function(properties, itemScope) {
+		var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index']; 
+		
+		return _.map(_(properties.mrProperties).pick(keys), function(value, index){ 
+				return index +":"+ value; 
+			}).join(';');
+	},
+	getValue: function(record, key) {
+		return record[key];
 	}
 });
+

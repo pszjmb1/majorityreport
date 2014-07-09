@@ -226,6 +226,8 @@ Meteor.methods({
     };
 
     Provenance.insert(revisionActivity);
+
+    return revisionId;
   }
 
 });
@@ -286,5 +288,5 @@ function reportRevision(provAttributes) {
     Provenance.insert(revisionActivity);
 
     return revisionId;
-  }
+}
 

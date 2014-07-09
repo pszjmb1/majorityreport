@@ -23,10 +23,10 @@
 
 <template name="media">
 	{{#if typeImage}}
-		{{#with medium}}
-			<div class="wrapper-medium">
-				<img src="{{provAtLocation}}" class="item-medium">
+		<div class="wrapper-medium draggable" style="{{ assignStyles properties 'wrapper'}}">
+			<div class="resizable" style="{{ assignStyles properties 'item'}}">
+				<img class="item-medium" src="{{getValue  medium 'provAtLocation'}}">
 			</div>
-		{{/with}}
+		</div>
 	{{/if}}
 </template>
