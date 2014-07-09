@@ -1,4 +1,13 @@
-.draggable:hover,
-.draggable:active {
+div.wrapper-medium {
+	position: absolute;
+}
+
+img.item-medium {
+	display: block;
+	width: auto;
+}
+
+.ui-draggable:hover,
+.ui-draggable:active {
 	cursor: move;
 }

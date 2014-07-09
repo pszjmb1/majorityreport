@@ -164,7 +164,7 @@ Meteor.methods({
       provClasses: ['Entity'],
       provType: 'MR: Media Properties',
       provGeneratedAtTime: now,
-      mrProperties: []
+      mrProperties: {}
     }
     var propId = Provenance.insert(prop);
     Provenance.update(propId, {$set: {mrOriginProv: propId}});
@@ -185,11 +185,48 @@ Meteor.methods({
     var revisionId = reportRevision(provAttributes);
 
     // Add the media and properties reference to the revision collection
-    var collectionEntity = { mrMedia: mediaId, mrProperties: propId };
+    var collectionEntity = { 
+      mrMedia: mediaId, 
+      mrMediaProperties: propId 
+    };
     Provenance.update(revisionId, {$push: {provHadMember: collectionEntity }} );
 
     return mediaId;
   },
+  'mediaPropertiesRevision': function(provAttributes) {
+    var user = Meteor.user(),
+      now = new Date().getTime(),
+      currentUser = Provenance.findOne({mrUserId: user._id});
+
+    var newMediaProperties = {
+      mrProperties: provAttributes.mrProperties,
+      provGeneratedAtTime: now
+    }
+
+    // Clone the latest media properties and update them
+    var revisionId,
+      prop = getLatestRevision(provAttributes.mrMediaProperties),
+      currentPropId = prop._id;
+
+    delete prop._id;
+    revisionId = Provenance.insert(prop);
+    Provenance.update(revisionId, {$set: newMediaProperties });      
+          
+    // Add a corresponding revision provenance /////////////////////////////
+    var revisionActivity = {
+      provClasses:['Derivation'],
+      mrReason: 'Media Properties Update',
+      provAtTime : now,
+      provWasStartedBy: currentUser._id,
+      provWasDerivedFrom: {
+        provEntity: revisionId, 
+        provDerivedFrom: currentPropId, 
+        provAttributes: [{provType: 'provRevision'}]
+      }
+    };
+
+    Provenance.insert(revisionActivity);
+  }
 
 });
 

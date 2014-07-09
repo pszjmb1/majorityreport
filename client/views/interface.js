@@ -64,8 +64,33 @@ Template.entities.events({
 	}
 });
 
-Template.media.rendered = function () {
-	$('.draggable').draggable();
+Template.media.rendered = function() {
+		// Select the elements that are present only within this template instance
+		console.log(this);
+		var self = this,
+				wrapper = self.$('.wrapper-medium'),
+				item = self.$('.item-medium');
+		
+		// Attach the handler only when the item is loaded
+		item.load(function(){ $(this).resizable(); });
+
+		wrapper.draggable({
+			stop: function() {
+				var provAttributes = {
+					mrMedia: self.data.mrMedia,
+					mrMediaProperties: self.data.mrMediaProperties,
+					mrProperties: {
+						top: $(this).css('top'),
+						left: $(this).css('left'),
+					}
+				}
+
+				Meteor.call('mediaPropertiesRevision', provAttributes, function(error, id) {
+			    if (error)
+		      	return alert(error.reason);
+			  });
+			}
+		});
 };
 
 Template.media.helpers({
