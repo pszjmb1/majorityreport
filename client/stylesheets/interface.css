@@ -1,5 +1,11 @@
 div.wrapper-medium {
 	position: absolute;
+	border: 1px solid #efefef;
+	-wekbit-transition: all 55s ease;
+}
+
+div.wrapper-medium:hover {
+	border-color: #0cc;
 }
 
 
@@ -14,10 +20,3 @@ img.item-medium {
 .ui-draggable:active {
 	cursor: move;
 }
-
-.ui-resizable-handle {
-	border: 1px solid #0cc;
-}
-
-
- /*n, e, s, w, ne, se, sw, nw*/
