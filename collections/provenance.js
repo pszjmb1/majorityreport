@@ -212,10 +212,11 @@ Meteor.methods({
 
     var now = new Date().getTime(),
         attribute = {};
+
     attribute[provAttributes.attrKey] = provAttributes.attrValue;
     
     var media = getLatestRevision(provAttributes.currentMediaProv),
-        existingAttrs = media.mrAttributes || {};
+        existingAttrs = media.mrAttributes;
         console.log(existingAttrs);
     
     var newMedia = {
