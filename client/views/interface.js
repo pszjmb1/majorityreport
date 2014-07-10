@@ -33,15 +33,20 @@ Template.media.rendered = function() {
 
 	resizer.resizable({
 		ghost: true,
-		stop: updateMediaProperties,
 		handles: "all",
-		resize: function(event, ui){
-	       reposition = ui.position;
-	     }
+		start: function(){ $(this).addClass('resizing-active'); },
+		stop: function(){ 
+			$(this).removeClass('dragging-active'); 
+			updateMediaProperties();
+		},
 	});
 
 	dragger.draggable({
-		stop: updateMediaProperties
+		start: function(){ $(this).addClass('dragging-active'); },
+		stop: function(){ 
+			$(this).removeClass('dragging-active'); 
+			updateMediaProperties();
+		},
 	});
 
 	function updateMediaProperties() {

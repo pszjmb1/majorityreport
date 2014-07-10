@@ -1,14 +1,21 @@
 div.wrapper-medium {
 	position: absolute;
 	border: 1px solid #efefef;
-	-wekbit-transition: all 55s ease;
 }
 
 div.wrapper-medium:hover {
 	border-color: #0cc;
 }
 
+.wrapper-medium, 
+.resizable {
+	transition: all ease-in 0.3s;
+}
 
+.wrapper-medium.dragging-active,
+.resizable.resizing-active {
+	transition: none 0ms;
+}
 
 img.item-medium {
 	display: block;
