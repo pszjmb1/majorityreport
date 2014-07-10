@@ -9,7 +9,7 @@ div.wrapper-medium:hover {
 
 .wrapper-medium, 
 .resizable {
-	transition: all ease-in 0.3s;
+	transition: all ease-in-out 0.2s;
 }
 
 .wrapper-medium.dragging-active,

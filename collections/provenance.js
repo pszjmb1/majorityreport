@@ -140,7 +140,8 @@ Meteor.methods({
       provClasses: ['Entity'],
       provType: 'MR: Media',
       provAtLocation: provAttributes.mediaUrl,
-      provGeneratedAtTime: now
+      provGeneratedAtTime: now,
+      mrAttributes: {}
     });
     var mediaId = Provenance.insert(media);
 
@@ -192,6 +193,42 @@ Meteor.methods({
     Provenance.update(revisionId, {$push: {provHadMember: collectionEntity }} );
 
     return mediaId;
+  },
+  'mediaRevision': function (provAttributes) {
+    var user = Meteor.user();
+
+
+    // ensure the user is logged in
+    if (!user)
+      throw new Meteor.Error(401, "Please login to add an attribute");
+
+    // ensure that the key of the attribute is entered
+    if (!provAttributes.attrKey)
+      throw new Meteor.Error(422, "Please enter the attribute key");
+    
+    // ensure that the value of the attribute is entered
+    if (!provAttributes.attrValue)
+      throw new Meteor.Error(422, "Please enter the attribute value");
+
+    var now = new Date().getTime(),
+        attribute = {};
+    attribute[provAttributes.attrKey] = provAttributes.attrValue;
+    
+    var media = getLatestRevision(provAttributes.currentMediaProv),
+        existingAttrs = media.mrAttributes || {};
+        console.log(existingAttrs);
+    
+    var newMedia = {
+        mrAttributes: _(existingAttrs).extend(attribute),
+        provGeneratedAtTime: now
+    };
+
+    delete media._id;
+    var revisionId = Provenance.insert(media);
+    Provenance.update(revisionId, {$set: newMedia});
+
+    return revisionId;
+
   },
   'mediaPropertiesRevision': function(provAttributes) {
     var user = Meteor.user(),
