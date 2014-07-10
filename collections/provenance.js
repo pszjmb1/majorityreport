@@ -211,6 +211,7 @@ Meteor.methods({
       throw new Meteor.Error(422, "Please enter the attribute value");
 
     var now = new Date().getTime(),
+        currentUser = Provenance.findOne({mrUserId:user._id});
         attribute = {};
 
     // Set up the new attributes as an object
@@ -236,7 +237,7 @@ Meteor.methods({
       provType:'MR: Media Attribute Insertion',
       provStartedAtTime: now,
       provEndedAtTime: now,
-      provWasStartedBy: userProv._id,
+      provWasStartedBy: currentUser._id,
       provGenerated: revisionId
     }
     // Add a corresponding revision provenance /////////////////////////////
