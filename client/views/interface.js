@@ -79,6 +79,7 @@ Template.media.helpers({
         return getLatestRevision(this.mrMediaProperties);
     },
     assignStyles: function(properties, itemScope) {
+        // Return width and height styles for item, otherwise the positional styles
         var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index']; 
         
         return _.map(_(properties.mrProperties).pick(keys), function(value, index){ 
@@ -96,27 +97,30 @@ Template.media.helpers({
 
 Template.meta.rendered = function () {
     var _self = this;
+
+    // Set up our dialog
     var dialog = _self.$('.attr-form').dialog({
         autoOpen: false,
         show: {effect: 'fade', duration: 200, ease: 'easeinQuint'},
         hide: {effect: 'fade', duration: 200, ease: 'easeOutQuint'}
     });
 
+    // Set up the trigger for our dialog
     _self.$(".add-attribute").on("click", function() {
         dialog.dialog("open");
     });
 
+    // Attach an event listener to our form. Due to jQuery UI, we cannot utitlise Meteor events
     dialog.find("form[name=attribute]").on("submit", function(e){
         e.preventDefault();
         addAttributes(this);
      });
 
+    // Method calls to add the attributes
     function addAttributes(context) {
         var attrKey = $(context).find('input[name=attrKey]').val(),
             attrValue = $(context).find('input[name=attrValue]').val();
-
-        console.log(_self);
-
+            
         var provAttributes = {
             currentMediaProv: _self.data.mrOriginProv,
             attrKey: attrKey,

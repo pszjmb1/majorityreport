@@ -213,11 +213,13 @@ Meteor.methods({
     var now = new Date().getTime(),
         attribute = {};
 
+    // Set up the new attributes as an object
     attribute[provAttributes.attrKey] = provAttributes.attrValue;
     
+    // Get the exisiting attributes so that we can extend it with our new attribute before updating
     var media = getLatestRevision(provAttributes.currentMediaProv),
+        currentMediaId = media._id,
         existingAttrs = media.mrAttributes;
-        console.log(existingAttrs);
     
     var newMedia = {
         mrAttributes: _(existingAttrs).extend(attribute),
@@ -227,6 +229,30 @@ Meteor.methods({
     delete media._id;
     var revisionId = Provenance.insert(media);
     Provenance.update(revisionId, {$set: newMedia});
+
+    // Add an activity for inserting new attribute /////////////////////////
+    var activity = {
+      provClasses:['Activity'],
+      provType:'MR: Media Attribute Insertion',
+      provStartedAtTime: now,
+      provEndedAtTime: now,
+      provWasStartedBy: userProv._id,
+      provGenerated: revisionId
+    }
+    // Add a corresponding revision provenance /////////////////////////////
+    var revisionActivity = {
+      provClasses:['Derivation'],
+      mrReason: 'Media Update',
+      provAtTime : now,
+      provWasStartedBy: currentUser._id,
+      provWasDerivedFrom: {
+        provEntity: revisionId, 
+        provDerivedFrom: currentMediaId, 
+        provAttributes: [{provType: 'provRevision'}]
+      }
+    };
+
+    Provenance.insert(revisionActivity);
 
     return revisionId;
 
