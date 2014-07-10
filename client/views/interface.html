@@ -1,51 +1,59 @@
 <template name='freeform'>
-	{{> entities}}
-	<div id="board">
-	{{#each provHadMember}}
-		{{> media}}
-	{{/each}}
-	</div>
+    {{> entities}}
+    <div id="board">
+    {{#each provHadMember}}
+        {{> media}}
+    {{/each}}
+    </div>
 </template>
 
 <template name="entities">
-	<form name="narreme">
-		<input type="textfield" placeholder="Narreme" name="narremeTitle" />
-		<button type="submit">Add Narreme</button>
-	</form>
-	<form name="media">
-		<input type="textfield" placeholder="Media URL" name="mediaUrl" />
-		<select name="mediaFormat">
-			<option value="image/jpeg">Image (.jpg)</option>
-		</select>
-		<button type="submit">Add media</button>
-	</form>
+    <form name="narreme">
+        <input type="textfield" placeholder="Narreme" name="narremeTitle" />
+        <button type="submit">Add Narreme</button>
+    </form>
+    <form name="media">
+        <input type="textfield" placeholder="Media URL" name="mediaUrl" />
+        <select name="mediaFormat">
+            <option value="image/jpeg">Image (.jpg)</option>
+        </select>
+        <button type="submit">Add media</button>
+    </form>
 </template>
 
 <template name="media">
-	{{#if typeImage}}
-		{{#with mediumWithProperties mediumItem mediumProperties}}
-			<div class="wrapper-medium draggable" style="{{ assignStyles this.properties 'wrapper'}}">
-				<div class="resizable" style="{{ assignStyles this.properties 'item'}}">
-					<img class="item-medium" src="{{ this.medium.provAtLocation }}">
-				</div>
-				{{#with this.medium}}
-					{{> meta }}
-				{{/with}}
-			</div>
-		{{/with}}
-	{{/if}}
+    {{#if typeImage}}
+        {{#with mediumWithProperties mediumItem mediumProperties}}
+            <div class="wrapper-medium draggable" style="{{ assignStyles this.properties 'wrapper'}}">
+                {{#with this.medium}}
+                    {{> meta }}
+                {{/with}}
+                <div class="resizable" style="{{ assignStyles this.properties 'item'}}">
+                    <img class="item-medium" src="{{ this.medium.provAtLocation }}">
+                </div>
+            </div>
+        {{/with}}
+    {{/if}}
 </template>
 
 <template name="meta">
-	{{#each attributes}}
-		{{key}} : {{value}} <br/>
-	{{/each}}
-	<button class="add-attribute">[+] Add Attribute</button>
-	<div class="attr-form">
-		<form name="attribute">
-			<input type="text" name="attrKey" placeholder="Attribute Key"/>
-			<input type="text" name="attrValue" placeholder="Attribute Value"/>
-			<button type="submit">Add Attribute</button>
-		</form>
-	</div>
+    <div class="meta-medium">
+        {{#if title}} {{title}} {{/if}}
+        {{!-- <i class="fa fa-info-circle"></i> --}}
+        <div class="meta-medium-details">
+            {{#each attributes}}
+                <div class="medium-attribute">
+                    <span class="label">{{key}}</span> <span class="value">{{value}}</span>
+                </div>
+            {{/each}}
+            <button class="add-attribute">[+] Add Attribute</button>
+            <div class="attr-form">
+                <form name="attribute">
+                    <input type="text" name="attrKey" placeholder="Attribute Key"/>
+                    <input type="text" name="attrValue" placeholder="Attribute Value"/>
+                    <button type="submit">Add Attribute</button>
+                </form>
+            </div>    
+        </div>
+    </div>
 </template>

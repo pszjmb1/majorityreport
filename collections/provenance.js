@@ -79,12 +79,11 @@ Meteor.methods({
   crisisReportInvalidation: function(provAttributes) {
     // Invalidate the record, rather than deleting it  
     var user = Meteor.user();
+    var currentCrisisId = provAttributes.currentCrisisId;
 
     // ensure the user is logged in
     if (!user)
       throw new Meteor.Error(401, "Please login to remove a crisis");
-
-    var currentCrisisId = provAttributes.currentCrisisId;
 
     // ensure the currentCrisisId has been set
     if (!currentCrisisId)
@@ -197,7 +196,6 @@ Meteor.methods({
   'mediaRevision': function (provAttributes) {
     var user = Meteor.user();
 
-
     // ensure the user is logged in
     if (!user)
       throw new Meteor.Error(401, "Please login to add an attribute");
@@ -259,6 +257,8 @@ Meteor.methods({
 
   },
   'mediaPropertiesRevision': function(provAttributes) {
+    // Add, if any, error handling
+
     var user = Meteor.user(),
       now = new Date().getTime(),
       currentUser = Provenance.findOne({mrUserId: user._id});

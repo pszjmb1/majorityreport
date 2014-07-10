@@ -6,7 +6,8 @@
       "iron-router": {},
       "spin": {},
       "jquery-ui": {},
-      "jquery-ui-bootstrap": {}
+      "jquery-ui-bootstrap": {},
+      "fontawesome4": {}
     },
     "packages": {
       "accounts-ui-bootstrap-dropdown": {
@@ -33,6 +34,11 @@
         "git": "https://github.com/TimHeckel/meteor-jquery-ui-bootstrap.git",
         "tag": "v0.1.2",
         "commit": "fa742a85639307003e105898e15b631394b63509"
+      },
+      "fontawesome4": {
+        "git": "https://github.com/chrismbeckett/meteor-fontawesome4.git",
+        "tag": "v1.1.0",
+        "commit": "7d2cb9119b7981b8f854b7051d302d4842311249"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",

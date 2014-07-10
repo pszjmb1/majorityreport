@@ -4,6 +4,7 @@
     "iron-router": {},
     "spin": {},
     "jquery-ui": {},
-    "jquery-ui-bootstrap": {}
+    "jquery-ui-bootstrap": {},
+    "fontawesome4": {}
   }
 }

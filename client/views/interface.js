@@ -135,8 +135,14 @@ Template.meta.rendered = function () {
 };
 
 Template.meta.helpers({
+    title: function(){
+        return _.result(this.mrAttributes, 'title');
+    },
+    shortdesc: function(){
+        return _.result(this.mrAttributes, 'shortdesc');
+    },
     attributes: function () {
-        return _(this.mrAttributes).map(function(val, key){
+        return _(_(this.mrAttributes).omit('title')).map(function(val, key){
                 return {key: key, value: val};
             });
     }
