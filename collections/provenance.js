@@ -202,11 +202,11 @@ Meteor.methods({
 
     // ensure that the key of the attribute is entered
     if (!provAttributes.attrKey)
-      throw new Meteor.Error(422, "Please enter the attribute key");
+      throw new Meteor.Error(422, "Please enter the attribute label");
     
     // ensure that the value of the attribute is entered
     if (!provAttributes.attrValue)
-      throw new Meteor.Error(422, "Please enter the attribute value");
+      throw new Meteor.Error(422, "Please enter the attribute content");
 
     var now = new Date().getTime(),
         currentUser = Provenance.findOne({mrUserId:user._id});
@@ -254,7 +254,62 @@ Meteor.methods({
     Provenance.insert(revisionActivity);
 
     return revisionId;
+  },
+  'mediaAttributeRemove': function (provAttributes) {
+    var user = Meteor.user();
 
+    // ensure the user is logged in
+    if (!user)
+      throw new Meteor.Error(401, "Please login to remove the attribute");
+
+    // ensure that the key of the attribute is entered
+    if (!provAttributes.attrKey)
+      throw new Meteor.Error(422, "Please select an appropriate attribute label");
+
+    var now = new Date().getTime(),
+        currentUser = Provenance.findOne({mrUserId:user._id});
+        attribute = {};
+    
+    // Get the exisiting attributes so that we can extend it with our new attribute before updating
+    var media = getLatestRevision(provAttributes.currentMediaProv),
+        currentMediaId = media._id,
+        existingAttrs = media.mrAttributes;
+
+    var newMedia = {
+        mrAttributes: _(existingAttrs).omit(provAttributes.attrKey),
+        provGeneratedAtTime: now
+    };
+
+
+    delete media._id;
+    var revisionId = Provenance.insert(media);
+    Provenance.update(revisionId, {$set: newMedia});
+
+    // Add an activity for inserting new attribute /////////////////////////
+    var activity = {
+      provClasses:['Activity'],
+      provType:'MR: Media Attribute Deletion',
+      provStartedAtTime: now,
+      provEndedAtTime: now,
+      provWasStartedBy: currentUser._id,
+      provGenerated: revisionId
+    }
+    // Add a corresponding revision provenance /////////////////////////////
+    var revisionActivity = {
+      provClasses:['Derivation'],
+      mrReason: 'Media Update',
+      provAtTime : now,
+      provWasStartedBy: currentUser._id,
+      provWasDerivedFrom: {
+        provEntity: revisionId, 
+        provDerivedFrom: currentMediaId, 
+        provAttributes: [{provType: 'provRevision'}]
+      }
+    };
+
+    Provenance.insert(revisionActivity);
+
+    return revisionId;
   },
   'mediaPropertiesRevision': function(provAttributes) {
     // Add, if any, error handling

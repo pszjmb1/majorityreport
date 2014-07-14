@@ -29,6 +29,31 @@ img.item-medium {
 }
 
 /*Medium meta/attributes */
-.meta-medium {
-	
+ul.attributes,
+ul.attributes li {
+	margin: 0;
+	list-style: none;
+}
+
+ul.attributes li { 
+	clear: both;
+	border-bottom: 1px dotted #ccc;
+	padding: 5px 0;
+}
+
+ul.attributes li .remove-attribute {
+	float: right;
+}
+
+ul.attributes li .remove-attribute:hover {
+	color: red;
+	cursor: pointer;
+}
+
+/* Temporary */
+.meta-medium { 
+	width: 300px;
+	max-width: 350px;
+	max-height: 300px;
+	overflow: auto;
 }

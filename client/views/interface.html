@@ -39,21 +39,28 @@
 <template name="meta">
     <div class="meta-medium">
         {{#if title}} {{title}} {{/if}}
-        {{!-- <i class="fa fa-info-circle"></i> --}}
-        <div class="meta-medium-details">
-            {{#each attributes}}
-                <div class="medium-attribute">
-                    <span class="label">{{key}}</span> <span class="value">{{value}}</span>
-                </div>
-            {{/each}}
-            <button class="add-attribute">[+] Add Attribute</button>
-            <div class="attr-form">
-                <form name="attribute">
-                    <input type="text" name="attrKey" placeholder="Attribute Key"/>
-                    <input type="text" name="attrValue" placeholder="Attribute Value"/>
-                    <button type="submit">Add Attribute</button>
-                </form>
-            </div>    
-        </div>
+        <button class="add-attribute">Attributes</button>
+        <div class="medium-attributes">
+            <form name="form-attribute">
+                <input type="text" name="attrKey" placeholder="Label"/>
+                <input type="text" name="attrValue" placeholder="Content"/>
+                <button type="submit">Add Attribute</button>
+            </form>
+            <ul class="attributes">
+                {{#each attributes}}
+                    <li>
+                        {{#with detailsWithContext this ..}}
+                            {{> metaItem}}
+                        {{/with}}
+                        
+                    </li>
+                {{/each}}
+            </ul>
+        </div>    
     </div>
+</template>
+
+<template name="metaItem">
+    <i class="fa fa-minus-square-o remove-attribute"></i>
+    <span class="label" data-key={{details.key}}>{{details.key}}</span> <span class="value">{{details.value}}</span>
 </template>
