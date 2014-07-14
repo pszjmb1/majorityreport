@@ -1,0 +1,9 @@
+{
+  "name": "jsPlumb",
+  "description": "jsPlumb provides a means for a developer to visually connect elements on their web pages. (http://jsplumbtoolkit.com)",
+  "homepage": "",
+  "author": "Sangeet Gyawali <sangeight@gmail.com> (http://sangeight.com)",
+  "version": "0.0.1",
+  "git": "",
+  "packages": {}
+}
