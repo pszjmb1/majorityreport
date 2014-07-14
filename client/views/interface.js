@@ -106,43 +106,10 @@ Template.meta.rendered = function () {
     });
 
     // Set up the trigger for our dialog
-    _self.$(".add-attribute").on("click", function() {
+    _self.$(".show-attributes").on("click", function(e) {
+        e.preventDefault();
         dialog.dialog("open");
     });
-
-    // Attach an event listener to our form. Due to jQuery UI, we cannot utitlise Meteor events
-    dialog.find("form[name=form-attribute]").on("submit", function(e){
-        e.preventDefault();
-        addAttributes(this);
-    });
-
-    dialog.find(".remove-attribute").on("click", function(e) {
-        e.preventDefault();
-        removeAttribute($(this).parent());
-    });
-
-    // Method calls to add the attributes
-    function addAttributes(context) {
-        var attrKey = $(context).find('input[name=attrKey]').val(),
-            attrValue = $(context).find('input[name=attrValue]').val();
-            
-        var provAttributes = {
-            currentMediaProv: _self.data.mrOriginProv,
-            attrKey: attrKey,
-            attrValue: attrValue
-        };
-
-        Meteor.call('mediaRevision', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
-    }
-
-    // Method call to remove an attribute, gets the DOM object to work out which key to remove from the DB
-    function removeAttribute(context) {
-       
-    }
-
 };
 
 Template.meta.helpers({
@@ -163,11 +130,28 @@ Template.meta.helpers({
             context: context
         };
     }
-
-
 });
 
-Template.metaItem.events({
+Template.formAttribute.events({
+    'submit form': function (e, tpl) {
+        e.preventDefault();
+        var attrKey = tpl.$('input[name=attrKey]').val(),
+            attrValue = tpl.$('input[name=attrValue]').val();
+            
+        var provAttributes = {
+            currentMediaProv: this.mrOriginProv,
+            attrKey: attrKey,
+            attrValue: attrValue
+        };
+
+        Meteor.call('mediaRevision', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+    }
+});
+
+Template.attributeItem.events({
     'click .remove-attribute': function (e, tpl) {
        e.preventDefault();
        var attrKey = this.details.key;

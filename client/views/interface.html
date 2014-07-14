@@ -38,21 +38,22 @@
 
 <template name="meta">
     <div class="meta-medium">
-        {{#if title}} {{title}} {{/if}}
-        <button class="add-attribute">Attributes</button>
+        {{#if title}}
+            <div class="media-title">
+                {{title}} 
+            </div>
+        {{/if}}
+        <button class="btn btn-default btn-sm show-attributes"><i class="fa fa-info-circle"></i> Attributes</button>
         <div class="medium-attributes">
-            <form name="form-attribute">
-                <input type="text" name="attrKey" placeholder="Label"/>
-                <input type="text" name="attrValue" placeholder="Content"/>
-                <button type="submit">Add Attribute</button>
-            </form>
+            {{#with this}}
+                {{> formAttribute}}
+            {{/with}}
             <ul class="attributes">
                 {{#each attributes}}
                     <li>
                         {{#with detailsWithContext this ..}}
-                            {{> metaItem}}
+                            {{> attributeItem}}
                         {{/with}}
-                        
                     </li>
                 {{/each}}
             </ul>
@@ -60,7 +61,15 @@
     </div>
 </template>
 
-<template name="metaItem">
+<template name="formAttribute">
+    <form name="form-attribute">
+        <input type="text" name="attrKey" placeholder="Label"/>
+        <input type="text" name="attrValue" placeholder="Content"/>
+        <button class="btn btn-success" type="submit"><i class="fa fa-plus-circle"></i> Add Attribute</button>
+    </form>
+</template>
+
+<template name="attributeItem">
     <i class="fa fa-minus-square-o remove-attribute"></i>
     <span class="label" data-key={{details.key}}>{{details.key}}</span> <span class="value">{{details.value}}</span>
 </template>
