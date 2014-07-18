@@ -2,7 +2,9 @@
     {{> entities}}
     <div id="board">
     {{#each provHadMember}}
-        {{> media}}
+        {{#with mediumWithAttribute}}
+            {{> media}}
+        {{/with}}
     {{/each}}
     </div>
 </template>
@@ -19,16 +21,14 @@
 
 <template name="media">
     {{#if typeImage}}
-        {{#with mediumWithAttribute}}
-            <div class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
-                <div class="resizable" style="{{ pickStyles 'item' }}">
-                    <img class="item-medium" src="{{ this.medium.provAtLocation }}">
-                </div>
-                {{#with this.medium}}
-                    {{> meta }}
-                {{/with}}
+        <div class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
+            <div class="resizable" style="{{ pickStyles 'item' }}">
+                <img class="item-medium" src="{{ this.medium.provAtLocation }}">
             </div>
-        {{/with}}
+            {{#with this.medium}}
+                {{> meta }}
+            {{/with}}
+        </div>
     {{/if}}
 </template>
 

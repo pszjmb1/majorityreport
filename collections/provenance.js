@@ -170,12 +170,11 @@ Meteor.methods({
 
     // Insert Media into the Report //////////////////////////////////////////
     // Prepare entity that defines mediaId and 
-    // its attributes relative to the report, i.e. position, dimensions
+    // its attributes **relative** to the report, i.e. position, dimensions
     var mediaAttribute = {
       provClasses: ['Entity'],
       provType: 'MR: Media Properties',
       provGeneratedAtTime: now,
-      mrMedia: mediaId,
       mrAttribute: {}
     }
     var mediaAttributeId = Provenance.insert(mediaAttribute);
@@ -328,7 +327,6 @@ Meteor.methods({
   },
   'mediaReportAttributeRevision': function(provAttributes) {
     var user = Meteor.user();
-
     // ensure the user is logged in
     if (!user)
       throw new Meteor.Error(401, "Please login to update the report");

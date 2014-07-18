@@ -1,3 +1,11 @@
+Template.freeform.helpers({
+    mediumWithAttribute: function() {
+        return {
+            attributes: getLatestRevision(this.mrAttribute),
+            medium: getLatestRevision(this.mrMedia),
+        }
+    },
+});
 Template.media.rendered = function() {
     // Select the elements that are present only within this template instance
     var _self = this,
@@ -9,7 +17,7 @@ Template.media.rendered = function() {
         handles: "all",
         start: function(){ $(this).addClass('resizing-active'); },
         stop: function(){ 
-            $(this).removeClass('dragging-active'); 
+            $(this).removeClass('resizing-active'); 
             updateMediaProperties();
         },
     });
@@ -24,9 +32,9 @@ Template.media.rendered = function() {
 
     function updateMediaProperties() {
         var provAttributes = {
-                mrMedia: _self.data.mrMedia,
-                currentAttributeId: _self.data._id,
-                currentAttributeOrigin: _self.data.mrOrigin,
+                mrMedia: _self.data.medium.mrOrigin,
+                currentAttributeId: _self.data.attributes._id,
+                currentAttributeOrigin: _self.data.attributes.mrOrigin,
                 mrAttribute: {
                     width: resizer.css('width'),
                     height: resizer.css('height'),
@@ -48,12 +56,6 @@ Template.media.helpers({
     typeImage: function () {
         // check if the media is image
         return true;
-    },
-    mediumWithAttribute: function() {
-        return {
-            attributes: getLatestRevision(this.mrAttribute),
-            medium: getLatestRevision(this.mrMedia),
-        }
     },
     pickStyles: function(itemScope) {
         // Return width and height styles for item, otherwise the positional styles
