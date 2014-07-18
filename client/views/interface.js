@@ -1,3 +1,25 @@
+var plumber; 
+
+Template.freeform.created = function () {
+    Session.set('renderedMediaItems', []);
+    jsPlumb.ready(function() {
+        plumber = jsPlumb.getInstance({
+            Anchor: 'Continuous',
+            DragOptions : { cursor: "crosshair" },
+            PaintStyle : {
+                lineWidth:13,
+                strokeStyle: '#ac8'
+            },
+            EndpointStyles : [{ fillStyle:"#ac8" }, { fillStyle:"#ac8" }]
+        });
+    }); 
+
+    Deps.autorun(function () {
+        var renderedMedia = Session.get('renderedMediaItems');
+        console.log("New rendered", renderedMedia)
+    });
+};
+
 Template.freeform.helpers({
     mediumWithAttribute: function() {
         return {
@@ -10,7 +32,26 @@ Template.media.rendered = function() {
     // Select the elements that are present only within this template instance
     var _self = this,
         dragger = _self.$('.draggable'),
-        resizer = _self.$('.resizable');
+        resizer = _self.$('.resizable'),
+        wrapper = _self.$('.wrapper-medium'),
+        connector = _self.$('.connector');
+
+    Meteor.defer(function(){
+        var renderedMedia = Session.get('renderedMediaItems');
+        renderedMedia.push(_self.data.medium.mrOrigin);
+        Session.set('renderedMediaItems', renderedMedia);
+    });
+
+    var source = plumber.makeSource(connector, {parent: wrapper});
+    var target = plumber.makeTarget(wrapper);
+
+    plumber.draggable(dragger, {
+        start: function(){ $(this).addClass('dragging-active'); },
+        stop: function(){ 
+            $(this).removeClass('dragging-active'); 
+            updateMediaProperties();
+        },
+    })
 
     resizer.resizable({
         ghost: true,
@@ -22,26 +63,22 @@ Template.media.rendered = function() {
         },
     });
 
-    dragger.draggable({
-        start: function(){ $(this).addClass('dragging-active'); },
-        stop: function(){ 
-            $(this).removeClass('dragging-active'); 
-            updateMediaProperties();
-        },
+    target.bind('beforeDrop', function(info) {
+        addRelation(info);
     });
 
     function updateMediaProperties() {
         var provAttributes = {
-                mrMedia: _self.data.medium.mrOrigin,
-                currentAttributeId: _self.data.attributes._id,
-                currentAttributeOrigin: _self.data.attributes.mrOrigin,
-                mrAttribute: {
-                    width: resizer.css('width'),
-                    height: resizer.css('height'),
-                    top: dragger.css('top'),
-                    left: dragger.css('left')
-                }
-            };
+            mrMedia: _self.data.medium.mrOrigin,
+            currentAttributeId: _self.data.attributes._id,
+            currentAttributeOrigin: _self.data.attributes.mrOrigin,
+            mrAttribute: {
+                width: resizer.css('width'),
+                height: resizer.css('height'),
+                top: dragger.css('top'),
+                left: dragger.css('left')
+            }
+        };
         
         // Update the properties in the db and create a new revision for the changes
         Meteor.call('mediaReportAttributeRevision', provAttributes, function(error, id) {
@@ -50,6 +87,18 @@ Template.media.rendered = function() {
         });
     }
 
+    function addRelation(info) {
+        console.log("Info", info)
+        var provAttributes = {
+            source: sourceId,
+            target: targetId,
+            annotation: {}
+        };
+        Meteor.call('mediaRelation', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+    }
 };
 
 Template.media.helpers({

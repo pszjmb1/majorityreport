@@ -206,7 +206,7 @@ Meteor.methods({
 
     return mediaId;
   },
-  'mediaRevision': function (provAttributes) {
+  mediaRevision: function (provAttributes) {
     var user = Meteor.user();
 
     // ensure the user is logged in
@@ -268,7 +268,7 @@ Meteor.methods({
 
     return revisionId;
   },
-  'mediaAttributeRemove': function (provAttributes) {
+  mediaAttributeRemove: function (provAttributes) {
     var user = Meteor.user();
 
     // ensure the user is logged in
@@ -325,7 +325,7 @@ Meteor.methods({
 
     return revisionId;
   },
-  'mediaReportAttributeRevision': function(provAttributes) {
+  mediaReportAttributeRevision: function(provAttributes) {
     var user = Meteor.user();
     // ensure the user is logged in
     if (!user)
@@ -364,6 +364,22 @@ Meteor.methods({
     Provenance.insert(revisionActivity);
 
     return revisionId;
+  },
+  mediaRelation: function(provAttributes) {
+    var user = Meteor.user();
+    // ensure the user is logged in
+    if (!user)
+      throw new Meteor.Error(401, "Please login to add a new relation");
+
+    var now = new Date().getTime(),
+      currentUser = Provenance.findOne({mrUserId: user._id});
+
+    // check if a relation entry exists for both source and target media
+    
+      // if a relation entry already exists, create a new revision
+      // if there is no existing relation entry for a media, create a new one
+    // Add relation entry to provRelationCollection if its not already there
+
   }
 
 });

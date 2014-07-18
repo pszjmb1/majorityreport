@@ -21,10 +21,11 @@
 
 <template name="media">
     {{#if typeImage}}
-        <div class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
+        <div id="{{ this.medium.mrOrigin }}" class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
             <div class="resizable" style="{{ pickStyles 'item' }}">
                 <img class="item-medium" src="{{ this.medium.provAtLocation }}">
             </div>
+            <div class="connector"></div>
             {{#with this.medium}}
                 {{> meta }}
             {{/with}}
