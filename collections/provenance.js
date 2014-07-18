@@ -5,14 +5,14 @@ Provenance = new Meteor.Collection('provenance');
 
 getRevisions = function(reportId) {
   return Provenance.find( 
-    { mrOriginProv: reportId }, 
+    { mrOrigin: reportId }, 
     { sort: { provGeneratedAtTime: -1 }}
   );
 };
 
 getLatestRevision = function(reportId) {
   return Provenance.findOne( 
-    { mrOriginProv: reportId }, 
+    { mrOrigin: reportId }, 
     { sort: { provGeneratedAtTime: -1 }}
   );
 }
@@ -59,7 +59,7 @@ Meteor.methods({
     
     // Assign an origin provenance ID to be able properly track related revisions, 
     // remains the same across related revisions
-    Provenance.update(crisisId, {$set: {mrOriginProv: crisisId}});
+    Provenance.update(crisisId, {$set: {mrOrigin: crisisId}});
 
     // Add a corresponding creation provenance activity ////////////////////
     var userProv = Provenance.findOne({mrUserId:user._id});
@@ -124,72 +124,77 @@ Meteor.methods({
     if (!provAttributes.dctermsFormat)
       throw new Meteor.Error(422, 'Please select a media format');
 
-    // check that there are no previous crises with the same title
-    if (provAttributes.mediaUrl && mediaWithSameUrl) {
-      throw new Meteor.Error(302, 
-        'A media with the same URL already exists', 
-        mediaWithSameUrl._id);
-    }
-
-    // Insert new media entity ///////////////////////////////////////////////
     var now = new Date().getTime();
-
-    // Extend the whitelisted attributes
-    var media = _.extend(_.pick(provAttributes, 'dctermsFormat'), {
-      provClasses: ['Entity'],
-      provType: 'MR: Media',
-      provAtLocation: provAttributes.mediaUrl,
-      provGeneratedAtTime: now,
-      mrAttributes: {}
-    });
-    var mediaId = Provenance.insert(media);
-
-    Provenance.update(mediaId, {$set: {mrOriginProv: mediaId}});
-
-    // Add a corresponding creation provenance activity ////////////////////
     var userProv = Provenance.findOne({mrUserId:user._id});
-    var activity = {
-      provClasses:['Activity'],
-      provType:'MR: Media Insertion',
-      provStartedAtTime: now,
-      provEndedAtTime: now,
-      provWasStartedBy: userProv._id,
-      provGenerated: mediaId
+    var mediaId;
+
+
+    // Ensure media doesn't already exists in the current report
+    if(mediaWithSameUrl) {
+      // Keep track of the existing media id in case media doesn't exist in the current report
+      mediaId = mediaWithSameUrl.mrOrigin;
+
+      var report = getLatestRevision(provAttributes.mrOrigin);
+      if( _.findWhere(report.provHadMember, {mrMedia: mediaId}) )
+        throw new Meteor.Error(422, 'Media already exists in the current report', mediaId);
+    } else {
+      // Insert new media entity ///////////////////////////////////////////////
+      // Extend the whitelisted attributes
+      var media = _.extend(_.pick(provAttributes, 'dctermsFormat'), {
+        provClasses: ['Entity'],
+        provType: 'MR: Media',
+        provAtLocation: provAttributes.mediaUrl,
+        provGeneratedAtTime: now,
+        mrAttribute: []
+      });
+      
+      mediaId = Provenance.insert(media);
+      Provenance.update(mediaId, {$set: {mrOrigin: mediaId}});
+
+      // Add a corresponding creation provenance activity ////////////////////
+      var activity = {
+        provClasses:['Activity'],
+        provType:'MR: Media Insertion',
+        provStartedAtTime: now,
+        provEndedAtTime: now,
+        provWasStartedBy: userProv._id,
+        provGenerated: mediaId
+      }
+
+      Provenance.insert(activity);
+
+      // TODO: Insert media into a global media provCollection
     }
 
-    Provenance.insert(activity);
 
-    // Insert new entity for the properties of the media
-    var prop = {
+    // Insert Media into the Report //////////////////////////////////////////
+    // Prepare entity that defines mediaId and 
+    // its attributes relative to the report, i.e. position, dimensions
+    var mediaAttribute = {
       provClasses: ['Entity'],
       provType: 'MR: Media Properties',
       provGeneratedAtTime: now,
-      mrProperties: {}
+      mrMedia: mediaId,
+      mrAttribute: []
     }
-    var propId = Provenance.insert(prop);
-    Provenance.update(propId, {$set: {mrOriginProv: propId}});
-
+    var mediaAttributeId = Provenance.insert(mediaAttribute);
+    Provenance.update(mediaAttributeId, {$set: {mrOrigin: mediaAttributeId}});
 
     // Add a corresponding creation provenance activity ////////////////////
-    var userProv = Provenance.findOne({mrUserId:user._id});
     var activity = {
       provClasses:['Activity'],
-      provType:'MR: Media Properties Insertion',
+      provType:'MR: Media Attribute Insertion',
       provStartedAtTime: now,
       provEndedAtTime: now,
       provWasStartedBy: userProv._id,
-      provGenerated: propId
+      provGenerated: mediaAttributeId
     }
+    
+    Provenance.insert(activity);
 
-    // Create a new revision of the report
+    // Prepare new revision of the report before inserting the mediaAttribute entity
     var revisionId = reportRevision(provAttributes);
-
-    // Add the media and properties reference to the revision collection
-    var collectionEntity = { 
-      mrMedia: mediaId, 
-      mrMediaProperties: propId 
-    };
-    Provenance.update(revisionId, {$push: {provHadMember: collectionEntity }} );
+    Provenance.update(revisionId, {$push: {provHadMember: mediaAttribute }} );
 
     return mediaId;
   },
@@ -218,10 +223,10 @@ Meteor.methods({
     // Get the exisiting attributes so that we can extend it with our new attribute before updating
     var media = getLatestRevision(provAttributes.currentMediaProv),
         currentMediaId = media._id,
-        existingAttrs = media.mrAttributes;
+        existingAttrs = media.mrAttribute;
     
     var newMedia = {
-        mrAttributes: _(existingAttrs).extend(attribute),
+        mrAttribute: _(existingAttrs).extend(attribute),
         provGeneratedAtTime: now
     };
 
@@ -273,10 +278,10 @@ Meteor.methods({
     // Get the exisiting attributes so that we can extend it with our new attribute before updating
     var media = getLatestRevision(provAttributes.currentMediaProv),
         currentMediaId = media._id,
-        existingAttrs = media.mrAttributes;
+        existingAttrs = media.mrAttribute;
 
     var newMedia = {
-        mrAttributes: _(existingAttrs).omit(provAttributes.attrKey),
+        mrAttribute: _(existingAttrs).omit(provAttributes.attrKey),
         provGeneratedAtTime: now
     };
 

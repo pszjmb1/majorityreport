@@ -6,7 +6,6 @@ if (Provenance.find().count() === 0) {
   var now = new Date().getTime();
 
   // Example User /////////////////////
-
   var jesseId = Meteor.users.insert({
     profile: { name: 'Jesse Blum' }
   });
@@ -27,10 +26,11 @@ if (Provenance.find().count() === 0) {
     provGeneratedAtTime: now - 6 * 3600 * 1000,
     dctermsTitle: "The death of Ian Tomlinson",
     dctermsDescription: "An English newspaper vendor who collapsed and died in the City of London on his way home from work after being unlawfully struck by a police officer, Simon Harwood, during the 2009 G-20 summit protests.",
-    cldtermsItemType: 'Crisis Report'
+    mrCollectionType: 'Crisis Report',
+    provHadMember: []
   });
 
-  Provenance.update(reportId, {$set: {mrOriginProv: reportId}});
+  Provenance.update(reportId, {$set: {mrOrigin: reportId}});
 
   Provenance.insert({
     provClasses:['Activity'],
@@ -41,34 +41,8 @@ if (Provenance.find().count() === 0) {
     provGenerated: reportId
   });
 
-  // Example Media Insertion ///////////
+  // Insert Media Items
+  // Insert Media Attributes
+  // Insert Relationships
 
-  var photographerProv = Provenance.insert({
-    provClasses:['Agent', 'Person'],
-    foafGivenName: 'Some Body'
-  });
-
-  var mediaProvId = Provenance.insert({
-    provClasses:['Entity'],
-    provType:'Media:Image',
-    provAtLocation:'http://timestreams.org/wp-content/uploads/2013/12/CR_027316.jpg',
-    dctermsTitle: "Once upon a time there was a man named Ian Tomlinson"
-  });
-
-  var contribId = Provenance.insert({
-    provClasses:['Activity'],
-    mrActivity:'contribute media',
-    provAtTime: now - 6 * 3600 * 999,
-    mrContributed: mediaProvId,
-    provWasStartedBy: jesseProv
-  });
-
-  Provenance.insert({
-    provClasses:['Activity'],
-    mrActivity:'take photograph',
-    provAtTime: now - 6 * 3600 * 4000,
-    provGenerated: mediaProvId,
-    provWasStartedBy: photographerProv,
-    mrContributionActivity: contribId
-  });
 }

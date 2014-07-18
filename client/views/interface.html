@@ -8,10 +8,6 @@
 </template>
 
 <template name="entities">
-    <form name="narreme">
-        <input type="textfield" placeholder="Narreme" name="narremeTitle" />
-        <button type="submit">Add Narreme</button>
-    </form>
     <form name="media">
         <input type="textfield" placeholder="Media URL" name="mediaUrl" />
         <select name="mediaFormat">
@@ -23,12 +19,12 @@
 
 <template name="media">
     {{#if typeImage}}
-        {{#with mediumWithProperties mediumItem mediumProperties}}
-            <div class="wrapper-medium draggable" style="{{ assignStyles this.properties 'wrapper'}}">
+        {{#with mediumWithAttribute}}
+            <div class="wrapper-medium draggable">
                 {{#with this.medium}}
                     {{> meta }}
                 {{/with}}
-                <div class="resizable" style="{{ assignStyles this.properties 'item'}}">
+                <div class="resizable">
                     <img class="item-medium" src="{{ this.medium.provAtLocation }}">
                 </div>
             </div>

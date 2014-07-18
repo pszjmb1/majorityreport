@@ -8,8 +8,8 @@
 
 Template.crises.helpers({
   crises: function() { 
-    var set = Provenance.find({provType: 'Collection', cldtermsItemType: 'Crisis Report'}, {sort: {provGeneratedAtTime: -1}}).fetch();
-    var list = _.groupBy(set, function(c){return c.mrOriginProv});
+    var set = Provenance.find({mrCollectionType: 'Crisis Report'}, {sort: {provGeneratedAtTime: -1}}).fetch();
+    var list = _.groupBy(set, function(c){return c.mrOrigin});
     var output = _.map(list, function(c){ return _.max(c, function(prov){ return prov.provGeneratedAtTime; }); });
     return output;
   } 
@@ -102,8 +102,8 @@ Template.crisisHeading.helpers({
   agentName: function() { 
     // TODO: REVISE the following. Derivation and Activity do not share 'provGenerated'
     currentCrisisId = this._id;
-    var mrOriginProv = this.mrOriginProv,
-        activity = Provenance.findOne({provGenerated: mrOriginProv});
+    var mrOrigin = this.mrOrigin,
+        activity = Provenance.findOne({provGenerated: mrOrigin});
     if(activity){
       var agent = Provenance.findOne(activity.provWasStartedBy);
       if(agent){
@@ -117,8 +117,8 @@ Template.crisisHeading.helpers({
   },
   owner: function() { 
     currentCrisisId = this._id;
-    var mrOriginProv = this.mrOriginProv,
-        activity = Provenance.findOne({provGenerated: mrOriginProv})
+    var mrOrigin = this.mrOrigin,
+        activity = Provenance.findOne({provGenerated: mrOrigin})
     if(activity){
       var agent = Provenance.findOne(activity.provWasStartedBy);
       if(agent){
@@ -127,9 +127,9 @@ Template.crisisHeading.helpers({
     }
   }, 
   provLink: function() {
-    return "/crisis/" + this.mrOriginProv;
+    return "/crisis/" + this.mrOrigin;
   },
   provEditLink: function() {
-    return "/crisis/" + this.mrOriginProv + '/edit';
+    return "/crisis/" + this.mrOrigin + '/edit';
   }
 });

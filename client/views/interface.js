@@ -7,13 +7,14 @@ Template.entities.events({
         // Insert appropriate provenances for the entity and the activity: revision, entity, membership
         var provAttributes = {
             currentCrisisId: this._id,
+            currentCrisisOrigin: this.mrOrigin,
             mediaUrl: mediaUrl,
             dctermsTitle: this.dctermsTitle,
             dctermsDescription: this.dctermsDescription,
             dctermsFormat: mediaFormat // Mime type
         };
 
-        var reportId = this.mrOriginProv;
+        var reportId = this.mrOrigin;
         Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
             if (error)
                 return alert(error.reason);
@@ -29,7 +30,7 @@ Template.media.rendered = function() {
         dragger = _self.$('.draggable'),
         resizer = _self.$('.resizable');
 
-    resizer.resizable({
+    /*resizer.resizable({
         ghost: true,
         handles: "all",
         start: function(){ $(this).addClass('resizing-active'); },
@@ -63,7 +64,7 @@ Template.media.rendered = function() {
             if (error)
                 return alert(error.reason);
       });
-    }
+    }*/
 
 };
 
@@ -72,11 +73,11 @@ Template.media.helpers({
         // check if the media is image
         return true;
     },
-    mediumItem: function() {
-        return getLatestRevision(this.mrMedia);
-    },
-    mediumProperties: function() {
-        return getLatestRevision(this.mrMediaProperties);
+    mediumWithAttribute: function() {
+        return {
+            medium: getLatestRevision(this.mrMedia),
+            attribute: this.mrAttribute
+        }
     },
     assignStyles: function(properties, itemScope) {
         // Return width and height styles for item, otherwise the positional styles
@@ -85,12 +86,6 @@ Template.media.helpers({
         return _.map(_(properties.mrProperties).pick(keys), function(value, index){ 
                 return index +":"+ value; 
             }).join(';');
-    },
-    mediumWithProperties: function(m, p) {
-        return {
-            medium: m,
-            properties: p
-        };
     }
 });
 
@@ -139,7 +134,7 @@ Template.formAttribute.events({
             attrValue = tpl.$('input[name=attrValue]').val();
             
         var provAttributes = {
-            currentMediaProv: this.mrOriginProv,
+            currentMediaProv: this.mrOrigin,
             attrKey: attrKey,
             attrValue: attrValue
         };
@@ -157,7 +152,7 @@ Template.attributeItem.events({
        var attrKey = this.details.key;
 
        var provAttributes = {
-            currentMediaProv: this.context.mrOriginProv,
+            currentMediaProv: this.context.mrOrigin,
             attrKey: attrKey
         };
 
