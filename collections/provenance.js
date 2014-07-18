@@ -50,7 +50,7 @@ Meteor.methods({
       provClasses: ['Entity'],
       provType: 'Collection',
       provGeneratedAtTime: now, 
-      cldtermsItemType: 'Crisis Report',
+      mrCollectionType: 'Crisis Report',
       provHadMember: []
     });
 
