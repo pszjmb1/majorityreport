@@ -1,9 +1,3 @@
-Template.freeform.helpers({
-    mediaItemWithAttribute: function() {
-        return getLatestRevision(this.mrMediaAttribute);
-    }
-});
-
 Template.media.rendered = function() {
     // Select the elements that are present only within this template instance
     var _self = this,
@@ -57,15 +51,14 @@ Template.media.helpers({
     },
     mediumWithAttribute: function() {
         return {
-            attribute: this.mrAttribute,
+            attributes: getLatestRevision(this.mrAttribute),
             medium: getLatestRevision(this.mrMedia),
         }
     },
     pickStyles: function(itemScope) {
         // Return width and height styles for item, otherwise the positional styles
         var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index'];
-
-        return _.map(_(this.attribute).pick(keys), function(value, index){ 
+        return _.map(_(this.attributes.mrAttribute).pick(keys), function(value, index){ 
                 return index +":"+ value; 
             }).join(';');
     }
@@ -91,7 +84,7 @@ Template.meta.rendered = function () {
 
 Template.meta.helpers({
     title: function(){
-        console.log(this)
+        // console.log(this)
         return _.result(this.mrAttribute, 'title');
     },
     shortdesc: function(){

@@ -133,9 +133,11 @@ Meteor.methods({
       // Keep track of the existing media id in case media doesn't exist in the current report
       mediaId = mediaWithSameUrl.mrOrigin;
 
-      var report = getLatestRevision(provAttributes.mrOrigin);
-      if( _.findWhere(report.provHadMember, {mrMedia: mediaId}) )
+      var report = getLatestRevision(provAttributes.currentCrisisOrigin);
+      if( _.findWhere(report.provHadMember, {mrMedia: mediaId}) ) {
         throw new Meteor.Error(422, 'Media already exists in the current report', mediaId);
+      }
+
     } else {
       // Insert new media entity ///////////////////////////////////////////////
       // Extend the whitelisted attributes
@@ -192,9 +194,15 @@ Meteor.methods({
     Provenance.insert(activity);
 
     // Prepare new revision of the report before inserting the mediaAttribute entity
-    var revisionId = reportRevision(provAttributes);
+    var revisionId = reportRevision(provAttributes),
+      entity = {
+        mrMedia: mediaId,
+        mrAttribute: mediaAttributeId
+      };
+
+
     Provenance.update(revisionId, 
-      { $push: {provHadMember: {mrMediaAttribute: mediaAttributeId}} } 
+      { $push: {provHadMember: entity} } 
     );
 
     return mediaId;
