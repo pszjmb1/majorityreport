@@ -132,7 +132,7 @@ Template.formAttribute.events({
 Template.attributeItem.events({
     'click .remove-attribute': function (e, tpl) {
        e.preventDefault();
-       var attrKey = this.details.key;
+       var attrKey = this.key;
 
        var provAttributes = {
             currentMediaId: this.mrMedia._id,
@@ -140,10 +140,10 @@ Template.attributeItem.events({
             attrKey: attrKey
         };
 
-        // Meteor.call('mediaAttributeRemove', provAttributes, function (error, result) {
-        //     if(error)
-        //         return alert(error.reason);
-        // });
+        Meteor.call('mediaAttributeRemove', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
     }
 });
 
