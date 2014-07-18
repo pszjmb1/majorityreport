@@ -37,9 +37,7 @@
 <template name="meta">
     <div class="meta-medium">
         {{#if title}}
-            <div class="media-title">
-                {{title}} 
-            </div>
+            <div class="media-title">{{title}}</div>
         {{/if}}
         <button class="btn btn-default btn-sm show-attributes"><i class="fa fa-info-circle"></i> Attributes</button>
         <div class="medium-attributes">
@@ -49,7 +47,7 @@
             <ul class="attributes">
                 {{#each attributes}}
                     <li>
-                        {{#with detailsWithContext this ..}}
+                        {{#with detailsWithContext ..}}
                             {{> attributeItem}}
                         {{/with}}
                     </li>
@@ -69,5 +67,5 @@
 
 <template name="attributeItem">
     <i class="fa fa-minus-square-o remove-attribute"></i>
-    <span class="label" data-key={{details.key}}>{{details.key}}</span> <span class="value">{{details.value}}</span>
+    <span class="label" data-key={{key}}>{{key}}</span> <span class="value">{{value}}</span>
 </template>

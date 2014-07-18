@@ -10,8 +10,6 @@ Template.media.rendered = function() {
         dragger = _self.$('.draggable'),
         resizer = _self.$('.resizable');
 
-        console.log('+', _self.data)
-
     resizer.resizable({
         ghost: true,
         handles: "all",
@@ -93,21 +91,19 @@ Template.meta.rendered = function () {
 
 Template.meta.helpers({
     title: function(){
-        return _.result(this.mrAttributes, 'title');
+        console.log(this)
+        return _.result(this.mrAttribute, 'title');
     },
     shortdesc: function(){
-        return _.result(this.mrAttributes, 'shortdesc');
+        return _.result(this.mrAttribute, 'shortdesc');
     },
     attributes: function () {
-        return _(_(this.mrAttributes).omit('title')).map(function(val, key){
+        return _(this.mrAttribute).map(function(val, key){
                 return {key: key, value: val};
             });
     },
-    detailsWithContext: function(details, context) {
-        return {
-            details: details,
-            context: context
-        };
+    detailsWithContext: function(mediaProv) {
+        return _(this).extend({ mrMedia : mediaProv});
     }
 });
 
@@ -118,10 +114,13 @@ Template.formAttribute.events({
             attrValue = tpl.$('input[name=attrValue]').val();
             
         var provAttributes = {
-            currentMediaProv: this.mrOrigin,
-            attrKey: attrKey,
+            currentMediaId: this._id,
+            currentMediaOrigin: this.mrOrigin,
+            attrKey: attrKey.toLowerCase(),
             attrValue: attrValue
         };
+
+        console.log("Hello", provAttributes)
 
         Meteor.call('mediaRevision', provAttributes, function (error, result) {
             if(error)
@@ -136,14 +135,15 @@ Template.attributeItem.events({
        var attrKey = this.details.key;
 
        var provAttributes = {
-            currentMediaProv: this.context.mrOrigin,
+            currentMediaId: this.mrMedia._id,
+            currentMediaOrigin: this.mrMedia.mrOrigin,
             attrKey: attrKey
         };
 
-        Meteor.call('mediaAttributeRemove', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
+        // Meteor.call('mediaAttributeRemove', provAttributes, function (error, result) {
+        //     if(error)
+        //         return alert(error.reason);
+        // });
     }
 });
 
