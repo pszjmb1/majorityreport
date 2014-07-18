@@ -1,26 +1,6 @@
-Template.entities.events({
-    'submit form[name=media]': function (e, tpl) {
-        e.preventDefault();
-        var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
-                mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
-
-        // Insert appropriate provenances for the entity and the activity: revision, entity, membership
-        var provAttributes = {
-            currentCrisisId: this._id,
-            currentCrisisOrigin: this.mrOrigin,
-            mediaUrl: mediaUrl,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription,
-            dctermsFormat: mediaFormat // Mime type
-        };
-
-        var reportId = this.mrOrigin;
-        Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
-            if (error)
-                return alert(error.reason);
-
-            Router.go('crisisContainer', {_id: reportId});
-        });
+Template.freeform.helpers({
+    mediaItemWithAttribute: function() {
+        return getLatestRevision(this.mrMediaAttribute);
     }
 });
 
@@ -30,7 +10,9 @@ Template.media.rendered = function() {
         dragger = _self.$('.draggable'),
         resizer = _self.$('.resizable');
 
-    /*resizer.resizable({
+        console.log('+', _self.data)
+
+    resizer.resizable({
         ghost: true,
         handles: "all",
         start: function(){ $(this).addClass('resizing-active'); },
@@ -51,20 +33,22 @@ Template.media.rendered = function() {
     function updateMediaProperties() {
         var provAttributes = {
                 mrMedia: _self.data.mrMedia,
-                mrMediaProperties: _self.data.mrMediaProperties,
-                mrProperties: {
+                currentAttributeId: _self.data._id,
+                currentAttributeOrigin: _self.data.mrOrigin,
+                mrAttribute: {
                     width: resizer.css('width'),
                     height: resizer.css('height'),
                     top: dragger.css('top'),
                     left: dragger.css('left')
                 }
             };
+        
         // Update the properties in the db and create a new revision for the changes
-        Meteor.call('mediaPropertiesRevision', provAttributes, function(error, id) {
+        Meteor.call('mediaReportAttributeRevision', provAttributes, function(error, id) {
             if (error)
                 return alert(error.reason);
-      });
-    }*/
+        });
+    }
 
 };
 
@@ -75,15 +59,15 @@ Template.media.helpers({
     },
     mediumWithAttribute: function() {
         return {
+            attribute: this.mrAttribute,
             medium: getLatestRevision(this.mrMedia),
-            attribute: this.mrAttribute
         }
     },
-    assignStyles: function(properties, itemScope) {
+    pickStyles: function(itemScope) {
         // Return width and height styles for item, otherwise the positional styles
-        var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index']; 
-        
-        return _.map(_(properties.mrProperties).pick(keys), function(value, index){ 
+        var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index'];
+
+        return _.map(_(this.attribute).pick(keys), function(value, index){ 
                 return index +":"+ value; 
             }).join(';');
     }
@@ -159,6 +143,32 @@ Template.attributeItem.events({
         Meteor.call('mediaAttributeRemove', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
+        });
+    }
+});
+
+Template.entities.events({
+    'submit form[name=media]': function (e, tpl) {
+        e.preventDefault();
+        var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
+                mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
+
+        // Insert appropriate provenances for the entity and the activity: revision, entity, membership
+        var provAttributes = {
+            currentCrisisId: this._id,
+            currentCrisisOrigin: this.mrOrigin,
+            mediaUrl: mediaUrl,
+            dctermsTitle: this.dctermsTitle,
+            dctermsDescription: this.dctermsDescription,
+            dctermsFormat: mediaFormat // Mime type
+        };
+
+        var reportId = this.mrOrigin;
+        Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
+            if (error)
+                return alert(error.reason);
+
+            Router.go('crisisContainer', {_id: reportId});
         });
     }
 });

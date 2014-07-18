@@ -7,16 +7,6 @@ div.wrapper-medium:hover {
 	border-color: #0cc;
 }
 
-.wrapper-medium, 
-.resizable {
-	transition: all ease-in-out 0.2s;
-}
-
-.wrapper-medium.dragging-active,
-.resizable.resizing-active {
-	transition: none 0ms;
-}
-
 img.item-medium {
 	display: block;
 	width: 100%;
@@ -52,7 +42,7 @@ ul.attributes li .remove-attribute:hover {
 
 /* Temporary */
 .meta-medium { 
-	width: 300px;
+	width: 100%;
 	max-width: 350px;
 	max-height: 300px;
 	overflow: auto;

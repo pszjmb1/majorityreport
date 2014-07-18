@@ -128,7 +128,6 @@ Meteor.methods({
     var userProv = Provenance.findOne({mrUserId:user._id});
     var mediaId;
 
-
     // Ensure media doesn't already exists in the current report
     if(mediaWithSameUrl) {
       // Keep track of the existing media id in case media doesn't exist in the current report
@@ -175,7 +174,7 @@ Meteor.methods({
       provType: 'MR: Media Properties',
       provGeneratedAtTime: now,
       mrMedia: mediaId,
-      mrAttribute: []
+      mrAttribute: {}
     }
     var mediaAttributeId = Provenance.insert(mediaAttribute);
     Provenance.update(mediaAttributeId, {$set: {mrOrigin: mediaAttributeId}});
@@ -194,7 +193,9 @@ Meteor.methods({
 
     // Prepare new revision of the report before inserting the mediaAttribute entity
     var revisionId = reportRevision(provAttributes);
-    Provenance.update(revisionId, {$push: {provHadMember: mediaAttribute }} );
+    Provenance.update(revisionId, 
+      { $push: {provHadMember: {mrMediaAttribute: mediaAttributeId}} } 
+    );
 
     return mediaId;
   },
@@ -316,36 +317,39 @@ Meteor.methods({
 
     return revisionId;
   },
-  'mediaPropertiesRevision': function(provAttributes) {
-    // Add, if any, error handling
+  'mediaReportAttributeRevision': function(provAttributes) {
+    var user = Meteor.user();
 
-    var user = Meteor.user(),
-      now = new Date().getTime(),
+    // ensure the user is logged in
+    if (!user)
+      throw new Meteor.Error(401, "Please login to update the report");
+    
+    var now = new Date().getTime(),
       currentUser = Provenance.findOne({mrUserId: user._id});
 
-    var newMediaProperties = {
-      mrProperties: provAttributes.mrProperties,
+    
+    // Prepare the new information
+    var newAttribute = {
+      mrAttribute: provAttributes.mrAttribute,
       provGeneratedAtTime: now
-    }
+    };
 
-    // Clone the latest media properties and update them
-    var revisionId,
-      prop = getLatestRevision(provAttributes.mrMediaProperties),
-      currentPropId = prop._id;
+    // Clone the latest media attribute and update them
+    var attribute = getLatestRevision(provAttributes.currentAttributeOrigin);
+    delete attribute._id;
 
-    delete prop._id;
-    revisionId = Provenance.insert(prop);
-    Provenance.update(revisionId, {$set: newMediaProperties });      
+    revisionId = Provenance.insert(attribute);
+    Provenance.update(revisionId, {$set: newAttribute });      
           
     // Add a corresponding revision provenance /////////////////////////////
     var revisionActivity = {
       provClasses:['Derivation'],
-      mrReason: 'Media Properties Update',
+      mrReason: 'Media Report Attribute Update',
       provAtTime : now,
       provWasStartedBy: currentUser._id,
       provWasDerivedFrom: {
-        provEntity: revisionId, 
-        provDerivedFrom: currentPropId, 
+        provGenerated: revisionId, 
+        provDerivedFrom: provAttributes.currentAttributeId, 
         provAttributes: [{provType: 'provRevision'}]
       }
     };
@@ -404,7 +408,7 @@ function reportRevision(provAttributes) {
       provAtTime : now,
       provWasStartedBy: currentUser._id,
       provWasDerivedFrom: {
-        provEntity: revisionId, 
+        provGenerated: revisionId, 
         provDerivedFrom: currentCrisisId, 
         provAttributes: [{provType: 'provRevision'}]
       }
