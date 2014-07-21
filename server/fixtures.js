@@ -70,7 +70,7 @@ if (Provenance.find().count() === 0) {
 
   Provenance.insert({
     provClasses:['Activity'],
-    mrActivity:'Relations Collection Creation',
+    mrActivity:'Relations List Creation',
     provStartedAtTime: now - 6 * 3600 * 1000,
     provEndedAtTime: now - 6 * 3600 * 1000,
     provWasStartedBy: majReporterProv,

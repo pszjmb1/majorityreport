@@ -415,6 +415,7 @@ Meteor.methods({
 
     // Keep log of the relations (as source and targets) per media items
     function addMediaRelative(provAttributes, relationId, isSource) {
+      now = new Date().getTime()
       var existingEntity = (isSource) ? getMediaRelations(provAttributes.source) : getMediaRelations(provAttributes.target);
 
       if(existingEntity) {
@@ -493,6 +494,39 @@ Meteor.methods({
         };
 
         Provenance.insert(activity);
+
+        // Insert the newly created media relatives entity to the main relations collection
+        var collection = Provenance.findOne(
+          {mrCollectionType: 'Relations'},
+          {sort: {provGeneratedAtTime: -1}}
+        );
+        var currentCollectionId = collection._id;
+        delete collection._id;
+
+        var revision = {
+          provHadMember: collection.provHadMember,
+          provGeneratedAtTime: now
+        };
+        revision.provHadMember.push(relativeId);
+
+        var revisionId = Provenance.insert(collection);
+        Provenance.update(revisionId, {$set: revision});
+
+        // Add a corresponding revision provenance /////////////////////////////
+        var revisionActivity = {
+          provClasses:['Derivation'],
+          mrReason: "Relations List Update",
+          provAtTime : now,
+          provWasStartedBy: userProv._id,
+          provWasDerivedFrom: {
+            provGenerated: revisionId, 
+            provDerivedFrom: currentCollectionId, 
+            provAttributes: [{provType: 'provRevision'}]
+          }
+        };
+
+        Provenance.insert(revisionActivity);
+
         return relativeId;
       }
     }
