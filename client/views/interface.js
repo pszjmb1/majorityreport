@@ -42,8 +42,8 @@ Template.media.rendered = function() {
         Session.set('renderedMediaItems', renderedMedia);
     });
 
-    var source = plumber.makeSource(connector, {parent: wrapper});
     var target = plumber.makeTarget(wrapper);
+    var source = plumber.makeSource(connector, {parent: wrapper});
 
     plumber.draggable(dragger, {
         start: function(){ $(this).addClass('dragging-active'); },
@@ -64,7 +64,7 @@ Template.media.rendered = function() {
     });
 
     target.bind('beforeDrop', function(info) {
-        addRelation(info);
+        addRelation(info)
     });
 
     function updateMediaProperties() {
@@ -90,9 +90,10 @@ Template.media.rendered = function() {
     function addRelation(info) {
         console.log("Info", info)
         var provAttributes = {
-            source: sourceId,
-            target: targetId,
-            annotation: {}
+            source: info.sourceId,
+            target: info.targetId,
+            key: 'KEY',
+            message: 'Hello'
         };
         Meteor.call('mediaRelation', provAttributes, function (error, result) {
             if(error)
