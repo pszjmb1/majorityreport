@@ -19,7 +19,7 @@ getLatestRevision = function(reportId) {
 
 getMediaRelations = function(mediaId) {
   return Provenance.findOne(
-    { provType: 'MR: Media Relation', mrMedia: mediaId},
+    { provType: 'MR: Media Relative', mrMedia: mediaId},
     { sort: { provGeneratedAtTime: -1 }}
   );
 };
@@ -391,10 +391,10 @@ Meteor.methods({
       provGeneratedAtTime: now,
       mrSource: provAttributes.source,
       mrTarget: provAttributes.target,
-      mrMessage: {}
+      mrAnnotation: {}
     };
 
-    relation.mrMessage[provAttributes.key] = provAttributes.message;
+    relation.mrAnnotation[provAttributes.key] = provAttributes.message;
     var relationId = Provenance.insert(relation);
     Provenance.update(relationId, {$set: {mrOrigin: relationId} }); 
 
@@ -405,135 +405,101 @@ Meteor.methods({
       provStartedAtTime: now,
       provEndedAtTime: now,
       provWasStartedBy: userProv._id,
-      provGenerated: entryId
+      provGenerated: relationId
     };
 
     Provenance.insert(activity);
 
+    addMediaRelative(provAttributes, relationId, true);
+    addMediaRelative(provAttributes, relationId, false);
 
-    // check if a relation entry exists for both source and target media
-    var sourceEntry = getMediaRelations(provAttributes.source);
-    if(sourceEntry) {  sourceRelation = sourceEntry.mrOrigin; }
+    // Keep log of the relations (as source and targets) per media items
+    function addMediaRelative(provAttributes, relationId, isSource) {
+      var existingId, existingEntity, newEntity;
 
-    if(sourceRelation) {
-      console.log(sourceEntry);
+      existingEntity = (isSource) ? getMediaRelations(provAttributes.source) : getMediaRelations(provAttributes.target);
 
-      var newEntity = {
-        mrTarget: sourceEntry.mrTarget,
-        provGeneratedAtTime: now
-      };
+      if(existingEntity) {
+        console.log("Existing", existingEntity);
+        existingId = existingEntity._id;
 
-      if(!newEntity.mrTarget[provAttributes.target])
-        newEntity.mrTarget[provAttributes.target] = [];
+        // Prepare the entity to update depending on whether the current media is a source or target
+        if(isSource) {
+          console.log("is source")
+          newEntity = {
+            mrTarget: existingEntity.mrTarget,
+            provGeneratedAtTime: now
+          };
+          if(!newEntity.mrTarget[provAttributes.target])
+            newEntity.mrTarget[provAttributes.target] = [];
 
-      newEntity.mrTarget[provAttributes.target].push(relationId);
+          newEntity.mrTarget[provAttributes.target].push(relationId);
+        } else {
+          console.log("is false")
+          newEntity = {
+            mrSource: existingEntity.mrSource,
+            provGeneratedAtTime: now
+          };
+          
+          if(!newEntity.mrSource[provAttributes.source])
+            newEntity.mrSource[provAttributes.source] = [];
 
-      var currentRelationId = sourceEntry._id;
-      delete sourceEntry._id;
-      var revisionId = Provenance.insert(sourceEntry);
-      Provenance.update(revisionId, {$set: newEntity});
-
-      // Add a corresponding revision provenance /////////////////////////////
-      var revisionActivity = {
-        provClasses:['Derivation'],
-        mrReason: 'Media Relation Update',
-        provAtTime : now,
-        provWasStartedBy: userProv._id,
-        provWasDerivedFrom: {
-          provGenerated: revisionId, 
-          provDerivedFrom: currentRelationId, 
-          provAttributes: [{provType: 'provRevision'}]
+          newEntity.mrSource[provAttributes.source].push(relationId);
         }
-      };
 
-      Provenance.insert(revisionActivity);
+        delete existingEntity._id;
+        var revisionId = Provenance.insert(existingEntity);
+        Provenance.update(revisionId, {$set: newEntity});
 
-    } else {
-      var relationEntry = {
-        provClasses: ['Entity'],
-        provType: 'MR: Media Relation',
-        provGeneratedAtTime: now,
-        mrMedia: provAttributes.source,
-        mrTarget: {},
-        mrSource: {}
-      };
-      relationEntry.mrTarget[provAttributes.target] = [relationId];
-      var entryId = Provenance.insert(relationEntry);
-      Provenance.update(entryId, {$set: {mrOrigin: entryId} });
+        // Add a corresponding revision provenance /////////////////////////////
+        var revisionActivity = {
+          provClasses:['Derivation'],
+          mrReason: 'Media Relative Update',
+          provAtTime : now,
+          provWasStartedBy: userProv._id,
+          provWasDerivedFrom: {
+            provGenerated: revisionId, 
+            provDerivedFrom: existingId, 
+            provAttributes: [{provType: 'provRevision'}]
+          }
+        };
 
-      // Add a corresponding creation provenance activity ////////////////////
-      var activity = {
-        provClasses:['Activity'],
-        provType:'MR: Media Relation Insertion',
-        provStartedAtTime: now,
-        provEndedAtTime: now,
-        provWasStartedBy: userProv._id,
-        provGenerated: entryId
-      }
+        Provenance.insert(revisionActivity);
 
-      Provenance.insert(activity);
-    }
+        return revisionId;
+      } else {
+        // Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
+        var relativeEntry = {
+          provClasses: ['Entity'],
+          provType: 'MR: Media Relative',
+          provGeneratedAtTime: now,
+          mrTarget: {},
+          mrSource: {}
+        };
 
-    var targetEntry = getMediaRelations(provAttributes.target);
-    if(targetEntry) {  targetRelation = targetEntry.mrOrigin; }
-
-    if(targetRelation) {
-      console.log(targetEntry);
-
-      var newEntity = {
-        mrSource: targetEntry.mrSource,
-        provGeneratedAtTime: now
-      };
-      
-      if(!newEntity.mrSource[provAttributes.source])
-        newEntity.mrSource[provAttributes.source] = [];
-
-      newEntity.mrSource[provAttributes.source].push(relationId);
-
-      var currentRelationId = targetEntry._id;
-      delete targetEntry._id;
-      var revisionId = Provenance.insert(targetEntry);
-      Provenance.update(revisionId, {$set: newEntity});
-
-      // Add a corresponding revision provenance /////////////////////////////
-      var revisionActivity = {
-        provClasses:['Derivation'],
-        mrReason: 'Media Relation Update',
-        provAtTime : now,
-        provWasStartedBy: userProv._id,
-        provWasDerivedFrom: {
-          provGenerated: revisionId, 
-          provDerivedFrom: currentRelationId, 
-          provAttributes: [{provType: 'provRevision'}]
+        if(isSource) {
+          relativeEntry.mrMedia = provAttributes.source;
+          relativeEntry.mrTarget[provAttributes.target] = [relationId];
+        } else {
+          relativeEntry.mrMedia = provAttributes.target;
+          relativeEntry.mrSource[provAttributes.source] = [relationId];
         }
-      };
+        
+        var relativeId = Provenance.insert(relativeEntry);
+        Provenance.update(relativeId, {$set: {mrOrigin: relativeId} });
 
-      Provenance.insert(revisionActivity);
-    } else {
-      var relationEntry = {
-        provClasses: ['Entity'],
-        provType: 'MR: Media Relation',
-        provGeneratedAtTime: now,
-        mrMedia: provAttributes.target,
-        mrTarget: {},
-        mrSource: {}
-      };
-      relationEntry.mrSource[provAttributes.source] = [relationId];
-      var entryId = Provenance.insert(relationEntry);
-      Provenance.update(entryId, {$set: {mrOrigin: entryId} });
+        // Add a corresponding creation provenance activity ////////////////////
+        var activity = {
+          provClasses:['Activity'],
+          provType:'MR: Media Relative Insertion',
+          provStartedAtTime: now,
+          provEndedAtTime: now,
+          provWasStartedBy: userProv._id,
+          provGenerated: relativeId
+        };
 
-      // Add a corresponding creation provenance activity ////////////////////
-      var activity = {
-        provClasses:['Activity'],
-        provType:'MR: Media Relation Insertion',
-        provStartedAtTime: now,
-        provEndedAtTime: now,
-        provWasStartedBy: userProv._id,
-        provGenerated: entryId
+        Provenance.insert(activity);
       }
-
-      Provenance.insert(activity);
-
     }
     
     // TODO: Insert into main relationship collection
