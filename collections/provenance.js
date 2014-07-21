@@ -410,17 +410,8 @@ Meteor.methods({
 
     Provenance.insert(activity);
 
-
-    if(getMediaRelations(provAttributes.source)) {
-
-    } else {
-
-    }
-
     addMediaRelative(provAttributes, relationId, true);
     addMediaRelative(provAttributes, relationId, false);
-
-
 
     // Keep log of the relations (as source and targets) per media items
     function addMediaRelative(provAttributes, relationId, isSource) {
