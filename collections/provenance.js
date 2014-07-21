@@ -410,42 +410,45 @@ Meteor.methods({
 
     Provenance.insert(activity);
 
+
+    if(getMediaRelations(provAttributes.source)) {
+
+    } else {
+
+    }
+
     addMediaRelative(provAttributes, relationId, true);
     addMediaRelative(provAttributes, relationId, false);
 
+
+
     // Keep log of the relations (as source and targets) per media items
     function addMediaRelative(provAttributes, relationId, isSource) {
-      var existingId, existingEntity, newEntity;
-
-      existingEntity = (isSource) ? getMediaRelations(provAttributes.source) : getMediaRelations(provAttributes.target);
+      var existingEntity = (isSource) ? getMediaRelations(provAttributes.source) : getMediaRelations(provAttributes.target);
 
       if(existingEntity) {
-        console.log("Existing", existingEntity);
-        existingId = existingEntity._id;
+        var listToUpdate,
+          existingId = existingEntity._id,
+          newEntity = { provGeneratedAtTime: now };
 
         // Prepare the entity to update depending on whether the current media is a source or target
         if(isSource) {
-          console.log("is source")
-          newEntity = {
-            mrTarget: existingEntity.mrTarget,
-            provGeneratedAtTime: now
-          };
-          if(!newEntity.mrTarget[provAttributes.target])
+          // Prepare the new entity for source media
+          newEntity.mrTarget = existingEntity.mrTarget;
+          if(!newEntity.mrTarget[provAttributes.target]) {
             newEntity.mrTarget[provAttributes.target] = [];
-
-          newEntity.mrTarget[provAttributes.target].push(relationId);
+          }
+          listToUpdate = newEntity.mrTarget[provAttributes.target];
         } else {
-          console.log("is false")
-          newEntity = {
-            mrSource: existingEntity.mrSource,
-            provGeneratedAtTime: now
-          };
-          
-          if(!newEntity.mrSource[provAttributes.source])
+          // Prepare the new entity for target media
+          newEntity.mrSource = existingEntity.mrSource;
+          if(!newEntity.mrSource[provAttributes.source]) {
             newEntity.mrSource[provAttributes.source] = [];
-
-          newEntity.mrSource[provAttributes.source].push(relationId);
+          }
+          listToUpdate = newEntity.mrSource[provAttributes.source];
         }
+
+        listToUpdate.push(relationId);
 
         delete existingEntity._id;
         var revisionId = Provenance.insert(existingEntity);
@@ -465,8 +468,8 @@ Meteor.methods({
         };
 
         Provenance.insert(revisionActivity);
-
         return revisionId;
+
       } else {
         // Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
         var relativeEntry = {
@@ -499,6 +502,7 @@ Meteor.methods({
         };
 
         Provenance.insert(activity);
+        return relativeId;
       }
     }
     
