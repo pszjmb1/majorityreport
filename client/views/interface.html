@@ -9,22 +9,20 @@
             {{> media}}
         {{/with}}
     {{/each}}
+    {{!-- Ready the different relations related with the current media items --}}
     {{#each renderedMedia}}
         {{#with mediaRelative this}}
             {{ maintainRelations}}
          {{/with}} 
     {{/each}}
+    
+    {{!-- Once the media items have been rendered, draw the different relations between them --}}
     {{#if allMediaRendered}}
-        <ol>
-            {{#each relations}}
-                {{#with relationDetails this}}
-                    <li>
-                        {{ this._id }}
-                        {{ connect}}
-                    </li>
-                {{/with}}
-            {{/each}}
-        </ol>
+        {{#each relations}}
+            {{#with relationDetails this}}
+                    {{ connect}}
+            {{/with}}
+        {{/each}}
     {{/if}}
     
     

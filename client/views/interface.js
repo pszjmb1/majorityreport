@@ -14,12 +14,6 @@ Template.freeform.created = function () {
             EndpointStyles : [{ fillStyle:"#ac8" }, { fillStyle:"#ac8" }]
         });
     }); 
-
-    Deps.autorun(function () {
-        var renderedMedia = Session.get('renderedMediaItems');
-        console.log("New rendered", renderedMedia);
-
-    });
 };
 
 Template.freeform.helpers({
@@ -41,9 +35,13 @@ Template.freeform.helpers({
         return getMediaRelative(media);  
     }, 
     maintainRelations: function() {
-        var sourceAndTarget = _.flatten(_.extend(this.mrSource, this.mrTarget));
-        var relations = Session.get('relations');
-        var newRels = _.union(relations, sourceAndTarget);
+        // Get the relevant targets and sources for the current media
+        // and combine them into one single array
+        // Once the array is ready accumulate only the unique relations that are present accross different media
+        var sourceAndTarget = _.flatten(_.extend(this.mrSource, this.mrTarget)),
+            relations = Session.get('relations'),
+            newRels = _.union(relations, sourceAndTarget);
+
         Session.set('relations', newRels);
     },
     relations: function() {
@@ -53,10 +51,10 @@ Template.freeform.helpers({
         return getLatestRevision(relOrigin);
     },
     connect: function() {
-        console.log("Connect", this.mrSource, this.mrTarget)
         var sourceElem = document.getElementById(this.mrSource),
             targetElem = document.getElementById(this.mrTarget);
 
+        // Make sure that a relationship entity only gets drawn once
         if(plumber.getConnections({scope: this.mrOrigin}).length == 0) {
             plumber.connect({
                 scope: this.mrOrigin,
@@ -98,7 +96,11 @@ Template.media.rendered = function() {
         handles: "all",
         start: function(){ $(this).addClass('resizing-active'); },
         stop: function(){ 
-            $(this).removeClass('resizing-active'); 
+            var parentDimensionOffset = {
+                width: 10,
+                height: 40
+            }
+            $(this).removeClass('resizing-active');
             updateMediaProperties();
         },
     });
@@ -128,7 +130,6 @@ Template.media.rendered = function() {
     }
 
     function addRelation(info) {
-        console.log("Info", info)
         var provAttributes = {
             source: info.sourceId,
             target: info.targetId,
@@ -149,10 +150,19 @@ Template.media.helpers({
     },
     pickStyles: function(itemScope) {
         plumber.repaintEverything();
+
+        var wrapperOffset = { width: 0, height: 55 },
+            keys = ['top', 'left', 'z-index', 'width', 'height'];
+        
         // Return width and height styles for item, otherwise the positional styles
-        var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index'];
+        if(itemScope === 'item') { keys = ['width', 'height']; }
+
         return _.map(_(this.attributes.mrAttribute).pick(keys), function(value, index){ 
-                return index +":"+ value; 
+                if(itemScope === 'wrapper' && wrapperOffset[index] != undefined)
+                    value = parseInt(value, 10) + wrapperOffset[index] + "px";
+
+                var prop = index +":"+ value; 
+                return prop;
             }).join(';');
     }
 });
@@ -205,8 +215,6 @@ Template.formAttribute.events({
             attrKey: attrKey.toLowerCase(),
             attrValue: attrValue
         };
-
-        console.log("Hello", provAttributes)
 
         Meteor.call('mediaRevision', provAttributes, function (error, result) {
             if(error)
