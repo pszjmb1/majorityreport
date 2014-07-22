@@ -55,11 +55,12 @@ Template.freeform.helpers({
             targetElem = document.getElementById(this.mrTarget);
 
         // Make sure that a relationship entity only gets drawn once
-        if(plumber.getConnections({scope: this.mrOrigin}).length == 0) {
+        if(plumber.getConnections({scope: this.mrOrigin}).length == 0 && (sourceElem && targetElem)) {
             plumber.connect({
                 scope: this.mrOrigin,
                 source: sourceElem,
                 target: targetElem,
+
             });
         }       
 
