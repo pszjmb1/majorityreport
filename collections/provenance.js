@@ -17,11 +17,23 @@ getLatestRevision = function(reportId) {
   );
 };
 
-getMediaRelations = function(mediaId) {
+getRelationsList = function() {
   return Provenance.findOne(
-    { provType: 'MR: Media Relative', mrMedia: mediaId},
-    { sort: { provGeneratedAtTime: -1 }}
+    {mrCollectionType: 'Relations'},
+    {sort: {provGeneratedAtTime: -1}}
   );
+}
+
+getMediaRelative = function(mediaId) {
+  var relative,
+    rList = getRelationsList();
+
+  if(rList && rList.provHadMember) {
+    relative = _.findWhere(rList.provHadMember, {mrMedia: mediaId})
+    
+    if(relative && relative.mrRelative)
+      return getLatestRevision(relative.mrRelative);
+  }
 };
 
 Meteor.methods({
@@ -416,7 +428,7 @@ Meteor.methods({
     // Keep log of the relations (as source and targets) per media items
     function addMediaRelative(provAttributes, relationId, isSource) {
       now = new Date().getTime()
-      var existingEntity = (isSource) ? getMediaRelations(provAttributes.source) : getMediaRelations(provAttributes.target);
+      var existingEntity = (isSource) ? getMediaRelative(provAttributes.source) : getMediaRelative(provAttributes.target);
 
       if(existingEntity) {
         var listToUpdate,
@@ -496,10 +508,7 @@ Meteor.methods({
         Provenance.insert(activity);
 
         // Insert the newly created media relatives entity to the main relations collection
-        var collection = Provenance.findOne(
-          {mrCollectionType: 'Relations'},
-          {sort: {provGeneratedAtTime: -1}}
-        );
+        var collection = getRelationsList();
         var currentCollectionId = collection._id;
         delete collection._id;
 
@@ -507,7 +516,11 @@ Meteor.methods({
           provHadMember: collection.provHadMember,
           provGeneratedAtTime: now
         };
-        revision.provHadMember.push(relativeId);
+        var member = {
+          mrMedia: relativeEntry.mrMedia,
+          mrRelative: relativeId 
+        };
+        revision.provHadMember.push(member);
 
         var revisionId = Provenance.insert(collection);
         Provenance.update(revisionId, {$set: revision});
@@ -531,8 +544,6 @@ Meteor.methods({
       }
     }
     
-    // TODO: Insert into main relationship collection
-
   }
 
 });

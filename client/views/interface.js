@@ -16,7 +16,10 @@ Template.freeform.created = function () {
 
     Deps.autorun(function () {
         var renderedMedia = Session.get('renderedMediaItems');
-        console.log("New rendered", renderedMedia)
+        console.log("New rendered", renderedMedia);
+
+        
+
     });
 };
 
@@ -27,6 +30,10 @@ Template.freeform.helpers({
             medium: getLatestRevision(this.mrMedia),
         }
     },
+    stringify: function(s) {
+        return JSON.stringify(s);
+    }
+
 });
 Template.media.rendered = function() {
     // Select the elements that are present only within this template instance
