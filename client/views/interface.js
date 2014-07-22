@@ -1,6 +1,7 @@
 var plumber; 
 
 Template.freeform.created = function () {
+    Session.set('relations', [])
     Session.set('renderedMediaItems', []);
     jsPlumb.ready(function() {
         plumber = jsPlumb.getInstance({
@@ -18,20 +19,52 @@ Template.freeform.created = function () {
         var renderedMedia = Session.get('renderedMediaItems');
         console.log("New rendered", renderedMedia);
 
-        
-
     });
 };
 
 Template.freeform.helpers({
+    allMediaRendered: function() {
+        if(this.provHadMember) {   
+            return (this.provHadMember.length === (Session.get('renderedMediaItems')).length)
+        }
+    },
     mediumWithAttribute: function() {
         return {
             attributes: getLatestRevision(this.mrAttribute),
             medium: getLatestRevision(this.mrMedia),
         }
     },
-    stringify: function(s) {
-        return JSON.stringify(s);
+    renderedMedia: function() {
+        return Session.get('renderedMediaItems');
+    },
+    mediaRelative: function(media) {
+        return getMediaRelative(media);  
+    }, 
+    maintainRelations: function() {
+        var sourceAndTarget = _.flatten(_.extend(this.mrSource, this.mrTarget));
+        var relations = Session.get('relations');
+        var newRels = _.union(relations, sourceAndTarget);
+        Session.set('relations', newRels);
+    },
+    relations: function() {
+        return Session.get('relations');
+    },
+    relationDetails: function(relOrigin) {
+        return getLatestRevision(relOrigin);
+    },
+    connect: function() {
+        console.log("Connect", this.mrSource, this.mrTarget)
+        var sourceElem = document.getElementById(this.mrSource),
+            targetElem = document.getElementById(this.mrTarget);
+
+        if(plumber.getConnections({scope: this.mrOrigin}).length == 0) {
+            plumber.connect({
+                scope: this.mrOrigin,
+                source: sourceElem,
+                target: targetElem,
+            });
+        }       
+
     }
 
 });
@@ -115,6 +148,7 @@ Template.media.helpers({
         return true;
     },
     pickStyles: function(itemScope) {
+        plumber.repaintEverything();
         // Return width and height styles for item, otherwise the positional styles
         var keys = (itemScope === 'item') ? ['width', 'height'] : ['top', 'left', 'z-index'];
         return _.map(_(this.attributes.mrAttribute).pick(keys), function(value, index){ 

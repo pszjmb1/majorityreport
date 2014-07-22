@@ -1,17 +1,32 @@
 <template name='freeform'>
     {{> entities}}
     <div id="board">
+    {{#each renderedMediaItems}}
+        {{ this.name }}
+    {{/each}}
     {{#each provHadMember}}
         {{#with mediumWithAttribute}}
             {{> media}}
         {{/with}}
     {{/each}}
-    
-    {{#each renderedMediaItems}}
-        {{#with getRelations}}
-        
-        {{/with}}
+    {{#each renderedMedia}}
+        {{#with mediaRelative this}}
+            {{ maintainRelations}}
+         {{/with}} 
     {{/each}}
+    {{#if allMediaRendered}}
+        <ol>
+            {{#each relations}}
+                {{#with relationDetails this}}
+                    <li>
+                        {{ this._id }}
+                        {{ connect}}
+                    </li>
+                {{/with}}
+            {{/each}}
+        </ol>
+    {{/if}}
+    
     
     </div>
 </template>
