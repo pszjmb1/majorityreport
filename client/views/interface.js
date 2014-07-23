@@ -145,7 +145,9 @@ Template.freeform.helpers({
         }
     },
     updateConnection: function(annotation) {
-        plumber.select({scope: this.mrOrigin}).setLabel(annotation);
+        if(annotation) {
+            plumber.select({scope: this.mrOrigin}).setLabel(annotation);
+        }
     }
 
 });
