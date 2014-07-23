@@ -47,20 +47,41 @@ Template.freeform.helpers({
     relations: function() {
         return Session.get('relations');
     },
-    relationDetails: function(relOrigin) {
-        return getLatestRevision(relOrigin);
+    relationDetails: function() {
+        return getLatestRevision(this.valueOf());
     },
     connect: function() {
-        var sourceElem = document.getElementById(this.mrSource),
-            targetElem = document.getElementById(this.mrTarget);
+        var _self = this;
+        var sourceElem = document.getElementById(_self.mrSource),
+            targetElem = document.getElementById(_self.mrTarget),
+            annotationObj = _.first( _.map(_self.mrAnnotation, function(value, key) {
+                    return {key: key, value: value};
+                }) 
+            ),
+            annotation = annotationObj.key +": "+ annotationObj.value;
 
         // Make sure that a relationship entity only gets drawn once
-        if(plumber.getConnections({scope: this.mrOrigin}).length == 0 && (sourceElem && targetElem)) {
-            plumber.connect({
-                scope: this.mrOrigin,
+        if(plumber.getConnections({scope: _self.mrOrigin}).length == 0 && (sourceElem && targetElem)) {
+            var connection = plumber.connect({
+                scope: _self.mrOrigin,
                 source: sourceElem,
                 target: targetElem,
+                overlays: [
+                    "Arrow",
+                    ["Label", {label: annotation, cssClass: "connection-annotation"}]
+                ]
+            });
 
+            // Ensure the ability to annotate a relationship
+            connection.bind('click', function(conn, evt) {
+                var dialog = $('.form-annotate'),
+                    label = dialog.find('input[name=annotation-label]'),
+                    value = dialog.find('input[name=annotation-value]');
+
+                label.val(annotationObj.key);
+                value.val(annotationObj.value);
+
+                dialog.dialog("open");
             });
         }       
 
@@ -134,9 +155,15 @@ Template.media.rendered = function() {
         var provAttributes = {
             source: info.sourceId,
             target: info.targetId,
-            key: 'KEY',
+            key: 'KEY'.toLowerCase(),
             message: 'Hello'
         };
+
+        var connection = plumber.connect({
+            source: info.sourceId,
+            target: info.targetId,
+        });
+
         Meteor.call('mediaRelation', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
@@ -167,7 +194,6 @@ Template.media.helpers({
             }).join(';');
     }
 });
-
 
 Template.meta.rendered = function () {
     var _self = this;
@@ -241,6 +267,11 @@ Template.attributeItem.events({
         });
     }
 });
+
+Template.relationAnnotate.rendered = function () {
+    var _self = this;
+    var dialog = _self.$('.form-annotate').dialog({ autoOpen: false });
+};
 
 Template.entities.events({
     'submit form[name=media]': function (e, tpl) {

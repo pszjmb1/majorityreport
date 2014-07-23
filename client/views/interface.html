@@ -15,16 +15,17 @@
             {{ maintainRelations}}
          {{/with}} 
     {{/each}}
-    
+
     {{!-- Once the media items have been rendered, draw the different relations between them --}}
     {{#if allMediaRendered}}
         {{#each relations}}
-            {{#with relationDetails this}}
-                    {{ connect}}
+            {{#with relationDetails}}
+                    {{ connect }}
             {{/with}}
         {{/each}}
     {{/if}}
     
+    {{> relationAnnotate}}
     
     </div>
 </template>
@@ -87,4 +88,14 @@
 <template name="attributeItem">
     <i class="fa fa-minus-square-o remove-attribute"></i>
     <span class="label" data-key={{key}}>{{key}}</span> <span class="value">{{value}}</span>
+</template>
+
+<template name="relationAnnotate">
+    <div class="form-annotate">
+        <div>
+            <input type="text" name="annotation-label" id="annotation-label" placeholder="Label"/>
+            <input type="text" name="annotation-value" id="annotation-value" placeholder="Value"/>
+            <button type="submit">Save</button>
+        </div>
+    </div>
 </template>

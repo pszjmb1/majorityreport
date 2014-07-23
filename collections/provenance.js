@@ -425,6 +425,8 @@ Meteor.methods({
     addMediaRelative(provAttributes, relationId, true);
     addMediaRelative(provAttributes, relationId, false);
 
+    return relationId;
+
     // Keep log of the relations (as source and targets) per media items
     function addMediaRelative(provAttributes, relationId, isSource) {
       now = new Date().getTime()
@@ -544,6 +546,8 @@ Meteor.methods({
       }
     }
     
+
+
   }
 
 });
