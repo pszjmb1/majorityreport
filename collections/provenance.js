@@ -364,7 +364,7 @@ Meteor.methods({
     var attribute = getLatestRevision(provAttributes.currentAttributeOrigin);
     delete attribute._id;
 
-    revisionId = Provenance.insert(attribute);
+    var revisionId = Provenance.insert(attribute);
     Provenance.update(revisionId, {$set: newAttribute });      
           
     // Add a corresponding revision provenance /////////////////////////////
@@ -545,9 +545,50 @@ Meteor.methods({
         return relativeId;
       }
     }
+  },
+  relationRevisionAnnotation: function(provAttributes) {
+    var user = Meteor.user();
+    // ensure the user is logged in
+    if (!user)
+      throw new Meteor.Error(401, "Please login to annotate a relation");
+
+    // TODO: ensure that the key and value are valid
+
+    var now = new Date().getTime(),
+      userProv = Provenance.findOne({mrUserId: user._id});
     
+    // Prepare the new information
+    var newEntity = {
+      mrAnnotation: {},
+      provGeneratedAtTime: now
+    };
+    newEntity.mrAnnotation[provAttributes.annotationKey] = provAttributes.annotationValue;
 
 
+    // Clone the latest version of the relation and update it
+    var relation = getLatestRevision(provAttributes.currentRelationOrigin),
+      currentRelationId = relation._id ;
+    delete relation._id;
+
+    var revisionId = Provenance.insert(relation);
+    Provenance.update(revisionId, {$set: newEntity });      
+          
+    // Add a corresponding revision provenance /////////////////////////////
+    var revisionActivity = {
+      provClasses:['Derivation'],
+      mrReason: 'Relation Annotation Update',
+      provAtTime : now,
+      provWasStartedBy: userProv._id,
+      provWasDerivedFrom: {
+        provGenerated: revisionId, 
+        provDerivedFrom: currentRelationId, 
+        provAttributes: [{provType: 'provRevision'}]
+      }
+    };
+
+    Provenance.insert(revisionActivity);
+
+    return revisionId;
   }
 
 });

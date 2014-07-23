@@ -3,6 +3,7 @@ var plumber;
 Template.freeform.created = function () {
     Session.set('relations', [])
     Session.set('renderedMediaItems', []);
+
     jsPlumb.ready(function() {
         plumber = jsPlumb.getInstance({
             Anchor: 'Continuous',
@@ -14,6 +15,11 @@ Template.freeform.created = function () {
             EndpointStyles : [{ fillStyle:"#ac8" }, { fillStyle:"#ac8" }]
         });
     }); 
+};
+
+Template.freeform.rendered = function () {
+    var _self = this;
+    var dialog = _self.$('.form-annotate').dialog({ autoOpen: false });
 };
 
 Template.freeform.helpers({
@@ -75,11 +81,17 @@ Template.freeform.helpers({
             // Ensure the ability to annotate a relationship
             connection.bind('click', function(conn, evt) {
                 var dialog = $('.form-annotate'),
-                    label = dialog.find('input[name=annotation-label]'),
-                    value = dialog.find('input[name=annotation-value]');
+                    fieldLabel = dialog.find('input[name=annotation-label]'),
+                    fieldValue = dialog.find('input[name=annotation-value]'),
+                    fieldRelation = dialog.find('input[name=annotation-relation-id]');
 
-                label.val(annotationObj.key);
-                value.val(annotationObj.value);
+                fieldLabel.val(annotationObj.key);
+                fieldValue.val(annotationObj.value);
+
+                // Pass the relation reference to the form 
+                //   for the purpose of updating the apporirate relation.
+                fieldRelation.attr('data-relation', _self.mrOrigin);
+
 
                 dialog.dialog("open");
             });
@@ -268,10 +280,26 @@ Template.attributeItem.events({
     }
 });
 
-Template.relationAnnotate.rendered = function () {
-    var _self = this;
-    var dialog = _self.$('.form-annotate').dialog({ autoOpen: false });
-};
+Template.formRelationAnnotate.events({
+    'click .btn': function (e, tpl) {
+        e.preventDefault();
+        
+        var annotationKey = tpl.$('input[name=annotation-label]').val(),
+            annotationValue = tpl.$('input[name=annotation-value]').val().toLowerCase(),
+            relationId = tpl.$('input[name=annotation-relation-id]').attr('data-relation');
+
+        var provAttributes = {
+            currentRelationOrigin: relationId,
+            annotationKey: annotationKey.toLowerCase(),
+            annotationValue: annotationValue
+        };
+
+        Meteor.call('relationRevisionAnnotation', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+    }
+});
 
 Template.entities.events({
     'submit form[name=media]': function (e, tpl) {

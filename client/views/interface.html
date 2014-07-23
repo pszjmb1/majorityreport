@@ -24,8 +24,9 @@
             {{/with}}
         {{/each}}
     {{/if}}
-    
-    {{> relationAnnotate}}
+    <div class="form-annotate">
+        {{> formRelationAnnotate}}
+    </div>
     
     </div>
 </template>
@@ -90,12 +91,11 @@
     <span class="label" data-key={{key}}>{{key}}</span> <span class="value">{{value}}</span>
 </template>
 
-<template name="relationAnnotate">
-    <div class="form-annotate">
-        <div>
-            <input type="text" name="annotation-label" id="annotation-label" placeholder="Label"/>
-            <input type="text" name="annotation-value" id="annotation-value" placeholder="Value"/>
-            <button type="submit">Save</button>
-        </div>
-    </div>
+<template name="formRelationAnnotate">
+    <form>
+        <input type="text" name="annotation-label" id="annotation-label" placeholder="Label"/>
+        <input type="text" name="annotation-value" id="annotation-value" placeholder="Value"/>
+        <button class="btn btn-success" type="submit"><i class="fa fa-plus-circle"></i>Save Annotation</button>
+        <input type="hidden" data-relation="" name="annotation-relation-id" />
+    </form>
 </template>
