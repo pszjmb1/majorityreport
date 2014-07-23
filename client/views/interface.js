@@ -1,3 +1,29 @@
+/**
+ * Implements the freeform interface with relations between media
+ * 
+ * Templates:
+ * [1]: freeform
+ * - delegates media rendering to the "media" template
+ * - maintains relationships related to the current media using Session variables for now
+ * - handles drawing of the relations between media items
+ * - the ability to annotate relations, wraps the annotation form in a *dialog*
+ * [2]: formRelationAnnotate
+ * - simply renders the fields required for adding/changin a relation annotation
+ * - activated/initialised/called as a dialog from the 'freeform' template
+ * - deals with db operations (adding/updating) relating to annotations
+ * [3]: entities
+ * - simply presents options to add different kinds of media
+ * - handles corresponding operations for inserting an item within a report
+ * [4]: media 
+ * [5]: meta - displays media attributes and allows insertion/deletion/update
+ * [6]: formAttribute - corresponds to the meta template
+ * [7]: attributeItem - corresponds to the meta template
+ *
+ * Makes use of jQuery UI and jsPlumb 
+ * - Always maintains a single instace of jsPlumb
+ * - each relation is given its own scope in regards to jsPlumb
+ */
+
 var plumber; 
 
 Template.freeform.created = function () {
@@ -19,7 +45,26 @@ Template.freeform.created = function () {
 
 Template.freeform.rendered = function () {
     var _self = this;
-    var dialog = _self.$('.form-annotate').dialog({ autoOpen: false });
+    
+
+    // Prepare the modal form for annotating relations
+    var dialog = _self.$('.form-annotate');
+    dialog.dialog({ 
+        autoOpen: false,
+        open: function(e) {
+            var relationOrigin = dialog.find('input[name=annotation-relation-id]').attr('data-relation'),
+                relation = getLatestRevision(relationOrigin);
+
+            //  If annotation exists, prepopulate the modal form with existing values
+            if(relation.mrAnnotation && !_.isEmpty(relation.mrAnnotation)) {
+                var fieldLabel = dialog.find('input[name=annotation-label]'),
+                    fieldValue = dialog.find('input[name=annotation-value]'),
+                    annotation = _.pairs(relation.mrAnnotation)[0];
+                fieldLabel.val(annotation[0]);
+                fieldValue.val(annotation[1]);
+            }
+        }
+    });
 };
 
 Template.freeform.helpers({
@@ -56,27 +101,34 @@ Template.freeform.helpers({
     relationDetails: function() {
         return getLatestRevision(this.valueOf());
     },
-    connect: function() {
+    isConnected: function() {
+        return (plumber.select({scope: this.mrOrigin}).length > 0);
+    },
+    annotation: function() {
+        if(this.mrAnnotation && !_.isEmpty(this.mrAnnotation) ) {
+            var annotation = _.pairs(this.mrAnnotation)[0];
+            return annotation[0] +": "+ annotation[1];
+        }
+    },
+    drawConnection: function(annotation) {
         var _self = this;
         var sourceElem = document.getElementById(_self.mrSource),
-            targetElem = document.getElementById(_self.mrTarget),
-            annotationObj = _.first( _.map(_self.mrAnnotation, function(value, key) {
-                    return {key: key, value: value};
-                }) 
-            ),
-            annotation = annotationObj.key +": "+ annotationObj.value;
+            targetElem = document.getElementById(_self.mrTarget);
 
-        // Make sure that a relationship entity only gets drawn once
-        if(plumber.getConnections({scope: _self.mrOrigin}).length == 0 && (sourceElem && targetElem)) {
+        // Draw a new connection only if it hasn't been drawn before
+        if(sourceElem && targetElem) {
             var connection = plumber.connect({
                 scope: _self.mrOrigin,
                 source: sourceElem,
                 target: targetElem,
                 overlays: [
                     "Arrow",
-                    ["Label", {label: annotation, cssClass: "connection-annotation"}]
+                    ["Label", {cssClass: "connection-annotation"}]
                 ]
             });
+
+            // Set the annotation if it exists
+            if(annotation) { connection.setLabel(annotation); }
 
             // Ensure the ability to annotate a relationship
             connection.bind('click', function(conn, evt) {
@@ -85,21 +137,19 @@ Template.freeform.helpers({
                     fieldValue = dialog.find('input[name=annotation-value]'),
                     fieldRelation = dialog.find('input[name=annotation-relation-id]');
 
-                fieldLabel.val(annotationObj.key);
-                fieldValue.val(annotationObj.value);
-
                 // Pass the relation reference to the form 
                 //   for the purpose of updating the apporirate relation.
                 fieldRelation.attr('data-relation', _self.mrOrigin);
-
-
                 dialog.dialog("open");
             });
-        }       
-
+        }
+    },
+    updateConnection: function(annotation) {
+        plumber.select({scope: this.mrOrigin}).setLabel(annotation);
     }
 
 });
+
 Template.media.rendered = function() {
     // Select the elements that are present only within this template instance
     var _self = this,
@@ -140,7 +190,7 @@ Template.media.rendered = function() {
     });
 
     target.bind('beforeDrop', function(info) {
-        addRelation(info)
+        addRelation(info);
     });
 
     function updateMediaProperties() {
@@ -166,15 +216,8 @@ Template.media.rendered = function() {
     function addRelation(info) {
         var provAttributes = {
             source: info.sourceId,
-            target: info.targetId,
-            key: 'KEY'.toLowerCase(),
-            message: 'Hello'
+            target: info.targetId
         };
-
-        var connection = plumber.connect({
-            source: info.sourceId,
-            target: info.targetId,
-        });
 
         Meteor.call('mediaRelation', provAttributes, function (error, result) {
             if(error)

@@ -406,7 +406,6 @@ Meteor.methods({
       mrAnnotation: {}
     };
 
-    relation.mrAnnotation[provAttributes.key] = provAttributes.message;
     var relationId = Provenance.insert(relation);
     Provenance.update(relationId, {$set: {mrOrigin: relationId} }); 
 

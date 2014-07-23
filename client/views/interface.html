@@ -20,7 +20,11 @@
     {{#if allMediaRendered}}
         {{#each relations}}
             {{#with relationDetails}}
-                    {{ connect }}
+                {{#if isConnected}}
+                    {{ updateConnection annotation}}
+                {{ else }}
+                    {{ drawConnection annotation}}
+                {{/if}}
             {{/with}}
         {{/each}}
     {{/if}}
