@@ -4,7 +4,7 @@
  * Templates:
  * [1]: freeform
  * - delegates media rendering to the "media" template
- * - maintains relationships related to the current media using Session variables for now
+ * - maintains relationships related to the current media using Session vars 
  * - handles drawing of the relations between media items
  * - the ability to annotate relations, wraps the annotation form in a *dialog*
  * [2]: formRelationAnnotate
@@ -27,7 +27,7 @@
 var plumber; 
 
 Template.freeform.created = function () {
-    Session.set('relations', [])
+    Session.set('relations', []);
     Session.set('renderedMediaItems', []);
 
     jsPlumb.ready(function() {
@@ -70,14 +70,14 @@ Template.freeform.rendered = function () {
 Template.freeform.helpers({
     allMediaRendered: function() {
         if(this.provHadMember) {   
-            return (this.provHadMember.length === (Session.get('renderedMediaItems')).length)
+            return (this.provHadMember.length === (Session.get('renderedMediaItems')).length);
         }
     },
     mediumWithAttribute: function() {
         return {
             attributes: getLatestRevision(this.mrAttribute),
             medium: getLatestRevision(this.mrMedia),
-        }
+        };
     },
     renderedMedia: function() {
         return Session.get('renderedMediaItems');
@@ -175,7 +175,7 @@ Template.media.rendered = function() {
             $(this).removeClass('dragging-active'); 
             updateMediaProperties();
         },
-    })
+    });
 
     resizer.resizable({
         ghost: true,
@@ -185,7 +185,8 @@ Template.media.rendered = function() {
             var parentDimensionOffset = {
                 width: 10,
                 height: 40
-            }
+            };
+
             $(this).removeClass('resizing-active');
             updateMediaProperties();
         },
@@ -243,7 +244,7 @@ Template.media.helpers({
         if(itemScope === 'item') { keys = ['width', 'height']; }
 
         return _.map(_(this.attributes.mrAttribute).pick(keys), function(value, index){ 
-                if(itemScope === 'wrapper' && wrapperOffset[index] != undefined)
+                if(itemScope === 'wrapper' && wrapperOffset[index] !== undefined) 
                     value = parseInt(value, 10) + wrapperOffset[index] + "px";
 
                 var prop = index +":"+ value; 
@@ -362,12 +363,24 @@ Template.entities.events({
             dctermsFormat: mediaFormat // Mime type
         };
 
-        var reportId = this.mrOrigin;
         Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
             if (error)
                 return alert(error.reason);
-
-            Router.go('crisisContainer', {_id: reportId});
         });
+    }, 
+    'click .entity-map': function(e, tpl) {
+        e.preventDefault();
+        var provAttributes = {
+            currentCrisisId: this._id,
+            currentCrisisOrigin: this.mrOrigin,
+            dctermsTitle: this.dctermsTitle,
+            dctermsDescription: this.dctermsDescription
+        };
+
+        Meteor.call('crisisReportMap', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+
     }
 });
