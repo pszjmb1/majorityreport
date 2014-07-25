@@ -474,7 +474,7 @@ Meteor.methods({
 				};
 
 				Provenance.insert(relationRevisionActivity);
-				return revisionId;
+				return relationRevisionId;
 
 			} else {
 				// Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
@@ -534,7 +534,7 @@ Meteor.methods({
 					provAtTime : now,
 					provWasStartedBy: userProv._id,
 					provWasDerivedFrom: {
-						provGenerated: revisionId, 
+						provGenerated: listRevisionId, 
 						provDerivedFrom: currentCollectionId, 
 						provAttributes: [{provType: 'provRevision'}]
 					}
@@ -591,16 +591,15 @@ Meteor.methods({
 		return revisionId;
 	},
 	crisisReportMap: function(provAttributes) {
-		var now = new Date().getTime(),
-			user = Meteor.user(),
-			mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.mediaUrl});
+		var user = Meteor.user();
 		
 		// Validate input ////////////////////////////////////////////////////////
 		// ensure the user is logged in
 		if (!user)
 			throw new Meteor.Error(401, "Please login to add a new media");
 
-		var userProv = Provenance.findOne({mrUserId:user._id});
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
 
 		// Insert new map entity ///////////////////////////////////////////////
 		// Extend the whitelisted attributes
@@ -608,13 +607,11 @@ Meteor.methods({
 			provClasses: ['Entity'],
 			provType: 'Collection',
 			mrCollectionType: 'Map',
-			provAtLocation: provAttributes.mediaUrl,
 			provGeneratedAtTime: now,
 			mrAttribute: {},
-			provHadMember: []	
+			provHadMember: []
 		};
-			
-		var mapId = Provenance.insert(media);
+		var mapId = Provenance.insert(map);
 		Provenance.update(mapId, {$set: {mrOrigin: mapId}});
 
 		// Add a corresponding creation provenance activity ////////////////////
@@ -631,12 +628,7 @@ Meteor.methods({
 
 		// Prepare new revision of the report before inserting the mediaAttribute entity
 		var revisionId = reportRevision(provAttributes),
-			entity = {
-				mrMedia: mapId,
-				
-				mrAttribute: mediaAttributeId
-			};
-
+			entity = { mrMedia: mapId };
 
 		Provenance.update(revisionId, 
 			{ $push: {provHadMember: entity} } 

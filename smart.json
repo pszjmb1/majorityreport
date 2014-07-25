@@ -5,6 +5,7 @@
     "spin": {},
     "jquery-ui": {},
     "jquery-ui-bootstrap": {},
-    "fontawesome4": {}
+    "fontawesome4": {},
+    "leaflet": {}
   }
 }

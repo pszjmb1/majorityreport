@@ -235,6 +235,11 @@ Template.media.helpers({
         return true;
     },
     pickStyles: function(itemScope) {
+        if(_.isEmpty(this.attributes.mrAttribute)) {
+            return;
+        }
+
+        // Redraw relations/connections on every resizing or dragging
         plumber.repaintEverything();
 
         var wrapperOffset = { width: 0, height: 55 },
@@ -250,8 +255,36 @@ Template.media.helpers({
                 var prop = index +":"+ value; 
                 return prop;
             }).join(';');
-    }
+    },
+    isMedia: function(type, isType) {
+        return (type === isType);
+    },
+    mediaType: function() {
+        var _m = this.medium;
+        if(_m.provType && _m.provType === 'MR: Media') {
+            return 'image';
+        } else if(_m.mrCollectionType && _m.mrCollectionType === "Map") {
+            return 'map';
+        }
+    }, 
+
 });
+
+Template.renderMap.rendered = function () {
+    var _self = this,
+        containerId = _self.data._id.concat("-map");
+
+    var map = L.map(containerId, {
+        center: [20.0, 5.0],
+        minZoom: 2,
+        zoom: 2
+    });
+
+    var tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
+        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+        subdomains: ['otile1','otile2','otile3','otile4']
+    }).addTo(map);
+};
 
 Template.meta.rendered = function () {
     var _self = this;
@@ -370,6 +403,7 @@ Template.entities.events({
     }, 
     'click .entity-map': function(e, tpl) {
         e.preventDefault();
+
         var provAttributes = {
             currentCrisisId: this._id,
             currentCrisisOrigin: this.mrOrigin,

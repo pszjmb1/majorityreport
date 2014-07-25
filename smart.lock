@@ -7,7 +7,8 @@
       "spin": {},
       "jquery-ui": {},
       "jquery-ui-bootstrap": {},
-      "fontawesome4": {}
+      "fontawesome4": {},
+      "leaflet": {}
     },
     "packages": {
       "accounts-ui-bootstrap-dropdown": {
@@ -22,8 +23,8 @@
       },
       "spin": {
         "git": "https://github.com/SachaG/meteor-spin.git",
-        "tag": "v0.2.2",
-        "commit": "3f655f0016228e4195acc784c45d3e3a247dc39f"
+        "tag": "v2.0.3",
+        "commit": "23c1145472a710d5c93fa4beaca4e576caeb2f24"
       },
       "jquery-ui": {
         "git": "https://github.com/TimHeckel/meteor-jquery-ui.git",
@@ -39,6 +40,11 @@
         "git": "https://github.com/chrismbeckett/meteor-fontawesome4.git",
         "tag": "v1.1.0",
         "commit": "7d2cb9119b7981b8f854b7051d302d4842311249"
+      },
+      "leaflet": {
+        "git": "https://github.com/bevanhunt/meteor-leaflet.git",
+        "tag": "v0.3.8",
+        "commit": "84caaa2e8aac1c7f7b585a6b64163a1de406add4"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",

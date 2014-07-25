@@ -47,17 +47,23 @@
 </template>
 
 <template name="media">
-    {{#if typeImage}}
-        <div id="{{ this.medium.mrOrigin }}" class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
-            <div class="resizable" style="{{ pickStyles 'item' }}">
-                <img class="item-medium" src="{{ this.medium.provAtLocation }}">
-            </div>
-            <div class="connector"></div>
-            {{#with this.medium}}
-                {{> meta }}
-            {{/with}}
+    <div id="{{ this.medium.mrOrigin }}" class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
+        <div class="resizable" style="{{ pickStyles 'item' }}">
+            {{#if isMedia mediaType 'image'}}
+                <img class="item-medium" src="{{ this.medium.provAtLocation }}" />
+            {{else}} {{#if isMedia mediaType 'map'}}
+                {{> renderMap this.medium}}
+            {{/if}}{{/if}}
         </div>
-    {{/if}}
+        <div class="connector"></div>
+        {{#with this.medium}}
+            {{> meta }}
+        {{/with}}
+    </div>
+</template>
+
+<template name="renderMap">
+    <div id="{{this._id}}-map" class="map"></div>
 </template>
 
 <template name="meta">

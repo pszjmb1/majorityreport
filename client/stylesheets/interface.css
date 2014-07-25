@@ -60,3 +60,9 @@ ul.attributes li .remove-attribute:hover {
 	width: 20px;
 	display: inline-block;
 }
+
+/* Maps */
+.map.leaflet-container {
+	width: 100%;
+	height: 100%;
+}
