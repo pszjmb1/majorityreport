@@ -8,7 +8,8 @@
       "jquery-ui": {},
       "jquery-ui-bootstrap": {},
       "fontawesome4": {},
-      "leaflet": {}
+      "leaflet": {},
+      "leaflet-search": {}
     },
     "packages": {
       "accounts-ui-bootstrap-dropdown": {
@@ -45,6 +46,11 @@
         "git": "https://github.com/bevanhunt/meteor-leaflet.git",
         "tag": "v0.3.8",
         "commit": "84caaa2e8aac1c7f7b585a6b64163a1de406add4"
+      },
+      "leaflet-search": {
+        "git": "https://github.com/stefanocudini/leaflet-search.git",
+        "tag": "v1.5.3",
+        "commit": "34c1c9c17b00aac44bb0b9c8eb0774fab6b1890a"
       },
       "blaze-layout": {
         "git": "https://github.com/EventedMind/blaze-layout.git",

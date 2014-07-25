@@ -6,6 +6,7 @@
     "jquery-ui": {},
     "jquery-ui-bootstrap": {},
     "fontawesome4": {},
-    "leaflet": {}
+    "leaflet": {},
+    "leaflet-search": {}
   }
 }

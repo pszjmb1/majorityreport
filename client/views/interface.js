@@ -280,10 +280,26 @@ Template.renderMap.rendered = function () {
         zoom: 2
     });
 
+
     var tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
         attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
         subdomains: ['otile1','otile2','otile3','otile4']
     }).addTo(map);
+
+    // Add a search layer
+    map.addControl(new L.Control.Search({
+        url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+        jsonpParam: 'json_callback',
+        propertyName: 'display_name',
+        propertyLoc: ['lat','lon']
+    }));
+
+    map.on('click', function() {
+        this.on("dragend", function() {
+            console.log("YOOO");
+        });
+        
+    });
 };
 
 Template.meta.rendered = function () {
