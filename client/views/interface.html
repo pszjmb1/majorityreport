@@ -63,7 +63,13 @@
 </template>
 
 <template name="renderMap">
-    <div id="{{this._id}}-map" class="map"></div>
+    <div id="{{this.mrOrigin}}-map" class="map"></div>
+    {{#if mapReady}}
+        {{#each markers}}
+            hello 
+            {{plot ..}}
+        {{/each}}
+    {{/if}}
 </template>
 
 <template name="meta">
