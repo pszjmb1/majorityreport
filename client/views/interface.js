@@ -213,6 +213,7 @@ Template.media.rendered = function() {
         Meteor.call('mediaReportAttributeRevision', provAttributes, function(error, id) {
             if (error)
                 return alert(error.reason);
+            console.log("updated", id);
         });
     }
 
@@ -295,7 +296,26 @@ Template.renderMap.rendered = function () {
         propertyLoc: ['lat','lon']
     }));
 
-    
+    map.on({
+        click: function(info) { addMarker(info.latlng); }
+    });
+
+    function addMarker(latlng) {
+        provAttributes = {
+            currentMapId: _self.data._id,
+            currentMapOrigin: _self.data.mrOrigin,
+            mrLatLng: {
+                lat: latlng.lat,
+                lng: latlng.lng
+            }
+        };
+        Meteor.call('addMapMarker', provAttributes, function (error, result) {
+            if(error) 
+                return alert(error.reason);
+        });
+    }
+
+
 };
 
 Template.meta.rendered = function () {

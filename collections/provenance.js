@@ -615,7 +615,7 @@ Meteor.methods({
 		Provenance.update(mapId, {$set: {mrOrigin: mapId}});
 
 		// Add a corresponding creation provenance activity ////////////////////
-		var activity = {
+		var mapActivity = {
 			provClasses:['Activity'],
 			provType:'MR: Map Insertion',
 			provStartedAtTime: now,
@@ -624,17 +624,88 @@ Meteor.methods({
 			provGenerated: mapId
 		};
 
-		Provenance.insert(activity);
+		Provenance.insert(mapActivity);
+
+		// Prepare entity that defines mediaId and 
+		// its attributes **relative** to the report, i.e. position, dimensions
+		var mapAttribute = {
+			provClasses: ['Entity'],
+			provType: 'MR: Map Properties',
+			provGeneratedAtTime: now,
+			mrAttribute: {}
+		}; 
+
+		var mapAttributeId = Provenance.insert(mapAttribute);
+		Provenance.update(mapAttributeId, {$set: {mrOrigin: mapAttributeId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var attrActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Map Attribute Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: mapAttributeId
+		};
+		
+		Provenance.insert(attrActivity);
 
 		// Prepare new revision of the report before inserting the mediaAttribute entity
 		var revisionId = reportRevision(provAttributes),
-			entity = { mrMedia: mapId };
+			entity = { 
+				mrMedia: mapId,
+				mrAttribute: mapAttributeId
+			};
 
 		Provenance.update(revisionId, 
 			{ $push: {provHadMember: entity} } 
 		);
 
 		return mapId;
+	},
+	'addMapMarker': function(provAttributes) {
+		var user = Meteor.user();
+		
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+
+		var marker = {
+			provClasses: ['Entity'],
+			provType: 'Marker',
+			provGeneratedAtTime: now,
+			mrLatLng: provAttributes.mrLatLng
+		};
+
+		var markerId = Provenance.insert(marker);
+		Provenance.update(markerId, {$set: {mrOrigin: markerId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var activity = {
+			provClasses:['Activity'],
+			provType:'MR: Marker Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: markerId
+		};
+
+		Provenance.insert(activity);
+
+		// Update the map with new marker
+		var latestMapRevision = getLatestRevision(provAttributes.currentMapOrigin),
+			latestMapId = latestMapRevision._id;
+
+		delete latestMapRevision._id;
+		var mapRevisionId = Provenance.insert(latestMapRevision);
+
+		Provenance.update(mapRevisionId, 
+			{ $push: {provHadMember: markerId} }
+		);
+
+		return markerId;
 	}
 
 });
