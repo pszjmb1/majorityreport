@@ -722,10 +722,6 @@ Meteor.methods({
 		};
 
 		Provenance.insert(revisionActivity);
-
-		console.log('map', currentMapId, getLatestRevision(provAttributes.currentMapOrigin) );
-
-
 		return markerId;
 	}
 
