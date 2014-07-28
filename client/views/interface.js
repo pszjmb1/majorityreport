@@ -282,7 +282,8 @@ Template.renderMap.rendered = function () {
 
 
     var tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
-        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>',
+        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
+         '<p>Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png"></p>',
         subdomains: ['otile1','otile2','otile3','otile4']
     }).addTo(map);
 
@@ -294,12 +295,7 @@ Template.renderMap.rendered = function () {
         propertyLoc: ['lat','lon']
     }));
 
-    map.on('click', function() {
-        this.on("dragend", function() {
-            console.log("YOOO");
-        });
-        
-    });
+    
 };
 
 Template.meta.rendered = function () {
