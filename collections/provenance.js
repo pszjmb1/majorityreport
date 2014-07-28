@@ -218,7 +218,6 @@ Meteor.methods({
 				mrAttribute: mediaAttributeId
 			};
 
-
 		Provenance.update(revisionId, 
 			{ $push: {provHadMember: entity} } 
 		);
@@ -626,7 +625,7 @@ Meteor.methods({
 
 		Provenance.insert(mapActivity);
 
-		// Prepare entity that defines mediaId and 
+		// Prepare entity that defines map and 
 		// its attributes **relative** to the report, i.e. position, dimensions
 		var mapAttribute = {
 			provClasses: ['Entity'],
@@ -674,7 +673,7 @@ Meteor.methods({
 
 		var marker = {
 			provClasses: ['Entity'],
-			provType: 'Marker',
+			provType: 'MR: Marker',
 			provGeneratedAtTime: now,
 			mrLatLng: provAttributes.mrLatLng
 		};
@@ -695,15 +694,37 @@ Meteor.methods({
 		Provenance.insert(activity);
 
 		// Update the map with new marker
-		var latestMapRevision = getLatestRevision(provAttributes.currentMapOrigin),
-			latestMapId = latestMapRevision._id;
+		var currentMap = getLatestRevision(provAttributes.currentMapOrigin),
+			currentMapId = currentMap._id;
 
-		delete latestMapRevision._id;
-		var mapRevisionId = Provenance.insert(latestMapRevision);
+
+		delete currentMap._id;
+		var mapRevisionId = Provenance.insert(currentMap);
 
 		Provenance.update(mapRevisionId, 
-			{ $push: {provHadMember: markerId} }
+			{ 
+				$set: {provGeneratedAtTime: now},
+			 	$push: {provHadMember: markerId} 
+			}
 		);
+
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: provAttributes.reason,
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: mapRevisionId, 
+				provDerivedFrom: currentMapId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		console.log('map', currentMapId, getLatestRevision(provAttributes.currentMapOrigin) );
+
 
 		return markerId;
 	}

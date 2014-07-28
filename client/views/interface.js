@@ -312,6 +312,7 @@ Template.renderMap.rendered = function () {
         Meteor.call('addMapMarker', provAttributes, function (error, result) {
             if(error) 
                 return alert(error.reason);
+
         });
     }
 
