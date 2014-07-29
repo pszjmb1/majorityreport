@@ -219,7 +219,6 @@ Template.media.rendered = function() {
         Meteor.call('mediaReportAttributeRevision', provAttributes, function(error, id) {
             if (error)
                 return alert(error.reason);
-            console.log("updated", id);
         });
     }
 
@@ -277,28 +276,21 @@ Template.media.helpers({
 
 });
 
-Template.renderMap.created = function () {
-    Session.set(this.data.mrOrigin + "-map", false);
-};
 
 Template.renderMap.rendered = function () {
     var _self = this,
-        containerId = _self.data.mrOrigin + "-map";
+        containerId = _self.data.mrOrigin + "-map",
+        map, tileLayer, markersLayer;
 
-    var map = L.map(containerId, {
+    L.Icon.Default.imagePath = '../packages/leaflet/images';
+
+    map = L.map(containerId, {
         center: [20.0, 5.0],
         minZoom: 2,
         zoom: 2
     });
     
-    L.Icon.Default.imagePath = '../packages/leaflet/images';
-
-    // keep track of the leaflet map object, for future reference
-    // *and* set the ready flag to true
-    maps[containerId] = map;
-    Session.set(containerId, true);
-
-    var tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
+    tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
         attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
          ' | '+ 'Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
         subdomains: ['otile1','otile2','otile3','otile4']
@@ -314,10 +306,29 @@ Template.renderMap.rendered = function () {
 
     // bind events
     map.on({
-        click: function(info) { addMarker(info.latlng); }
+        click: function(info) { insertMarker(info.latlng); }
     });
 
-    function addMarker(latlng) {
+    // Plot Markers - listen for any changes
+    Deps.autorun(function () {
+        var currentMap = getLatestRevision(_self.data.mrOrigin);
+        plotMarkers(currentMap.provHadMember);
+    });
+
+    function plotMarkers(markerIds) {
+        function getMarkers() {
+            return _.map(markerIds, function(markerOrigin) {
+                var marker = getLatestRevision(markerOrigin);
+                return L.marker(_.flatten(marker.mrLatLng));
+            });
+        }
+        
+        if(markersLayer) { markersLayer.clearLayers(); }
+
+        markersLayer = L.layerGroup(getMarkers()).addTo(map);
+    }
+
+    function insertMarker(latlng) {
         provAttributes = {
             currentMapId: _self.data._id,
             currentMapOrigin: _self.data.mrOrigin,
@@ -333,23 +344,6 @@ Template.renderMap.rendered = function () {
     }
 
 };
-
-Template.renderMap.helpers({
-    mapReady: function() {
-        return Session.equals(this.mrOrigin + "-map", true);
-    },
-    markers: function () {
-        return _.map(this.provHadMember, function(marker) {
-            return getLatestRevision(marker);
-        });
-    },
-    plot: function(parent) {
-        var map = maps[parent.mrOrigin+"-map"];
-        var latlng = new L.LatLng(this.mrLatLng.lat, this.mrLatLng.lng);
-        L.marker(latlng).addTo(map);
-    }
-});
-
 
 Template.meta.rendered = function () {
     var _self = this;
