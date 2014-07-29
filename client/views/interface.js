@@ -314,13 +314,16 @@ Template.renderMap.rendered = function () {
     });
 
     function plotMarkers(markerIds) {
+
         function getMarkers() {
             return _.map(markerIds, function(markerOrigin) {
                 var marker = getLatestRevision(markerOrigin);
+                var popUpContent = document.createElement('div');
+                UI.insert(UI.renderWithData(Template.markerPopup, marker), popUpContent);
                 return L.marker(_.flatten(marker.mrLatLng))
                     .on({
                         click: function(event) { markerClick(event, marker); },
-                    });
+                    }).bindPopup( popUpContent );
             });
         }
         
@@ -354,6 +357,12 @@ Template.renderMap.rendered = function () {
     }
 
 };
+
+Template.markerPopup.events({
+    'click .button': function (e, tpl) {
+        console.log("Button can be clicked");
+    }
+});
 
 Template.meta.rendered = function () {
     var _self = this;
