@@ -25,7 +25,7 @@
  * - each relation is given its own scope in regards to jsPlumb
  */
 
-var plumber, maps = {};
+var plumber;
 
 Template.freeform.created = function () {
     Session.set('relations', []);
@@ -284,12 +284,15 @@ Template.renderMap.rendered = function () {
 
     L.Icon.Default.imagePath = '../packages/leaflet/images';
 
+    // setup default map
     map = L.map(containerId, {
         center: [20.0, 5.0],
         minZoom: 2,
-        zoom: 2
+        zoom: 2,
+        doubleClickZoom: false
     });
     
+    // Add the tile layer
     tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
         attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
          ' | '+ 'Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
@@ -304,11 +307,6 @@ Template.renderMap.rendered = function () {
         propertyLoc: ['lat','lon']
     }));
 
-    // bind events
-    map.on({
-        click: function(info) { insertMarker(info.latlng); }
-    });
-
     // Plot Markers - listen for any changes
     Deps.autorun(function () {
         var currentMap = getLatestRevision(_self.data.mrOrigin);
@@ -319,13 +317,25 @@ Template.renderMap.rendered = function () {
         function getMarkers() {
             return _.map(markerIds, function(markerOrigin) {
                 var marker = getLatestRevision(markerOrigin);
-                return L.marker(_.flatten(marker.mrLatLng));
+                return L.marker(_.flatten(marker.mrLatLng))
+                    .on({
+                        click: function(event) { markerClick(event, marker); },
+                    });
             });
         }
         
+        // remove all the previous markers in the map 
         if(markersLayer) { markersLayer.clearLayers(); }
+        // render the new set of markers 
+        markersLayer = L.featureGroup(getMarkers()).addTo(map);
+    }
 
-        markersLayer = L.layerGroup(getMarkers()).addTo(map);
+    // bind events
+    map.on({
+        dblclick: function(info) { insertMarker(info.latlng); }
+    });
+    function markerClick(event, marker) {
+        // Click operations on marker
     }
 
     function insertMarker(latlng) {
