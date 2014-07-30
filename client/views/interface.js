@@ -248,7 +248,7 @@ Template.media.helpers({
         // Redraw relations/connections on every resizing or dragging
         plumber.repaintEverything();
 
-        var wrapperOffset = { width: 0, height: 55 },
+        var wrapperOffset = { width: 0, height: 105 },
             keys = ['top', 'left', 'z-index', 'width', 'height'];
         
         // Return width and height styles for item, otherwise the positional styles
@@ -333,7 +333,6 @@ Template.renderMap.rendered = function () {
 
 Template.renderMap.helpers({
     compactInfo: function (context) {
-        console.log("yoo");
         return _.extend(getLatestRevision(this.valueOf()), {mapOrigin: context.mrOrigin});
     }
 });
@@ -354,6 +353,7 @@ Template.renderMarker.rendered = function () {
     
     popup = L.popup({
         keepInView: true,
+        autoPan: false,
         className: 'marker-popup'
     }).setContent(popUpContent);
 
@@ -363,7 +363,6 @@ Template.renderMarker.rendered = function () {
 
 Template.renderMarker.helpers({
     isMarkerAlreadyRendered: function() {
-        console.log("yooo", _.has(markers, this.mrOrigin), markers);
         return _.has(markers, this.mrOrigin);
     },
     maintain: function () {
@@ -386,6 +385,12 @@ Template.markerPopup.events({
 
 Template.meta.rendered = function () {
     var _self = this;
+
+    _self.$('.nav-tabs a').click(function(e) {
+        e.preventDefault();
+        console.log($(this).tab());
+        $(this).tab('show');
+    })
 
     // Set up our dialog
     var dialog = _self.$('.medium-attributes').dialog({
