@@ -64,11 +64,28 @@
 
 <template name="renderMap">
     <div id="{{this.mrOrigin}}-map" class="map"></div>
+    {{#each provHadMember}}
+        {{#with compactInfo ..}}
+            {{> renderMarker}}
+        {{/with}}
+    {{/each}}
+</template>
+
+<template name="renderMarker">
+    {{#if isMarkerAlreadyRendered}}
+        {{maintain}}
+    {{/if}}
 </template>
 
 <template name="markerPopup">
-    <a class="button" href="#">{{_id}} </a>
+    <div class="meta">
+        {{#with this}}
+            {{> meta}}
+        {{/with}}
+    </div>
 </template>
+
+
 
 <template name="meta">
     <div class="meta-medium">
@@ -76,10 +93,7 @@
             <div class="media-title">{{title}}</div>
         {{/if}}
         <button class="btn btn-default btn-sm show-attributes"><i class="fa fa-info-circle"></i> Attributes</button>
-        <div class="medium-attributes">
-            {{#with this}}
-                {{> formAttribute}}
-            {{/with}}
+        {{#if isMarkerPopup}}
             <ul class="attributes">
                 {{#each attributes}}
                     <li>
@@ -89,7 +103,28 @@
                     </li>
                 {{/each}}
             </ul>
-        </div>    
+            <div class="medium-attributes">
+                {{#with this}}
+                    {{> formAttribute}}
+                {{/with}}
+            </div> 
+        {{else}}
+            <div class="medium-attributes">
+                {{#with this}}
+                    {{> formAttribute}}
+                {{/with}}
+                <ul class="attributes">
+                    {{#each attributes}}
+                        <li>
+                            {{#with detailsWithContext ..}}
+                                {{> attributeItem}}
+                            {{/with}}
+                        </li>
+                    {{/each}}
+                </ul>
+            </div> 
+        {{/if}}
+           
     </div>
 </template>
 

@@ -25,7 +25,7 @@
  * - each relation is given its own scope in regards to jsPlumb
  */
 
-var plumber;
+var plumber, maps = {}, markers = {};
 
 Template.freeform.created = function () {
     Session.set('relations', []);
@@ -292,6 +292,8 @@ Template.renderMap.rendered = function () {
         doubleClickZoom: false
     });
     
+    maps[containerId] = map;
+
     // Add the tile layer
     tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
         attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
@@ -307,39 +309,10 @@ Template.renderMap.rendered = function () {
         propertyLoc: ['lat','lon']
     }));
 
-    // Plot Markers - listen for any changes
-    Deps.autorun(function () {
-        var currentMap = getLatestRevision(_self.data.mrOrigin);
-        plotMarkers(currentMap.provHadMember);
-    });
-
-    function plotMarkers(markerIds) {
-
-        function getMarkers() {
-            return _.map(markerIds, function(markerOrigin) {
-                var marker = getLatestRevision(markerOrigin);
-                var popUpContent = document.createElement('div');
-                UI.insert(UI.renderWithData(Template.markerPopup, marker), popUpContent);
-                return L.marker(_.flatten(marker.mrLatLng))
-                    .on({
-                        click: function(event) { markerClick(event, marker); },
-                    }).bindPopup( popUpContent );
-            });
-        }
-        
-        // remove all the previous markers in the map 
-        if(markersLayer) { markersLayer.clearLayers(); }
-        // render the new set of markers 
-        markersLayer = L.featureGroup(getMarkers()).addTo(map);
-    }
-
     // bind events
     map.on({
         dblclick: function(info) { insertMarker(info.latlng); }
     });
-    function markerClick(event, marker) {
-        // Click operations on marker
-    }
 
     function insertMarker(latlng) {
         provAttributes = {
@@ -357,6 +330,53 @@ Template.renderMap.rendered = function () {
     }
 
 };
+
+Template.renderMap.helpers({
+    compactInfo: function (context) {
+        console.log("yoo");
+        return _.extend(getLatestRevision(this.valueOf()), {mapOrigin: context.mrOrigin});
+    }
+});
+
+Template.renderMarker.rendered = function () {
+    var _self = this,
+        mapContainer = _self.data.mapOrigin +"-map",
+        map = maps[mapContainer],
+        marker, popup;
+
+    marker = L.marker(_.flatten(_self.data.mrLatLng)).addTo(map);
+    // Keep tracker of the marker instance
+    markers[_self.data.mrOrigin] = marker;
+
+    // Prepare marker popup
+    var popUpContent = document.createElement('div');
+    UI.insert(UI.renderWithData(Template.markerPopup, _self.data), popUpContent);
+    
+    popup = L.popup({
+        keepInView: true,
+        className: 'marker-popup'
+    }).setContent(popUpContent);
+
+    marker.bindPopup(popup);
+
+};
+
+Template.renderMarker.helpers({
+    isMarkerAlreadyRendered: function() {
+        console.log("yooo", _.has(markers, this.mrOrigin), markers);
+        return _.has(markers, this.mrOrigin);
+    },
+    maintain: function () {
+        var marker = markers[this.mrOrigin],
+            popup = marker.getPopup();
+
+        var popUpContent = document.createElement('div');
+        UI.insert(UI.renderWithData(Template.markerPopup, this), popUpContent);
+        popup.setContent(popUpContent).update();
+
+
+    }
+});
 
 Template.markerPopup.events({
     'click .button': function (e, tpl) {
@@ -385,6 +405,9 @@ Template.meta.helpers({
     title: function(){
         // console.log(this)
         return _.result(this.mrAttribute, 'title');
+    },
+    isMarkerPopup: function() {
+        return (this.provType === 'MR: Marker');
     },
     shortdesc: function(){
         return _.result(this.mrAttribute, 'shortdesc');
