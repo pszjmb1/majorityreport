@@ -1,10 +1,10 @@
-div.wrapper-medium {
+.wrapper-medium {
 	padding: 5px;
 	position: absolute;
 	border: 1px solid #efefef;
 }
 
-div.wrapper-medium:hover {
+.wrapper-medium:hover {
 	border-color: #0cc;
 }
 
@@ -70,4 +70,8 @@ ul.attributes li .remove-attribute:hover {
 .marker-popup {
 	width: 250px;
 	max-width: 250px;
+}
+
+.highlight-relative {
+	border: 2px dashed #ca8;
 }

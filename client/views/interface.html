@@ -81,10 +81,17 @@
     <div class="marker-meta">
         {{#with this}}
             {{> meta}}
+            <h5>Relatives:</h5>
+            {{#with relatives}}
+                {{#each targets}}
+                    {{#with relative mrTarget}}
+                        <div class="relation-item-marker">{{this.mrOrigin}}</div>
+                    {{/with}}
+                {{/each}}
+            {{/with}}
         {{/with}}
     </div>
 </template>
-
 
 
 <template name="meta">
@@ -92,51 +99,38 @@
         {{#if title}}
             <div class="media-title"><h5>{{title}}</h5></div>
         {{/if}}
-        <ul class="nav nav-tabs">
-            <li class="active"><a href="#{{this.mrOrigin}}-tab-attributes">Attributes</a></li>
-            <li><a href="#{{this.mrOrigin}}-tab-relations">Relations</a></li>
-        </ul>
-        
-        <div class="tab-content">
-            <div id="{{this.mrOrigin}}-tab-attributes" class="tab-pane active">
-                <button class="btn btn-default btn-sm show-attributes"><i class="fa fa-info-circle"></i> Add Attribute</button>
-                {{#if isMarkerPopup}}
-                    <ul class="attributes">
-                        {{#each attributes}}
-                            <li>
-                                {{#with detailsWithContext ..}}
-                                    {{> attributeItem}}
-                                {{/with}}
-                            </li>
-                        {{/each}}
-                    </ul>
-                    <div class="medium-attributes">
-                        {{#with this}}
-                            {{> formAttribute}}
+        <button class="btn btn-default btn-mini show-attributes"><i class="fa fa-info-circle"></i> Add Attribute</button>
+        {{#if isMarkerPopup}}
+            <ul class="attributes">
+                {{#each attributes}}
+                    <li>
+                        {{#with detailsWithContext ..}}
+                            {{> attributeItem}}
                         {{/with}}
-                    </div> 
-                {{else}}
-                    <div class="medium-attributes">
-                        {{#with this}}
-                            {{> formAttribute}}
-                        {{/with}}
-                        <ul class="attributes">
-                            {{#each attributes}}
-                                <li>
-                                    {{#with detailsWithContext ..}}
-                                        {{> attributeItem}}
-                                    {{/with}}
-                                </li>
-                            {{/each}}
-                        </ul>
-                    </div> 
-                {{/if}}
-            </div>
-
-            <div id="{{this.mrOrigin}}-tab-relations" class="tab-pane">
-                Relatives
-            </div>   
-        </div>
+                    </li>
+                {{/each}}
+            </ul>
+            <div class="medium-attributes">
+                {{#with this}}
+                    {{> formAttribute}}
+                {{/with}}
+            </div> 
+        {{else}}
+            <div class="medium-attributes">
+                {{#with this}}
+                    {{> formAttribute}}
+                {{/with}}
+                <ul class="attributes">
+                    {{#each attributes}}
+                        <li>
+                            {{#with detailsWithContext ..}}
+                                {{> attributeItem}}
+                            {{/with}}
+                        </li>
+                    {{/each}}
+                </ul>
+            </div> 
+        {{/if}}
            
     </div>
 </template>

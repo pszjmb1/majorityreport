@@ -25,7 +25,7 @@
  * - each relation is given its own scope in regards to jsPlumb
  */
 
-var plumber, maps = {}, markers = {};
+plumber = null, maps = {}, markers = {};
 
 Template.freeform.created = function () {
     Session.set('relations', []);
@@ -222,17 +222,6 @@ Template.media.rendered = function() {
         });
     }
 
-    function addRelation(info) {
-        var provAttributes = {
-            source: info.sourceId,
-            target: info.targetId
-        };
-
-        Meteor.call('mediaRelation', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
-    }
 };
 
 Template.media.helpers({
@@ -338,26 +327,48 @@ Template.renderMap.helpers({
 });
 
 Template.renderMarker.rendered = function () {
-    var _self = this,
-        mapContainer = _self.data.mapOrigin +"-map",
-        map = maps[mapContainer],
-        marker, popup;
+    var _self = this;
 
-    marker = L.marker(_.flatten(_self.data.mrLatLng)).addTo(map);
-    // Keep tracker of the marker instance
-    markers[_self.data.mrOrigin] = marker;
+    Meteor.defer(function() {
+        var mapContainer = _self.data.mapOrigin +"-map",
+            map = maps[mapContainer],
+            marker, popup;
 
-    // Prepare marker popup
-    var popUpContent = document.createElement('div');
-    UI.insert(UI.renderWithData(Template.markerPopup, _self.data), popUpContent);
-    
-    popup = L.popup({
-        keepInView: true,
-        autoPan: false,
-        className: 'marker-popup'
-    }).setContent(popUpContent);
+        marker = L.marker(_.flatten(_self.data.mrLatLng)).addTo(map);
+        // Keep tracker of the marker instance
+        markers[_self.data.mrOrigin] = marker;
 
-    marker.bindPopup(popup);
+        // Prepare marker popup
+        var popUpContent = document.createElement('div');
+        UI.insert(UI.renderWithData(Template.markerPopup, _self.data), popUpContent);
+        
+        popup = L.popup({
+            keepInView: true,
+            autoPan: false,
+            className: 'marker-popup'
+        }).setContent(popUpContent);
+
+        marker.bindPopup(popup);
+        marker.on('mouseover', function(e) {
+            this.openPopup();
+        });
+
+        // bind any events 
+        $(marker._icon).on('load', function(e) {
+            var elem = $(e.target),
+                connector = document.createElement('div');
+
+            $(elem).attr({
+                id: _self.data.mrOrigin
+            });
+            var source = plumber.makeSource(elem, {parent: elem});
+        });
+
+        // avoid drawing connections for marker, hide them
+        plumber.hide(_self.data.mrOrigin);
+        plumber.hide(_self.data.mrOrigin, true);
+    });
+       
 
 };
 
@@ -372,26 +383,36 @@ Template.renderMarker.helpers({
         var popUpContent = document.createElement('div');
         UI.insert(UI.renderWithData(Template.markerPopup, this), popUpContent);
         popup.setContent(popUpContent).update();
+    }
+});
 
-
+Template.markerPopup.helpers({
+    relatives: function () {
+        return getMediaRelative(this.mrOrigin);
+    },
+    relative: function(origin) {
+        return getLatestRevision(origin);
+    },
+    targets: function() {
+        return _.map(_.flatten(this.mrTarget), function(relation) {
+            return getLatestRevision(relation);
+        });
     }
 });
 
 Template.markerPopup.events({
-    'click .button': function (e, tpl) {
-        console.log("Button can be clicked");
-    }
+    'mouseover .relation-item-marker, mouseout .relation-item-marker': function(e, tpl) {
+        var className = "highlight-relative",
+            relativeElem = document.getElementById(this.mrOrigin);
+        if(relativeElem) {
+            $(relativeElem).toggleClass(className);
+        }
+    },
+    
 });
 
 Template.meta.rendered = function () {
     var _self = this;
-
-    _self.$('.nav-tabs a').click(function(e) {
-        e.preventDefault();
-        console.log($(this).tab());
-        $(this).tab('show');
-    })
-
     // Set up our dialog
     var dialog = _self.$('.medium-attributes').dialog({
         autoOpen: false,
@@ -524,3 +545,22 @@ Template.entities.events({
 
     }
 });
+
+
+
+/**
+ * HELPERS/ COMMON METHODS 
+ */
+
+function addRelation(info) {
+
+    var provAttributes = {
+        source: info.sourceId,
+        target: info.targetId
+    };
+
+    Meteor.call('mediaRelation', provAttributes, function (error, result) {
+        if(error)
+            return alert(error.reason);
+    });
+}
