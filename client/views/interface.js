@@ -25,7 +25,7 @@
  * - each relation is given its own scope in regards to jsPlumb
  */
 
-plumber = null, maps = {}, markers = {};
+var plumber, maps = {}, markers = {};
 
 Template.freeform.created = function () {
     Session.set('relations', []);
@@ -123,6 +123,7 @@ Template.freeform.helpers({
 
         // Draw a new connection only if it hasn't been drawn before
         if(sourceElem && targetElem) {
+            console.log(sourceElem, targetElem)
             var connection = plumber.connect({
                 scope: _self.mrOrigin,
                 source: sourceElem,
@@ -358,15 +359,9 @@ Template.renderMarker.rendered = function () {
             var elem = $(e.target),
                 connector = document.createElement('div');
 
-            $(elem).attr({
-                id: _self.data.mrOrigin
-            });
+            $(elem).attr({ "data-id": _self.data.mrOrigin });
             var source = plumber.makeSource(elem, {parent: elem});
         });
-
-        // avoid drawing connections for marker, hide them
-        plumber.hide(_self.data.mrOrigin);
-        plumber.hide(_self.data.mrOrigin, true);
     });
        
 
@@ -555,7 +550,8 @@ Template.entities.events({
 function addRelation(info) {
 
     var provAttributes = {
-        source: info.sourceId,
+        // Gather source id, in case of markers look to the "data-id" attribute
+        source: $(info.source).attr('data-id') || info.sourceId,
         target: info.targetId
     };
 
