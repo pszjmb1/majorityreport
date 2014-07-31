@@ -123,7 +123,6 @@ Template.freeform.helpers({
 
         // Draw a new connection only if it hasn't been drawn before
         if(sourceElem && targetElem) {
-            console.log(sourceElem, targetElem)
             var connection = plumber.connect({
                 scope: _self.mrOrigin,
                 source: sourceElem,
