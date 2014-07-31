@@ -1,5 +1,5 @@
 <template name='freeform'>
-    {{> entities}}
+    {{> tools}}
     <div id="board">
     {{#each provHadMember}}
         {{#with entityWithAttribute}}
@@ -30,17 +30,6 @@
     </div>
     
     </div>
-</template>
-
-<template name="entities">
-    <button class="entity-map btn"><i class="fa fa-map-marker"></i> Add a map</button>
-    <form name="media">
-        <input type="textfield" placeholder="Media URL" name="mediaUrl" />
-        <select name="mediaFormat">
-            <option value="image/jpeg">Image (.jpg)</option>
-        </select>
-        <button class="btn" type="submit"><i class="fa fa-image"></i>  Add media</button>
-    </form>
 </template>
 
 <template name="entity">
@@ -132,11 +121,22 @@
     </div>
 </template>
 
+<template name="tools">
+    <button class="entity-map btn"><i class="fa fa-map-marker"></i> Add a map</button>
+    <form name="media">
+        <input type="textfield" placeholder="Media URL" name="mediaUrl" />
+        <select name="mediaFormat">
+            <option value="image/jpeg">Image (.jpg)</option>
+        </select>
+        <button class="btn" type="submit"><i class="fa fa-image"></i>  Add media</button>
+    </form>
+</template>
+
 <template name="formAttribute">
     <form name="form-attribute">
         <input type="text" name="attrKey" placeholder="Label"/>
         <input type="text" name="attrValue" placeholder="Content"/>
-        <button class="btn btn-success" type="submit"><i class="fa fa-plus-circle"></i> Add Attribute</button>
+        <button class="btn btn-success" type="submit"><i class="fa fa-plus-circle"></i> Attributes</button>
     </form>
 </template>
 

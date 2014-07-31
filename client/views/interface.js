@@ -82,14 +82,14 @@ Template.freeform.helpers({
     entityWithAttribute: function() {
         return {
             attributes: getLatestRevision(this.mrAttribute),
-            entity: getLatestRevision(this.mrMedia),
+            entity: getLatestRevision(this.mrEntity),
         };
     },
     renderedEntities: function() {
         return Session.get('renderedEntityItems');
     },
     entityRelative: function(entity) {
-        return getMediaRelative(entity);  
+        return getEntityRelative(entity);  
     }, 
     maintainRelations: function() {
         // Get the relevant targets and sources for the current media
@@ -225,10 +225,6 @@ Template.entity.rendered = function() {
 };
 
 Template.entity.helpers({
-    typeImage: function () {
-        // check if the media is image
-        return true;
-    },
     pickStyles: function(itemScope) {
         if(_.isEmpty(this.attributes.mrAttribute)) {
             return;
@@ -237,7 +233,7 @@ Template.entity.helpers({
         // Redraw relations/connections on every resizing or dragging
         plumber.repaintEverything();
 
-        var wrapperOffset = { width: 0, height: 105 },
+        var wrapperOffset = { width: 0, height: 55 },
             keys = ['top', 'left', 'z-index', 'width', 'height'];
         
         // Return width and height styles for item, otherwise the positional styles
@@ -382,7 +378,7 @@ Template.renderMarker.helpers({
 
 Template.markerPopup.helpers({
     relatives: function () {
-        return getMediaRelative(this.mrOrigin);
+        return getEntityRelative(this.mrOrigin);
     },
     relative: function(origin) {
         return getLatestRevision(origin);
@@ -423,7 +419,6 @@ Template.meta.rendered = function () {
 
 Template.meta.helpers({
     title: function(){
-        // console.log(this)
         return _.result(this.mrAttribute, 'title');
     },
     isMarkerPopup: function() {
@@ -437,8 +432,8 @@ Template.meta.helpers({
                 return {key: key, value: val};
             });
     },
-    detailsWithContext: function(mediaProv) {
-        return _(this).extend({ mrMedia : mediaProv});
+    detailsWithContext: function(entity) {
+        return _(this).extend({ mrEntity : entity});
     }
 });
 
@@ -449,13 +444,13 @@ Template.formAttribute.events({
             attrValue = tpl.$('input[name=attrValue]').val();
             
         var provAttributes = {
-            currentMediaId: this._id,
-            currentMediaOrigin: this.mrOrigin,
+            currentEntityId: this._id,
+            currentEntityOrigin: this.mrOrigin,
             attrKey: attrKey.toLowerCase(),
             attrValue: attrValue
         };
 
-        Meteor.call('mediaRevision', provAttributes, function (error, result) {
+        Meteor.call('entityAttribute', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
         });
@@ -468,12 +463,12 @@ Template.attributeItem.events({
        var attrKey = this.key;
 
        var provAttributes = {
-            currentMediaId: this.mrMedia._id,
-            currentMediaOrigin: this.mrMedia.mrOrigin,
+            currentEntityId: this.mrEntity._id,
+            currentEntityOrigin: this.mrEntity.mrOrigin,
             attrKey: attrKey
         };
 
-        Meteor.call('mediaAttributeRemove', provAttributes, function (error, result) {
+        Meteor.call('entityAttributeRemove', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
         });
@@ -501,7 +496,7 @@ Template.formRelationAnnotate.events({
     }
 });
 
-Template.entities.events({
+Template.tools.events({
     'submit form[name=media]': function (e, tpl) {
         e.preventDefault();
         var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
@@ -511,7 +506,7 @@ Template.entities.events({
         var provAttributes = {
             currentCrisisId: this._id,
             currentCrisisOrigin: this.mrOrigin,
-            mediaUrl: mediaUrl,
+            provAtLocation: mediaUrl,
             dctermsTitle: this.dctermsTitle,
             dctermsDescription: this.dctermsDescription,
             dctermsFormat: mediaFormat // Mime type
@@ -554,7 +549,7 @@ function addRelation(info) {
         target: info.targetId
     };
 
-    Meteor.call('mediaRelation', provAttributes, function (error, result) {
+    Meteor.call('entityRelation', provAttributes, function (error, result) {
         if(error)
             return alert(error.reason);
     });

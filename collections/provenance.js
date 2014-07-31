@@ -12,27 +12,27 @@ getRevisions = function(reportId) {
 
 getLatestRevision = function(reportId) {
 	return Provenance.findOne( 
-	{ mrOrigin: reportId }, 
-	{ sort: { provGeneratedAtTime: -1 }}
+		{ mrOrigin: reportId }, 
+		{ sort: { provGeneratedAtTime: -1 }}
 	);
 };
 
 getRelationsList = function() {
 	return Provenance.findOne(
-	{mrCollectionType: 'Relations'},
-	{sort: {provGeneratedAtTime: -1}}
+		{mrCollectionType: 'Relations'},
+		{sort: {provGeneratedAtTime: -1}}
 	);
 };
 
-getMediaRelative = function(mediaId) {
+getEntityRelative = function(entity) {
 	var relative,
 	rList = getRelationsList();
 
 	if(rList && rList.provHadMember) {
-	relative = _.findWhere(rList.provHadMember, {mrMedia: mediaId});
+		relative = _.findWhere(rList.provHadMember, {mrEntity: entity});
 	
-	if(relative && relative.mrRelative) 
-		return getLatestRevision(relative.mrRelative);
+		if(relative && relative.mrRelative) 
+			return getLatestRevision(relative.mrRelative);
 	}
 };
 
@@ -127,24 +127,24 @@ Meteor.methods({
 	}, 
 	crisisReportMedia: function(provAttributes) {
 		var user = Meteor.user(),
-			mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.mediaUrl});
+			mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.provAtLocation});
 		
 		// Validate input ////////////////////////////////////////////////////////
 		// ensure the user is logged in
 		if (!user)
 			throw new Meteor.Error(401, "Please login to add a new media");
 
-		// ensure the crisis has a mediaUrl
-		if (!provAttributes.mediaUrl)
+		// ensure the crisis has a provAtLocation
+		if (!provAttributes.provAtLocation)
 			throw new Meteor.Error(422, 'Please fill in the media URL');
 
 		// ensure the crisis has a dctermsFormat
 		if (!provAttributes.dctermsFormat)
 			throw new Meteor.Error(422, 'Please select a media format');
 
-		var now = new Date().getTime();
-		var userProv = Provenance.findOne({mrUserId:user._id});
-		var mediaId;
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id}),
+			mediaId;
 
 		// Ensure media doesn't already exists in the current report
 		if(mediaWithSameUrl) {
@@ -152,19 +152,18 @@ Meteor.methods({
 			mediaId = mediaWithSameUrl.mrOrigin;
 
 			var report = getLatestRevision(provAttributes.currentCrisisOrigin);
-			if( _.findWhere(report.provHadMember, {mrMedia: mediaId}) ) {
-			throw new Meteor.Error(422, 'Media already exists in the current report', mediaId);
+			if( _.findWhere(report.provHadMember, {mrEntity: mediaId}) ) {
+				throw new Meteor.Error(422, 'Media already exists in the current report', mediaId);
 			}
 
 		} else {
 			// Insert new media entity ///////////////////////////////////////////////
 			// Extend the whitelisted attributes
-			var media = _.extend(_.pick(provAttributes, 'dctermsFormat'), {
-			provClasses: ['Entity'],
-			provType: 'MR: Media',
-			provAtLocation: provAttributes.mediaUrl,
-			provGeneratedAtTime: now,
-			mrAttribute: {}
+			var media = _.extend(_.pick(provAttributes, 'dctermsFormat', 'provAtLocation'), {
+				provClasses: ['Entity'],
+				provType: 'MR: Media',
+				provGeneratedAtTime: now,
+				mrAttribute: {}
 			});
 			
 			mediaId = Provenance.insert(media);
@@ -172,12 +171,12 @@ Meteor.methods({
 
 			// Add a corresponding creation provenance activity ////////////////////
 			var enterActivity = {
-			provClasses:['Activity'],
-			provType:'MR: Media Insertion',
-			provStartedAtTime: now,
-			provEndedAtTime: now,
-			provWasStartedBy: userProv._id,
-			provGenerated: mediaId
+				provClasses:['Activity'],
+				provType:'MR: Media Insertion',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provGenerated: mediaId
 			};
 
 			Provenance.insert(enterActivity);
@@ -189,33 +188,33 @@ Meteor.methods({
 		// Insert Media into the Report //////////////////////////////////////////
 		// Prepare entity that defines mediaId and 
 		// its attributes **relative** to the report, i.e. position, dimensions
-		var mediaAttribute = {
+		var entityAttribute = {
 			provClasses: ['Entity'],
-			provType: 'MR: Media Properties',
+			provType: 'MR: Media Report Attributes',
 			provGeneratedAtTime: now,
 			mrAttribute: {}
 		}; 
 
-		var mediaAttributeId = Provenance.insert(mediaAttribute);
-		Provenance.update(mediaAttributeId, {$set: {mrOrigin: mediaAttributeId}});
+		var entityAttributeId = Provenance.insert(entityAttribute);
+		Provenance.update(entityAttributeId, {$set: {mrOrigin: entityAttributeId}});
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var activity = {
 			provClasses:['Activity'],
-			provType:'MR: Media Attribute Insertion',
+			provType:'MR: Media Report Attributes Insertion',
 			provStartedAtTime: now,
 			provEndedAtTime: now,
 			provWasStartedBy: userProv._id,
-			provGenerated: mediaAttributeId
+			provGenerated: entityAttributeId
 		};
 		
 		Provenance.insert(activity);
 
-		// Prepare new revision of the report before inserting the mediaAttribute entity
+		// Prepare new revision of the report before inserting the entityAttribute entity
 		var revisionId = reportRevision(provAttributes),
 			entity = {
-			mrMedia: mediaId,
-			mrAttribute: mediaAttributeId
+				mrEntity: mediaId,
+				mrAttribute: entityAttributeId
 			};
 
 		Provenance.update(revisionId, 
@@ -224,7 +223,7 @@ Meteor.methods({
 
 		return mediaId;
 	},
-	mediaRevision: function (provAttributes) {
+	entityAttribute: function (provAttributes) {
 		var user = Meteor.user();
 
 		// ensure the user is logged in
@@ -240,32 +239,32 @@ Meteor.methods({
 			throw new Meteor.Error(422, "Please enter the attribute content");
 
 		var now = new Date().getTime(),
-			currentUser = Provenance.findOne({mrUserId:user._id});
+			userProv = Provenance.findOne({mrUserId:user._id});
 			attribute = {};
 
 		// Set up the new attributes as an object
 		attribute[provAttributes.attrKey] = provAttributes.attrValue;
 		
 		// Get the exisiting attributes so that we can extend it with our new attribute before updating
-		var media = getLatestRevision(provAttributes.currentMediaOrigin),
-			existingAttrs = media.mrAttribute;
+		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
+			existingAttrs = entity.mrAttribute;
 
-		var newMedia = {
+		var newEntity = {
 			mrAttribute: _(existingAttrs).extend(attribute),
 			provGeneratedAtTime: now
 		};
 
-		delete media._id;
-		var revisionId = Provenance.insert(media);
-		Provenance.update(revisionId, {$set: newMedia});
+		delete entity._id;
+		var revisionId = Provenance.insert(entity);
+		Provenance.update(revisionId, {$set: newEntity});
 
 		// Add an activity for inserting new attribute /////////////////////////
 		var activity = {
 			provClasses:['Activity'],
-			provType:'MR: Media Attribute Insertion',
+			provType: 'MR: Entity Attribute Insertion',
 			provStartedAtTime: now,
 			provEndedAtTime: now,
-			provWasStartedBy: currentUser._id,
+			provWasStartedBy: userProv._id,
 			provGenerated: revisionId
 		};
 
@@ -274,20 +273,20 @@ Meteor.methods({
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
 			provClasses:['Derivation'],
-			mrReason: 'Media Update',
+			mrReason: 'Entity Update',
 			provAtTime : now,
-			provWasStartedBy: currentUser._id,
+			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
 			provGenerated: revisionId, 
-			provDerivedFrom: provAttributes.currentCrisisId, 
-			provAttributes: [{provType: 'provRevision'}]
+			provDerivedFrom: provAttributes.currentEntityId, 
+				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 		Provenance.insert(revisionActivity);
 
 		return revisionId;
 	},
-	mediaAttributeRemove: function (provAttributes) {
+	entityAttributeRemove: function (provAttributes) {
 		var user = Meteor.user();
 
 		// ensure the user is logged in
@@ -299,30 +298,30 @@ Meteor.methods({
 			throw new Meteor.Error(422, "Please select an appropriate attribute label");
 
 		var now = new Date().getTime(),
-			currentUser = Provenance.findOne({mrUserId:user._id});
+			userProv = Provenance.findOne({mrUserId:user._id});
 			attribute = {};
 		
 		// Get the exisiting attributes so that we can extend it with our new attribute before updating
-		var media = getLatestRevision(provAttributes.currentMediaOrigin),
-			existingAttrs = media.mrAttribute;
+		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
+			existingAttrs = entity.mrAttribute;
 
-		var newMedia = {
+		var newEntity = {
 			// Remove the attribute key from the existing list/object
 			mrAttribute: _(existingAttrs).omit(provAttributes.attrKey),
 			provGeneratedAtTime: now
 		};
 
-		delete media._id;
-		var revisionId = Provenance.insert(media);
-		Provenance.update(revisionId, {$set: newMedia});
+		delete entity._id;
+		var revisionId = Provenance.insert(entity);
+		Provenance.update(revisionId, {$set: newEntity});
 
 		// Add an activity for inserting new attribute /////////////////////////
 		var activity = {
 			provClasses:['Activity'],
-			provType:'MR: Media Attribute Deletion',
+			provType: 'MR: Entity Attribute Deletion',
 			provStartedAtTime: now,
 			provEndedAtTime: now,
-			provWasStartedBy: currentUser._id,
+			provWasStartedBy: userProv._id,
 			provGenerated: revisionId
 		};
 
@@ -330,13 +329,13 @@ Meteor.methods({
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
 			provClasses:['Derivation'],
-			mrReason: 'Media Update',
+			mrReason: 'Entity Update',
 			provAtTime : now,
-			provWasStartedBy: currentUser._id,
+			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
 			provGenerated: revisionId, 
-			provDerivedFrom: provAttributes.currentMediaId, 
-			provAttributes: [{provType: 'provRevision'}]
+			provDerivedFrom: provAttributes.currentEntityId, 
+				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 
@@ -384,7 +383,7 @@ Meteor.methods({
 
 		return revisionId;
 	},
-	mediaRelation: function(provAttributes) {
+	entityRelation: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
@@ -393,8 +392,7 @@ Meteor.methods({
 		var now = new Date().getTime(),
 			userProv = Provenance.findOne({mrUserId: user._id}),
 			sourceRelation, 
-			targetRelation,
-			entry;
+			targetRelation;
 
 		// Insert relation entity
 		var relation = {
@@ -421,15 +419,15 @@ Meteor.methods({
 
 		Provenance.insert(activity);
 
-		addMediaRelative(provAttributes, relationId, true);
-		addMediaRelative(provAttributes, relationId, false);
+		addEntityRelative(provAttributes, relationId, true);
+		addEntityRelative(provAttributes, relationId, false);
 
 		return relationId;
 
 		// Keep log of the relations (as source and targets) per media items
-		function addMediaRelative(provAttributes, relationId, isSource) {
+		function addEntityRelative(provAttributes, relationId, isSource) {
 			var now = new Date().getTime(),
-			existingEntity = (isSource) ? getMediaRelative(provAttributes.source) : getMediaRelative(provAttributes.target);
+			existingEntity = (isSource) ? getEntityRelative(provAttributes.source) : getEntityRelative(provAttributes.target);
 
 			if(existingEntity) {
 			var listToUpdate,
@@ -441,14 +439,14 @@ Meteor.methods({
 				// Prepare the new entity for source media
 				newEntity.mrTarget = existingEntity.mrTarget;
 				if(!newEntity.mrTarget[provAttributes.target]) {
-				newEntity.mrTarget[provAttributes.target] = [];
+					newEntity.mrTarget[provAttributes.target] = [];
 				}
 				listToUpdate = newEntity.mrTarget[provAttributes.target];
 			} else {
 				// Prepare the new entity for target media
 				newEntity.mrSource = existingEntity.mrSource;
 				if(!newEntity.mrSource[provAttributes.source]) {
-				newEntity.mrSource[provAttributes.source] = [];
+					newEntity.mrSource[provAttributes.source] = [];
 				}
 				listToUpdate = newEntity.mrSource[provAttributes.source];
 			}
@@ -479,17 +477,17 @@ Meteor.methods({
 			// Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
 			var relativeEntry = {
 				provClasses: ['Entity'],
-				provType: 'MR: Media Relative',
+				provType: 'MR: Entity Relative',
 				provGeneratedAtTime: now,
 				mrTarget: {},
 				mrSource: {}
 			};
 
 			if(isSource) {
-				relativeEntry.mrMedia = provAttributes.source;
+				relativeEntry.mrEntity = provAttributes.source;
 				relativeEntry.mrTarget[provAttributes.target] = [relationId];
 			} else {
-				relativeEntry.mrMedia = provAttributes.target;
+				relativeEntry.mrEntity = provAttributes.target;
 				relativeEntry.mrSource[provAttributes.source] = [relationId];
 			}
 			
@@ -499,7 +497,7 @@ Meteor.methods({
 			// Add a corresponding creation provenance activity ////////////////////
 			var activity = {
 				provClasses:['Activity'],
-				provType:'MR: Media Relative Insertion',
+				provType:'MR: Entity Relative Insertion',
 				provStartedAtTime: now,
 				provEndedAtTime: now,
 				provWasStartedBy: userProv._id,
@@ -518,7 +516,7 @@ Meteor.methods({
 				provGeneratedAtTime: now
 			};
 			var member = {
-				mrMedia: relativeEntry.mrMedia,
+				mrEntity: relativeEntry.mrEntity,
 				mrRelative: relativeId 
 			};
 			revision.provHadMember.push(member);
@@ -652,8 +650,8 @@ Meteor.methods({
 		// Prepare new revision of the report before inserting the mediaAttribute entity
 		var revisionId = reportRevision(provAttributes),
 			entity = { 
-			mrMedia: mapId,
-			mrAttribute: mapAttributeId
+				mrEntity: mapId,
+				mrAttribute: mapAttributeId
 			};
 
 		Provenance.update(revisionId, 
@@ -704,8 +702,8 @@ Meteor.methods({
 
 		Provenance.update(mapRevisionId, 
 			{ 
-			$set: {provGeneratedAtTime: now},
-			$push: {provHadMember: markerId} 
+				$set: {provGeneratedAtTime: now},
+				$push: {provHadMember: markerId} 
 			}
 		);
 
@@ -718,13 +716,13 @@ Meteor.methods({
 			provWasDerivedFrom: {
 			provGenerated: mapRevisionId, 
 			provDerivedFrom: currentMapId, 
-			provAttributes: [{provType: 'provRevision'}]
+				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 
 		Provenance.insert(revisionActivity);
 		return markerId;
-		}
+	}
 
 });
 
