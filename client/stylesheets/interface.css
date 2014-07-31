@@ -45,13 +45,6 @@ ul.attributes li .remove-attribute:hover {
 	cursor: pointer;
 }
 
-/* Temporary */
-.meta-medium { 
-	width: 100%;
-	max-width: 350px;
-	max-height: 300px;
-	overflow: auto;
-}
 
 /*Plumbing*/
 .connector {
@@ -71,7 +64,25 @@ ul.attributes li .remove-attribute:hover {
 	width: 250px;
 	max-width: 250px;
 }
-
+.relation-item-marker {
+	padding: 5px;
+	margin-bottom: 5px;
+}
+.relation-item-marker:hover {
+	background-color: #fa8;
+}
 .highlight-relative {
 	border: 2px dashed #ca8;
+}
+
+.marker-relative-endpoint {
+	position: fixed;
+}
+
+/* Temporary */
+.meta-medium { 
+	width: 100%;
+	max-width: 350px;
+	max-height: 300px;
+	overflow: auto;
 }

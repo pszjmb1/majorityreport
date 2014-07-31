@@ -69,10 +69,8 @@
             {{> meta}}
             <h5>Relatives:</h5>
             {{#with relatives}}
-                {{#each targets}}
-                    {{#with relative mrTarget}}
-                        <div class="relation-item-marker">{{this.mrOrigin}}</div>
-                    {{/with}}
+                {{#each entities this.mrTarget}}
+                    <div class="relation-item-marker relation-item-marker-target">{{this.mrTarget}}</div>
                 {{/each}}
             {{/with}}
         {{/with}}

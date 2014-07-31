@@ -380,22 +380,63 @@ Template.markerPopup.helpers({
     relatives: function () {
         return getEntityRelative(this.mrOrigin);
     },
-    relative: function(origin) {
-        return getLatestRevision(origin);
+    relative: function() {
+        console.log(this);
     },
-    targets: function() {
-        return _.map(_.flatten(this.mrTarget), function(relation) {
+    entities: function(entities) {
+        return _.map(_.flatten(entities), function(relation) {
             return getLatestRevision(relation);
         });
     }
 });
 
 Template.markerPopup.events({
-    'mouseover .relation-item-marker, mouseout .relation-item-marker': function(e, tpl) {
+    'mouseover .relation-item-marker-target': function(e, tpl) {
+        var _self = this,
+            className = "highlight-relative",
+            targetElem = document.getElementById(_self.mrTarget),
+            sourceElem = document.createElement('div'),
+            offset = getOffsetRect(e.target);
+
+        $(sourceElem)
+            .attr('id', _self.mrSource)
+            .offset({
+                top: offset.top, 
+                left: offset.left + e.target.getBoundingClientRect().width,
+            })
+            .addClass('marker-relative-endpoint')
+            .appendTo($(e.target));
+
+        if(targetElem) {
+            $(targetElem).addClass(className);
+            
+            var connection = plumber.connect({
+                scope: _self.mrOrigin,
+                source: sourceElem,
+                target: targetElem,
+                overlays: [
+                    "Arrow",
+                    ["Label", {cssClass: "connection-annotation"}]
+                ]
+            });
+        }
+    },
+    'mouseout .relation-item-marker-target': function(e, tpl) {
         var className = "highlight-relative",
-            relativeElem = document.getElementById(this.mrOrigin);
+            relativeElem = document.getElementById(this.mrTarget),
+            source = document.getElementById(this.mrSource),
+            connection = plumber.getConnections(this.mrOrigin)[0];
+
+        $(source).remove();
+        
+        if(connection) { 
+            plumber.detach(connection, {
+                forceDetach: true
+            });
+        }
+
         if(relativeElem) {
-            $(relativeElem).toggleClass(className);
+            $(relativeElem).removeClass(className);
         }
     },
     
@@ -553,4 +594,28 @@ function addRelation(info) {
         if(error)
             return alert(error.reason);
     });
+}
+
+
+function getOffsetRect(elem) {
+    // Solution from http://javascript.info/tutorial/coordinates
+    // (1)
+    var box = elem.getBoundingClientRect();
+    
+    var body = document.body;
+    var docElem = document.documentElement;
+    
+    // (2)
+    var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+    var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+    
+    // (3)
+    var clientTop = docElem.clientTop || body.clientTop || 0;
+    var clientLeft = docElem.clientLeft || body.clientLeft || 0;
+    
+    // (4)
+    var top  = box.top +  scrollTop - clientTop;
+    var left = box.left + scrollLeft - clientLeft;
+    
+    return { top: Math.round(top), left: Math.round(left) };
 }
