@@ -29,7 +29,7 @@ var plumber, maps = {}, markers = {};
 
 Template.freeform.created = function () {
     Session.set('relations', []);
-    Session.set('renderedMediaItems', []);
+    Session.set('renderedEntityItems', []);
 
     jsPlumb.ready(function() {
         plumber = jsPlumb.getInstance({
@@ -74,22 +74,22 @@ Template.freeform.destroyed = function () {
 
 
 Template.freeform.helpers({
-    allMediaRendered: function() {
+    allEntitiesRendered: function() {
         if(this.provHadMember) {   
-            return (this.provHadMember.length === (Session.get('renderedMediaItems')).length);
+            return (this.provHadMember.length === (Session.get('renderedEntityItems')).length);
         }
     },
-    mediumWithAttribute: function() {
+    entityWithAttribute: function() {
         return {
             attributes: getLatestRevision(this.mrAttribute),
-            medium: getLatestRevision(this.mrMedia),
+            entity: getLatestRevision(this.mrMedia),
         };
     },
-    renderedMedia: function() {
-        return Session.get('renderedMediaItems');
+    renderedEntities: function() {
+        return Session.get('renderedEntityItems');
     },
-    mediaRelative: function(media) {
-        return getMediaRelative(media);  
+    entityRelative: function(entity) {
+        return getMediaRelative(entity);  
     }, 
     maintainRelations: function() {
         // Get the relevant targets and sources for the current media
@@ -158,7 +158,7 @@ Template.freeform.helpers({
 
 });
 
-Template.media.rendered = function() {
+Template.entity.rendered = function() {
     // Select the elements that are present only within this template instance
     var _self = this,
         dragger = _self.$('.draggable'),
@@ -167,9 +167,9 @@ Template.media.rendered = function() {
         connector = _self.$('.connector');
 
     Meteor.defer(function(){
-        var renderedMedia = Session.get('renderedMediaItems');
-        renderedMedia.push(_self.data.medium.mrOrigin);
-        Session.set('renderedMediaItems', renderedMedia);
+        var renderedMedia = Session.get('renderedEntityItems');
+        renderedMedia.push(_self.data.entity.mrOrigin);
+        Session.set('renderedEntityItems', renderedMedia);
     });
 
     var target = plumber.makeTarget(wrapper);
@@ -204,7 +204,7 @@ Template.media.rendered = function() {
 
     function updateMediaProperties() {
         var provAttributes = {
-            mrMedia: _self.data.medium.mrOrigin,
+            mrMedia: _self.data.entity.mrOrigin,
             currentAttributeId: _self.data.attributes._id,
             currentAttributeOrigin: _self.data.attributes.mrOrigin,
             mrAttribute: {
@@ -224,7 +224,7 @@ Template.media.rendered = function() {
 
 };
 
-Template.media.helpers({
+Template.entity.helpers({
     typeImage: function () {
         // check if the media is image
         return true;
@@ -251,14 +251,14 @@ Template.media.helpers({
                 return prop;
             }).join(';');
     },
-    isMedia: function(type, isType) {
+    entityOfType: function(type, isType) {
         return (type === isType);
     },
-    mediaType: function() {
-        var _m = this.medium;
-        if(_m.provType && _m.provType === 'MR: Media') {
+    entityType: function() {
+        var entity = this.entity;
+        if(entity.provType && entity.provType === 'MR: Media') {
             return 'image';
-        } else if(_m.mrCollectionType && _m.mrCollectionType === "Map") {
+        } else if(entity.mrCollectionType && entity.mrCollectionType === "Map") {
             return 'map';
         }
     }, 

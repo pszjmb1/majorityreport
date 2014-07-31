@@ -1,23 +1,20 @@
 <template name='freeform'>
     {{> entities}}
     <div id="board">
-    {{#each renderedMediaItems}}
-        {{ this.name }}
-    {{/each}}
     {{#each provHadMember}}
-        {{#with mediumWithAttribute}}
-            {{> media}}
+        {{#with entityWithAttribute}}
+            {{> entity}}
         {{/with}}
     {{/each}}
     {{!-- Ready the different relations related with the current media items --}}
-    {{#each renderedMedia}}
-        {{#with mediaRelative this}}
+    {{#each renderedEntities}}
+        {{#with entityRelative this}}
             {{ maintainRelations}}
          {{/with}} 
     {{/each}}
 
     {{!-- Once the media items have been rendered, draw the different relations between them --}}
-    {{#if allMediaRendered}}
+    {{#if allEntitiesRendered}}
         {{#each relations}}
             {{#with relationDetails}}
                 {{#if isConnected}}
@@ -46,17 +43,17 @@
     </form>
 </template>
 
-<template name="media">
-    <div id="{{ this.medium.mrOrigin }}" class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
+<template name="entity">
+    <div id="{{ this.entity.mrOrigin }}" class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
         <div class="resizable" style="{{ pickStyles 'item' }}">
-            {{#if isMedia mediaType 'image'}}
-                <img class="item-medium" src="{{ this.medium.provAtLocation }}" />
-            {{else}} {{#if isMedia mediaType 'map'}}
-                {{> renderMap this.medium}}
+            {{#if entityOfType entityType 'image'}}
+                <img class="item-medium" src="{{ this.entity.provAtLocation }}" />
+            {{else}} {{#if entityOfType entityType 'map'}}
+                {{> renderMap this.entity}}
             {{/if}}{{/if}}
         </div>
         <div class="connector"></div>
-        {{#with this.medium}}
+        {{#with this.entity}}
             {{> meta }}
         {{/with}}
     </div>
