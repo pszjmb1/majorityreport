@@ -80,20 +80,20 @@ Template.freeform.rendered = function () {
         // Adjust board height to allow for selecting divs 
         // based on solution from: http://stackoverflow.com/a/24922818
         // -- (http://jsfiddle.net/genkilabs/WCw8E/2/)
-        var offsetBottom = 50,
-            finalHeight = $(window).height() - board.position().top - offsetBottom;
+        var offset = 40,
+            finalWidth = $(window).width() - board.position().left - offset,
+            finalHeight = $(window).height() - board.position().top - offset;
 
         board.find('.ui-draggable').each(function() {
-            var itemHeight = $(this).position().top + $(this).height() - board.position().top + offsetBottom;
+            var itemWidth = $(this).position().left + $(this).width() - board.position().left + offset,
+                itemHeight = $(this).position().top + $(this).height() - board.position().top + offset;
 
-            if(finalHeight < itemHeight) {
-                finalHeight = itemHeight;
-            }
+            if(finalWidth < itemWidth) { finalWidth = itemWidth; }
+            if(finalHeight < itemHeight) { finalHeight = itemHeight; }
         });
 
-        if(board.height() != finalHeight) {
-            board.height(finalHeight);
-        }
+        if(board.width() != finalWidth) { board.width(finalWidth); }
+        if(board.height() != finalHeight) { board.height(finalHeight); }
 
     });    
     
@@ -207,15 +207,13 @@ Template.entity.rendered = function() {
     var source = plumber.makeSource(connector, {parent: wrapper});
 
     plumber.draggable(dragger, {
-        containment: 'parent',
+        // containment: 'parent',
         start: function(){ 
             $(this).addClass('dragging-active'); 
         },
-        drag: function() {
+        stop: function(){ 
             // Fire custom event to handle every change in entity styles
             $('#board').trigger('entity-changed');
-        },
-        stop: function(){ 
             $(this).removeClass('dragging-active'); 
             updateMediaProperties();
         },
@@ -225,10 +223,6 @@ Template.entity.rendered = function() {
         ghost: true,
         handles: "all",
         start: function(){ $(this).addClass('resizing-active'); },
-        resize: function() {
-            // Fire custom event to handle every change in entity styles
-            $('#board').trigger('entity-changed');
-        },
         stop: function(){ 
             var parentDimensionOffset = {
                 width: 10,
