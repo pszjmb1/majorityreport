@@ -18,7 +18,7 @@
  * [5]: meta - displays media attributes and allows insertion/deletion/update
  * [6]: formAttribute - corresponds to the meta template
  * [7]: attributeItem - corresponds to the meta template
- * [8]: renderMap - Renders map and binds related operations
+ * [8]: entityMap - Renders map and binds related operations
  *
  * Makes use of jQuery UI and jsPlumb 
  * - Always maintains a single instace of jsPlumb
@@ -262,7 +262,7 @@ Template.entity.helpers({
 });
 
 
-Template.renderMap.rendered = function () {
+Template.entityMap.rendered = function () {
     var _self = this,
         containerId = _self.data.mrOrigin + "-map",
         map, tileLayer, markersLayer;
@@ -316,13 +316,13 @@ Template.renderMap.rendered = function () {
 
 };
 
-Template.renderMap.helpers({
+Template.entityMap.helpers({
     compactInfo: function (context) {
         return _.extend(getLatestRevision(this.valueOf()), {mapOrigin: context.mrOrigin});
     }
 });
 
-Template.renderMarker.rendered = function () {
+Template.entityMarker.rendered = function () {
     var _self = this;
 
     Meteor.defer(function() {
@@ -362,7 +362,7 @@ Template.renderMarker.rendered = function () {
 
 };
 
-Template.renderMarker.helpers({
+Template.entityMarker.helpers({
     isMarkerAlreadyRendered: function() {
         return _.has(markers, this.mrOrigin);
     },

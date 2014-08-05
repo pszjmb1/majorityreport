@@ -38,7 +38,7 @@
             {{#if entityOfType entityType 'image'}}
                 <img class="item-medium" src="{{ this.entity.provAtLocation }}" />
             {{else}} {{#if entityOfType entityType 'map'}}
-                {{> renderMap this.entity}}
+                {{> entityMap this.entity}}
             {{/if}}{{/if}}
         </div>
         <div class="connector"></div>
@@ -48,16 +48,16 @@
     </div>
 </template>
 
-<template name="renderMap">
+<template name="entityMap">
     <div id="{{this.mrOrigin}}-map" class="map"></div>
     {{#each provHadMember}}
         {{#with compactInfo ..}}
-            {{> renderMarker}}
+            {{> entityMarker}}
         {{/with}}
     {{/each}}
 </template>
 
-<template name="renderMarker">
+<template name="entityMarker">
     {{#if isMarkerAlreadyRendered}}
         {{maintain}}
     {{/if}}
