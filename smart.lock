@@ -19,13 +19,13 @@
       },
       "iron-router": {
         "git": "https://github.com/EventedMind/iron-router.git",
-        "tag": "v0.8.1",
-        "commit": "74e867557fd9cb81173e048e5f81cf4a0a1160a8"
+        "tag": "v0.8.2",
+        "commit": "05415a8891ea87a00fb1e2388585f2ca5a38e0da"
       },
       "spin": {
         "git": "https://github.com/SachaG/meteor-spin.git",
-        "tag": "v2.0.3",
-        "commit": "23c1145472a710d5c93fa4beaca4e576caeb2f24"
+        "tag": "v2.0.4",
+        "commit": "f7b1e12a7caff1283cdb3671a393c182d0ae9862"
       },
       "jquery-ui": {
         "git": "https://github.com/TimHeckel/meteor-jquery-ui.git",

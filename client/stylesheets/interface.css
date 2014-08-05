@@ -1,3 +1,19 @@
+#board.ui-selectable {
+    border: 1px black dotted;
+    margin-bottom: 20px;
+}
+
+#board .ui-selecting {
+	background-color: #0cc;
+}
+#board .ui-selecting > * {
+	opacity: 0.7
+}
+
+#board .ui-selected {
+	background-color: #0cc;
+}
+
 .wrapper-medium {
 	padding: 5px;
 	position: absolute;

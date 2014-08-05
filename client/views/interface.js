@@ -45,7 +45,8 @@ Template.freeform.created = function () {
 };
 
 Template.freeform.rendered = function () {
-    var _self = this;
+    var _self = this,
+        board = this.$('#board');
     
 
     // Prepare the modal form for annotating relations
@@ -66,6 +67,36 @@ Template.freeform.rendered = function () {
             }
         }
     });
+
+
+    // Selectable 
+    board.selectable({filter: '.wrapper-medium'});
+
+    // Listen to changes in child elements 
+    board.bind('entity-changed', function() {
+        // Redraw relations/connections on every resizing or dragging
+        plumber.repaintEverything();
+
+        // Adjust board height to allow for selecting divs 
+        // based on solution from: http://stackoverflow.com/a/24922818
+        // -- (http://jsfiddle.net/genkilabs/WCw8E/2/)
+        var offsetBottom = 50,
+            finalHeight = $(window).height() - board.position().top - offsetBottom;
+
+        board.find('.ui-draggable').each(function() {
+            var itemHeight = $(this).position().top + $(this).height() - board.position().top + offsetBottom;
+
+            if(finalHeight < itemHeight) {
+                finalHeight = itemHeight;
+            }
+        });
+
+        if(board.height() != finalHeight) {
+            board.height(finalHeight);
+        }
+
+    });    
+    
 };
 
 Template.freeform.destroyed = function () {
@@ -176,7 +207,14 @@ Template.entity.rendered = function() {
     var source = plumber.makeSource(connector, {parent: wrapper});
 
     plumber.draggable(dragger, {
-        start: function(){ $(this).addClass('dragging-active'); },
+        containment: 'parent',
+        start: function(){ 
+            $(this).addClass('dragging-active'); 
+        },
+        drag: function() {
+            // Fire custom event to handle every change in entity styles
+            $('#board').trigger('entity-changed');
+        },
         stop: function(){ 
             $(this).removeClass('dragging-active'); 
             updateMediaProperties();
@@ -187,6 +225,10 @@ Template.entity.rendered = function() {
         ghost: true,
         handles: "all",
         start: function(){ $(this).addClass('resizing-active'); },
+        resize: function() {
+            // Fire custom event to handle every change in entity styles
+            $('#board').trigger('entity-changed');
+        },
         stop: function(){ 
             var parentDimensionOffset = {
                 width: 10,
@@ -229,10 +271,10 @@ Template.entity.helpers({
         if(_.isEmpty(this.attributes.mrAttribute)) {
             return;
         }
+        // Fire custom event to handle every change in entity styles
+        $('#board').trigger('entity-changed');
 
-        // Redraw relations/connections on every resizing or dragging
-        plumber.repaintEverything();
-
+        // Prepare and return appropriate styles
         var wrapperOffset = { width: 0, height: 55 },
             keys = ['top', 'left', 'z-index', 'width', 'height'];
         
