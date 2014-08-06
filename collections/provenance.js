@@ -722,7 +722,85 @@ Meteor.methods({
 
 		Provenance.insert(revisionActivity);
 		return markerId;
-	}
+	},
+	crisisReportPanel: function(provAttributes) {
+		var user = Meteor.user();
+		
+		// Validate input ////////////////////////////////////////////////////////
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+
+		// Insert new panel entity ///////////////////////////////////////////////
+		// Extend the whitelisted attributes
+		var panel = _.extend(_.pick(provAttributes, 'provHadMember'), {
+					provClasses: ['Entity'],
+					provType: 'Collection',
+					mrCollectionType: 'Panel',
+					provGeneratedAtTime: now,
+					mrAttribute: {}
+				});
+		var panelId = Provenance.insert(panel);
+		Provenance.update(panelId, {$set: {mrOrigin: panelId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var panelActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Panel Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: panelId
+		};
+
+		Provenance.insert(panelActivity);
+
+		// Prepare entity that defines panel and 
+		// its attributes **relative** to the report, i.e. position, dimensions
+		var panelAttribute = {
+			provClasses: ['Entity'],
+			provType: 'MR: Panel Properties',
+			provGeneratedAtTime: now,
+			mrAttribute: provAttributes.mrAttribute || {}
+		}; 
+
+		var panelAttributeId = Provenance.insert(panelAttribute);
+		Provenance.update(panelAttributeId, {$set: {mrOrigin: panelAttributeId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var attrActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Panel Attribute Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: panelAttributeId
+		};
+		
+		Provenance.insert(attrActivity);
+
+		// Prepare new revision of the report before inserting the mediaAttribute entity
+		var revisionId = reportRevision(provAttributes),
+			report = Provenance.findOne(revisionId),
+			entity = { 
+				mrEntity: panelId,
+				mrAttribute: panelAttributeId
+			};
+
+		// Check and remove if the entities in the panel exist in the report
+		var members = _.reject(report.provHadMember, function(member) {
+			return _.findWhere(provAttributes.provHadMember, member);
+		});
+
+		members.push(entity);
+
+		Provenance.update(revisionId, { $set: {provHadMember: members} } );
+
+		return panelId;
+	},
 
 });
 
