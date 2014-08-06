@@ -83,7 +83,7 @@
         {{#if title}}
             <div class="media-title"><h5>{{title}}</h5></div>
         {{/if}}
-        <button class="btn btn-default btn-mini show-attributes"><i class="fa fa-info-circle"></i> Add Attribute</button>
+        <button class="btn btn-default btn-xs show-attributes"><i class="fa fa-info-circle"></i> Add Attribute</button>
         {{#if isMarkerPopup}}
             <ul class="attributes">
                 {{#each attributes}}
@@ -143,23 +143,20 @@
 
 <template name="tools">
     
-    <div class="btn-group btn-group-justified">
-        <div class="btn-group">
-            <form name="media">
-                <input type="textfield" placeholder="Media URL" name="mediaUrl" />
-                <select name="mediaFormat">
-                    <option value="image/jpeg">Image (.jpg)</option>
-                </select>
-                <button class="btn" type="submit"><i class="fa fa-image"></i>  Add media</button>
-            </form>  
-        </div>
-        <div class="btn-group">
-            <button type="button" class="entity-map btn"><i class="fa fa-map-marker"></i> Add a map</button>
-        </div>
-        <div class="btn-group">
-            <button type="button" class="entity-group btn"><i class="fa"></i>Group</button>
-        </div>
-    </div>
+    <div class="btn-group">
+        <form name="media" class="form-inline">
+            <div class="input-group">
+                <input type="textfield" class="form-control" placeholder="Media URL" name="mediaUrl" />
+                <div class="input-group-btn">
+                    <select class="form-control" name="mediaFormat">
+                        <option value="image/jpeg">Image (.jpg)</option>
+                    </select>
+                    <button class="btn" type="submit"><i class="fa fa-image"></i>  Add Media</button>
+                </div>      
+            </div>
+        </form> 
+    </div>    
 
-    
+    <button type="button" class="entity-map btn"><i class="fa fa-map-marker"></i> Add Map</button>
+    <button type="button" class="entity-group btn"><i class="fa fa-folder-open-o"></i> Group</button>
 </template>

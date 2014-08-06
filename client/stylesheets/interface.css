@@ -1,6 +1,6 @@
 #board.ui-selectable {
     border: 1px black dotted;
-    margin-bottom: 20px;
+    margin: 20px 0;
 }
 
 #board .ui-selecting {
