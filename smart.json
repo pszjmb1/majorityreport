@@ -1,12 +1,12 @@
 {
   "packages": {
-    "accounts-ui-bootstrap-dropdown": {},
     "iron-router": {},
     "spin": {},
     "jquery-ui": {},
     "jquery-ui-bootstrap": {},
     "fontawesome4": {},
     "leaflet": {},
-    "leaflet-search": {}
+    "leaflet-search": {},
+    "accounts-ui-bootstrap-3": {}
   }
 }
