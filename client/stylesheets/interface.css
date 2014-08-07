@@ -37,8 +37,6 @@ img.item-medium {
 
 .ui-resizable {
 	margin: 0 auto;
-	pointer-events: all;
-	background-color: #fff;
 }
 
 /*Medium meta/attributes */

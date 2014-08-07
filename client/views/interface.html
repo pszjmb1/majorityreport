@@ -1,33 +1,34 @@
 <template name='freeform'>
     {{> tools}}
     <div id="board">
-        {{#each provHadMember}}
-            {{#with entityWithAttribute}}
-                {{> entity}}
+    {{#each provHadMember}}
+        {{#with entityWithAttribute}}
+            {{> entity}}
+        {{/with}}
+    {{/each}}
+    {{!-- Ready the different relations related with the current media items --}}
+    {{#each renderedEntities}}
+        {{#with entityRelative this}}
+            {{ maintainRelations}}
+         {{/with}} 
+    {{/each}}
+
+    {{!-- Once the media items have been rendered, draw the different relations between them --}}
+    {{#if allEntitiesRendered}}
+        {{#each relations}}
+            {{#with relationDetails}}
+                {{#if isConnected}}
+                    {{ updateConnection annotation}}
+                {{ else }}
+                    {{ drawConnection annotation}}
+                {{/if}}
             {{/with}}
         {{/each}}
-        {{!-- Ready the different relations related with the current media items --}}
-        {{#each renderedEntities}}
-            {{#with entityRelative this}}
-                {{ maintainRelations}}
-             {{/with}} 
-        {{/each}}
-
-        {{!-- Once the media items have been rendered, draw the different relations between them --}}
-        {{#if allEntitiesRendered}}
-            {{#each relations}}
-                {{#with relationDetails}}
-                    {{#if isConnected}}
-                        {{ updateConnection annotation}}
-                    {{ else }}
-                        {{ drawConnection annotation}}
-                    {{/if}}
-                {{/with}}
-            {{/each}}
-        {{/if}}
-        <div class="form-annotate">
-            {{> formRelationAnnotate}}
-        </div>
+    {{/if}}
+    <div class="form-annotate">
+        {{> formRelationAnnotate}}
+    </div>
+    
     </div>
 </template>
 
@@ -38,9 +39,7 @@
                 <img class="item-medium" src="{{ this.entity.provAtLocation }}" />
             {{else}} {{#if entityOfType entityType 'map'}}
                 {{> entityMap this.entity}}
-            {{else}} {{#if entityOfType entityType 'panel'}}
-                {{> entityPanel this.entity}}
-            {{/if}}{{/if}}{{/if}}
+            {{/if}}{{/if}}
         </div>
         <div class="connector"></div>
         {{#with this.entity}}
@@ -54,14 +53,6 @@
     {{#each provHadMember}}
         {{#with compactInfo ..}}
             {{> entityMarker}}
-        {{/with}}
-    {{/each}}
-</template>
-
-<template name="entityPanel">
-    {{#each provHadMember}}
-        {{#with entityWithAttribute}}
-            {{> entity}}
         {{/with}}
     {{/each}}
 </template>

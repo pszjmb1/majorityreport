@@ -77,27 +77,24 @@ Template.freeform.rendered = function () {
         // Redraw relations/connections on every resizing or dragging
         plumber.repaintEverything();
 
-        // Calculate parent wrapper's dimension and position in relation to children nodes (absolute positioned)
+        // Adjust board height to allow for selecting divs 
         // based on solution from: http://stackoverflow.com/a/24922818
         // -- (http://jsfiddle.net/genkilabs/WCw8E/2/)
-        var offset = { width: 40, height: 40},
-            dimension = {
-                width: $(window).width() - board.position().left - offset.width,
-                height: $(window).height() - board.position().top - offset.height
-            };
+        var offset = 40,
+            finalWidth = $(window).width() - board.position().left - offset,
+            finalHeight = $(window).height() - board.position().top - offset;
 
-        board.find('.ui-draggable').each(function(){
-            var itemDimen = {
-                width: $(this).width() + $(this).position().left - board.position().left + offset.width,
-                height: $(this).height() + $(this).position().top - board.position().top + offset.height,
-            };
+        board.find('.ui-draggable').each(function() {
+            var itemWidth = $(this).position().left + $(this).width() - board.position().left + offset,
+                itemHeight = $(this).position().top + $(this).height() - board.position().top + offset;
 
-            if(dimension.width < itemDimen.width) { dimension.width = itemDimen.width; }
-            if(dimension.height < itemDimen.height) { dimension.height = itemDimen.height; }
+            if(finalWidth < itemWidth) { finalWidth = itemWidth; }
+            if(finalHeight < itemHeight) { finalHeight = itemHeight; }
         });
 
-        if(board.width() != dimension.width) { board.width(dimension.width); }
-        if(board.height() != dimension.height) { board.height(dimension.height); }
+        if(board.width() != finalWidth) { board.width(finalWidth); }
+        if(board.height() != finalHeight) { board.height(finalHeight); }
+
     });    
     
 };
@@ -272,7 +269,7 @@ Template.entity.helpers({
         $('#board').trigger('entity-changed');
 
         // Prepare and return appropriate styles
-        var wrapperOffset = { width: 15, height: 60 },
+        var wrapperOffset = { width: 0, height: 55 },
             keys = ['top', 'left', 'z-index', 'width', 'height'];
         
         // Return width and height styles for item, otherwise the positional styles
@@ -293,8 +290,8 @@ Template.entity.helpers({
         var entity = this.entity;
         if(entity.provType && entity.provType === 'MR: Media') {
             return 'image';
-        } else if(entity.mrCollectionType) {
-            return entity.mrCollectionType.toLowerCase();
+        } else if(entity.mrCollectionType && entity.mrCollectionType === "Map") {
+            return 'map';
         }
     }, 
 
@@ -481,15 +478,6 @@ Template.markerPopup.events({
     
 });
 
-Template.entityPanel.helpers({
-    entityWithAttribute: function () {
-        return {
-            attributes: getLatestRevision(this.mrAttribute),
-            entity: getLatestRevision(this.mrEntity),
-        }; 
-    }
-});
-
 Template.meta.rendered = function () {
     var _self = this;
     // Set up our dialog
@@ -585,21 +573,6 @@ Template.formRelationAnnotate.events({
     }
 });
 
-Template.tools.rendered = function () {
-    var _self = this,
-        btnEntityGroup = _self.$('.entity-group');
-
-    btnEntityGroup.attr('disabled', true);
-    $(document).on('selectableselecting selectableunselecting', function(e, ui) {
-        console.log("yo");
-        if( $(".ui-selecting").length > 1 || $(".ui-selected").length > 1 ) {
-            btnEntityGroup.attr('disabled', false);
-        } else {
-            btnEntityGroup.attr('disabled', true);
-        }
-    });
-};
-
 Template.tools.events({
     'submit form[name=media]': function (e, tpl) {
         e.preventDefault();
@@ -635,47 +608,6 @@ Template.tools.events({
             if(error)
                 return alert(error.reason);
         });
-    },
-    'click .entity-group': function(e, tpl) {
-        e.preventDefault();
-
-
-        var selectedItems = $('.ui-selected'),
-            members = _.map(selectedItems, function(item) {
-                var data = UI.getElementData(item);
-                if(data) {
-                    return {
-                        mrEntity: data.entity.mrOrigin,
-                        mrAttribute: data.attributes.mrOrigin
-                    };
-                }
-            });
-
-        var div = document.createElement('div');
-        var panelBox = calculcatePanelBox('.ui-selected');
-
-        var provAttributes = {
-            currentCrisisId: this._id,
-            currentCrisisOrigin: this.mrOrigin,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription,
-            mrAttribute: panelBox,
-            provHadMember: members
-        };
-
-        console.log(panelBox);
-        Meteor.call('crisisReportPanel', provAttributes, function(error, id) {
-            if (error)
-                return alert(error.reason);
-
-            // Deselect the elements if success
-            $('.ui-selectable .ui-selected').each(function() {
-                $(this).removeClass(".ui-selected");
-            });
-        });
-
-
-
 
     }
 });
@@ -722,34 +654,4 @@ function getOffsetRect(elem) {
     var left = box.left + scrollLeft - clientLeft;
     
     return { top: Math.round(top), left: Math.round(left) };
-}
-
-
-function calculcatePanelBox(itemSelector, padding) {
-    padding = padding || { top: 10, right: 10, bottom: 10, left: 10 };
-    
-    var box = { right: 0, bottom: 0, top: -1, left: -1 };
-
-    $(itemSelector).each(function() {
-        var itemBox = {
-            left:  $(this).position().left,
-            top: $(this).position().top,
-            right: $(this).position().left + $(this).outerWidth(),
-            bottom: $(this).position().top + $(this).outerHeight(),
-        };
-
-        if(box.left < 0 || box.left > itemBox.left) { box.left = itemBox.left; }
-        if(box.top < 0 || box.top > itemBox.top) { box.top = itemBox.top; }
-        if(box.right < itemBox.right) { box.right = itemBox.right; }
-        if(box.bottom < itemBox.bottom) { box.bottom = itemBox.bottom; }
-
-    });
-
-    box.width = (box.right - box.left + padding.bottom) + 'px';
-    box.height = (box.bottom - box.top + padding.left) + 'px';
-    box.left = (box.left - padding.left) + 'px';
-    box.top = (box.top - padding.top) + 'px';
-
-
-    return box;
 }
