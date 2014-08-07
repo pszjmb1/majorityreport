@@ -73,10 +73,10 @@
   <div class="crisis">
     <div class="crisis-heading">
       <h3>{{dctermsTitle}}<span>{{dctermsDescription}}</span></h3>
-       <p>
-          submitted by {{agentName}}
-          {{#if owner}}<a href="{{provEditLink}}">Edit</a>{{/if}}      
-        </p>
+      <p>
+        submitted by {{getName agent}}
+        {{#if isOwner agent}}<a href="{{provEditLink}}">Edit</a>{{/if}}      
+      </p> 
     </div>
     <a href="{{provLink}}" class="discuss btn">Investigate</a>
   </div>

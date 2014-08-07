@@ -3,16 +3,17 @@
  */
 Provenance = new Meteor.Collection('provenance');
 
-getRevisions = function(reportId) {
-	return Provenance.find( 
-	{ mrOrigin: reportId }, 
-	{ sort: { provGeneratedAtTime: -1 }}
-	);
+getReports = function() {
+	return Provenance.find(
+        { mrCollectionType: 'Crisis Report',  wasInvalidatedBy: { $exists: false} },
+        {sort: {provGeneratedAtTime: -1}}
+    );
 };
 
-getLatestRevision = function(reportId) {
+getLatestRevision = function(origin) {
+	if(!origin) { return; }
 	return Provenance.findOne( 
-		{ mrOrigin: reportId }, 
+		{ mrOrigin: origin }, 
 		{ sort: { provGeneratedAtTime: -1 }}
 	);
 };
@@ -788,7 +789,7 @@ function reportRevision(provAttributes) {
 	// Clone the current crisis record to retain the original provenance details    
 	var crisis = Provenance.findOne(provAttributes.currentCrisisId),
 		currentCrisisId = crisis._id;
-		
+
 	delete crisis._id;
 	var revisionId = Provenance.insert(crisis);
 	Provenance.update(revisionId, {$set: crisisProperties});

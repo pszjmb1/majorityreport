@@ -8,10 +8,7 @@
 
 Template.crises.helpers({
   crises: function() { 
-    var set = Provenance.find({mrCollectionType: 'Crisis Report'}, {sort: {provGeneratedAtTime: -1}}).fetch();
-    var list = _.groupBy(set, function(c){return c.mrOrigin});
-    var output = _.map(list, function(c){ return _.max(c, function(prov){ return prov.provGeneratedAtTime; }); });
-    return output;
+    return getReports();
   } 
 });
 
@@ -27,7 +24,7 @@ Template.crises.helpers({
     var crisis = {
       dctermsTitle: $(e.target).find('[name=dctermsTitle]').val(),
       dctermsDescription: $(e.target).find('[name=dctermsDescription]').val()
-    }
+    };
 
     crisis._id = Meteor.call('crisisReport', crisis, function(error, id) {
       if (error)
@@ -52,7 +49,7 @@ Template.editCrisis.events({
         dctermsDescription: 
                 $(e.target).find('[name=dctermsDescription]').val(),
         reason: $(e.target).find('[name=reason]').val()
-      }
+      };
 
       Meteor.call('crisisReportRevision', crisis, function(error, id) {
         if (error){
@@ -67,9 +64,8 @@ Template.editCrisis.events({
     e.preventDefault();
 
     if (confirm("Remove this crisis report?")) {
-      var crisis = {
-        currentCrisisId: this._id
-      }
+      var crisis = { currentCrisisId: this._id };
+
       Meteor.call('crisisReportInvalidation', crisis, function(error, id) {
         if (error){
           return alert(error.reason);
@@ -84,46 +80,32 @@ Template.editCrisis.events({
  * crisisHeading helpers
  */
 Template.crisisHeading.helpers({
-  activityId: function() { 
-    currentCrisisId = this._id;
-    var activity = Provenance.findOne({provGenerated:currentCrisisId})
-    if(activity){
-      return activity._id;
-    }
-    //Provenance.findOne({provGenerated:currentCrisisId}).provWasStartedBy;
-  },  
   agentId: function() { 
     currentCrisisId = this._id;
     var activity = Provenance.findOne({provGenerated:currentCrisisId});
     if(activity){
       return activity.provWasStartedBy;
     }
-  },  
-  agentName: function() { 
-    // TODO: REVISE the following. Derivation and Activity do not share 'provGenerated'
-    currentCrisisId = this._id;
-    var mrOrigin = this.mrOrigin,
-        activity = Provenance.findOne({provGenerated: mrOrigin});
+  },
+  agent: function() { 
+    var activity = Provenance.findOne({provGenerated: this.mrOrigin});
+
     if(activity){
-      var agent = Provenance.findOne(activity.provWasStartedBy);
-      if(agent){
+      return Provenance.findOne(activity.provWasStartedBy);
+    }
+  },
+  getName: function(agent) {
+      if(agent) {
         if( agent.foafGivenName){
-          return agent.foafGivenName + " " +  agent.foafFamilyName;
+          return agent.foafGivenName +" "+  agent.foafFamilyName;
         }else{
           return agent.mrUserName;
         }
       }
-    }
   },
-  owner: function() { 
-    currentCrisisId = this._id;
-    var mrOrigin = this.mrOrigin,
-        activity = Provenance.findOne({provGenerated: mrOrigin})
-    if(activity){
-      var agent = Provenance.findOne(activity.provWasStartedBy);
-      if(agent){
-        return agent.mrUserId == Meteor.userId();
-      }
+  isOwner: function(agent) { 
+    if(agent) {
+      return agent.mrUserId == Meteor.userId();
     }
   }, 
   provLink: function() {
