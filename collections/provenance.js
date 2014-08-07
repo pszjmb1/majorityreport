@@ -246,7 +246,9 @@ Meteor.methods({
 		attribute[provAttributes.attrKey] = provAttributes.attrValue;
 		
 		// Get the exisiting attributes so that we can extend it with our new attribute before updating
+		// Create a new revision
 		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
+			currentEntityId = entity._id,
 			existingAttrs = entity.mrAttribute;
 
 		var newEntity = {
@@ -277,12 +279,15 @@ Meteor.methods({
 			provAtTime : now,
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
-			provGenerated: revisionId, 
-			provDerivedFrom: provAttributes.currentEntityId, 
+				provGenerated: revisionId, 
+				provDerivedFrom: currentEntityId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
 	},
@@ -302,7 +307,9 @@ Meteor.methods({
 			attribute = {};
 		
 		// Get the exisiting attributes so that we can extend it with our new attribute before updating
+		// Insert a new revision
 		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
+			currentEntityId = entity._id,
 			existingAttrs = entity.mrAttribute;
 
 		var newEntity = {
@@ -333,13 +340,16 @@ Meteor.methods({
 			provAtTime : now,
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
-			provGenerated: revisionId, 
-			provDerivedFrom: provAttributes.currentEntityId, 
+				provGenerated: revisionId, 
+				provDerivedFrom: currentEntityId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 
 		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
 	},
@@ -360,7 +370,9 @@ Meteor.methods({
 		};
 
 		// Clone the latest media attribute and update them
-		var attribute = getLatestRevision(provAttributes.currentAttributeOrigin);
+		// Insert a new revision
+		var attribute = getLatestRevision(provAttributes.currentAttributeOrigin),
+			currentAttributeId = attribute._id;
 		delete attribute._id;
 
 		var revisionId = Provenance.insert(attribute);
@@ -373,13 +385,16 @@ Meteor.methods({
 			provAtTime : now,
 			provWasStartedBy: currentUser._id,
 			provWasDerivedFrom: {
-			provGenerated: revisionId, 
-			provDerivedFrom: provAttributes.currentAttributeId, 
-			provAttributes: [{provType: 'provRevision'}]
+				provGenerated: revisionId, 
+				provDerivedFrom: currentAttributeId, 
+				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 
 		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentAttributeId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
 	},
@@ -430,116 +445,123 @@ Meteor.methods({
 			existingEntity = (isSource) ? getEntityRelative(provAttributes.source) : getEntityRelative(provAttributes.target);
 
 			if(existingEntity) {
-			var listToUpdate,
-				existingId = existingEntity._id,
-				newEntity = { provGeneratedAtTime: now };
+				var listToUpdate,
+					existingId = existingEntity._id,
+					newEntity = { provGeneratedAtTime: now };
 
-			// Prepare the entity to update depending on whether the current media is a source or target
-			if(isSource) {
-				// Prepare the new entity for source media
-				newEntity.mrTarget = existingEntity.mrTarget;
-				if(!newEntity.mrTarget[provAttributes.target]) {
-					newEntity.mrTarget[provAttributes.target] = [];
+				// Prepare the entity to update depending on whether the current media is a source or target
+				if(isSource) {
+					// Prepare the new entity for source media
+					newEntity.mrTarget = existingEntity.mrTarget;
+					if(!newEntity.mrTarget[provAttributes.target]) {
+						newEntity.mrTarget[provAttributes.target] = [];
+					}
+					listToUpdate = newEntity.mrTarget[provAttributes.target];
+				} else {
+					// Prepare the new entity for target media
+					newEntity.mrSource = existingEntity.mrSource;
+					if(!newEntity.mrSource[provAttributes.source]) {
+						newEntity.mrSource[provAttributes.source] = [];
+					}
+					listToUpdate = newEntity.mrSource[provAttributes.source];
 				}
-				listToUpdate = newEntity.mrTarget[provAttributes.target];
+
+				listToUpdate.push(relationId);
+
+				delete existingEntity._id;
+				var relationRevisionId = Provenance.insert(existingEntity);
+				Provenance.update(relationRevisionId, {$set: newEntity});
+
+				// Add a corresponding revision provenance /////////////////////////////
+				var relationRevisionActivity = {
+					provClasses:['Derivation'],
+					mrReason: 'Media Relative Update',
+					provAtTime : now,
+					provWasStartedBy: userProv._id,
+					provWasDerivedFrom: {
+						provGenerated: relationRevisionId, 
+						provDerivedFrom: existingId, 
+						provAttributes: [{provType: 'provRevision'}]
+					}
+				};
+
+				Provenance.insert(relationRevisionActivity);
+				//Invalidate the previous version
+				Provenance.update(existingId, {$set: {wasInvalidatedBy: relationRevisionActivity}});
+
+				return relationRevisionId;
+
 			} else {
-				// Prepare the new entity for target media
-				newEntity.mrSource = existingEntity.mrSource;
-				if(!newEntity.mrSource[provAttributes.source]) {
-					newEntity.mrSource[provAttributes.source] = [];
+				// Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
+				var relativeEntry = {
+					provClasses: ['Entity'],
+					provType: 'MR: Entity Relative',
+					provGeneratedAtTime: now,
+					mrTarget: {},
+					mrSource: {}
+				};
+
+				if(isSource) {
+					relativeEntry.mrEntity = provAttributes.source;
+					relativeEntry.mrTarget[provAttributes.target] = [relationId];
+				} else {
+					relativeEntry.mrEntity = provAttributes.target;
+					relativeEntry.mrSource[provAttributes.source] = [relationId];
 				}
-				listToUpdate = newEntity.mrSource[provAttributes.source];
-			}
+				
+				var relativeId = Provenance.insert(relativeEntry);
+				Provenance.update(relativeId, {$set: {mrOrigin: relativeId} });
 
-			listToUpdate.push(relationId);
+				// Add a corresponding creation provenance activity ////////////////////
+				var activity = {
+					provClasses:['Activity'],
+					provType:'MR: Entity Relative Insertion',
+					provStartedAtTime: now,
+					provEndedAtTime: now,
+					provWasStartedBy: userProv._id,
+					provGenerated: relativeId
+				};
 
-			delete existingEntity._id;
-			var relationRevisionId = Provenance.insert(existingEntity);
-			Provenance.update(relationRevisionId, {$set: newEntity});
+				Provenance.insert(activity);
 
-			// Add a corresponding revision provenance /////////////////////////////
-			var relationRevisionActivity = {
-				provClasses:['Derivation'],
-				mrReason: 'Media Relative Update',
-				provAtTime : now,
-				provWasStartedBy: userProv._id,
-				provWasDerivedFrom: {
-				provGenerated: relationRevisionId, 
-				provDerivedFrom: existingId, 
-				provAttributes: [{provType: 'provRevision'}]
-				}
-			};
+				// Insert the newly created media relatives entity to the main relations collection
+				var collection = getRelationsList(),
+					currentCollectionId = collection._id;
 
-			Provenance.insert(relationRevisionActivity);
-			return relationRevisionId;
+				delete collection._id;
 
-			} else {
-			// Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
-			var relativeEntry = {
-				provClasses: ['Entity'],
-				provType: 'MR: Entity Relative',
-				provGeneratedAtTime: now,
-				mrTarget: {},
-				mrSource: {}
-			};
+				var revision = {
+					provHadMember: collection.provHadMember,
+					provGeneratedAtTime: now
+				};
+				var member = {
+					mrEntity: relativeEntry.mrEntity,
+					mrRelative: relativeId 
+				};
+				revision.provHadMember.push(member);
 
-			if(isSource) {
-				relativeEntry.mrEntity = provAttributes.source;
-				relativeEntry.mrTarget[provAttributes.target] = [relationId];
-			} else {
-				relativeEntry.mrEntity = provAttributes.target;
-				relativeEntry.mrSource[provAttributes.source] = [relationId];
-			}
-			
-			var relativeId = Provenance.insert(relativeEntry);
-			Provenance.update(relativeId, {$set: {mrOrigin: relativeId} });
+				var listRevisionId = Provenance.insert(collection);
+				Provenance.update(listRevisionId, {$set: revision});
 
-			// Add a corresponding creation provenance activity ////////////////////
-			var activity = {
-				provClasses:['Activity'],
-				provType:'MR: Entity Relative Insertion',
-				provStartedAtTime: now,
-				provEndedAtTime: now,
-				provWasStartedBy: userProv._id,
-				provGenerated: relativeId
-			};
+				// Add a corresponding revision provenance /////////////////////////////
+				var listRevisionActivity = {
+					provClasses:['Derivation'],
+					mrReason: "Relations List Update",
+					provAtTime : now,
+					provWasStartedBy: userProv._id,
+					provWasDerivedFrom: {
+						provGenerated: listRevisionId, 
+						provDerivedFrom: currentCollectionId, 
+						provAttributes: [{provType: 'provRevision'}]
+					}
+				};
 
-			Provenance.insert(activity);
+				Provenance.insert(listRevisionActivity);
 
-			// Insert the newly created media relatives entity to the main relations collection
-			var collection = getRelationsList();
-			var currentCollectionId = collection._id;
-			delete collection._id;
+				//Invalidate the previous version
+				Provenance.update(currentCollectionId, {$set: {wasInvalidatedBy: listRevisionActivity}});
 
-			var revision = {
-				provHadMember: collection.provHadMember,
-				provGeneratedAtTime: now
-			};
-			var member = {
-				mrEntity: relativeEntry.mrEntity,
-				mrRelative: relativeId 
-			};
-			revision.provHadMember.push(member);
-
-			var listRevisionId = Provenance.insert(collection);
-			Provenance.update(listRevisionId, {$set: revision});
-
-			// Add a corresponding revision provenance /////////////////////////////
-			var listRevisionActivity = {
-				provClasses:['Derivation'],
-				mrReason: "Relations List Update",
-				provAtTime : now,
-				provWasStartedBy: userProv._id,
-				provWasDerivedFrom: {
-				provGenerated: listRevisionId, 
-				provDerivedFrom: currentCollectionId, 
-				provAttributes: [{provType: 'provRevision'}]
-				}
-			};
-
-			Provenance.insert(listRevisionActivity);
-
-			return relativeId;
+				return relativeId;
 			}
 		}
 	},
@@ -577,13 +599,16 @@ Meteor.methods({
 			provAtTime : now,
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
-			provGenerated: revisionId, 
-			provDerivedFrom: currentRelationId, 
-			provAttributes: [{provType: 'provRevision'}]
+				provGenerated: revisionId, 
+				provDerivedFrom: currentRelationId, 
+				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 
 		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentRelationId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
 	},
@@ -714,13 +739,17 @@ Meteor.methods({
 			provAtTime : now,
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
-			provGenerated: mapRevisionId, 
-			provDerivedFrom: currentMapId, 
+				provGenerated: mapRevisionId, 
+				provDerivedFrom: currentMapId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
 
 		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentMapId, {$set: {wasInvalidatedBy: revisionActivity}});
+
 		return markerId;
 	}
 
@@ -735,10 +764,8 @@ function reportRevision(provAttributes) {
 	if (!user)
 		throw new Meteor.Error(401, "Please login to revise a crisis");
 
-	var currentCrisisId = provAttributes.currentCrisisId;
-
 	// ensure the currentCrisisId has been set
-	if (!currentCrisisId)
+	if (!provAttributes.currentCrisisId)
 		throw new Meteor.Error(422, 'Please include the currentCrisisId');
 
 	// ensure the crisis has a dctermsTitle
@@ -759,12 +786,12 @@ function reportRevision(provAttributes) {
 	};
 
 	// Clone the current crisis record to retain the original provenance details    
-	var revisionId;
-	Provenance.find(currentCrisisId, {$limit: 1}).forEach(function(crisis){
-		delete crisis._id;
-		revisionId = Provenance.insert(crisis);
-		Provenance.update(revisionId, {$set: crisisProperties});
-	});
+	var crisis = Provenance.findOne(provAttributes.currentCrisisId),
+		currentCrisisId = crisis._id;
+		
+	delete crisis._id;
+	var revisionId = Provenance.insert(crisis);
+	Provenance.update(revisionId, {$set: crisisProperties});
 			
 	// Add a corresponding revision provenance /////////////////////////////
 	var revisionActivity = {
@@ -773,13 +800,16 @@ function reportRevision(provAttributes) {
 		provAtTime : now,
 		provWasStartedBy: currentUser._id,
 		provWasDerivedFrom: {
-		provGenerated: revisionId, 
-		provDerivedFrom: currentCrisisId, 
-		provAttributes: [{provType: 'provRevision'}]
+			provGenerated: revisionId, 
+			provDerivedFrom: currentCrisisId, 
+			provAttributes: [{provType: 'provRevision'}]
 		}
 	};
 
 	Provenance.insert(revisionActivity);
+
+	//Invalidate the previous version
+	Provenance.update(currentCrisisId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 	return revisionId;
 }
