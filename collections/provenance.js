@@ -13,7 +13,7 @@ getReports = function() {
 getLatestRevision = function(origin) {
 	if(!origin) { return; }
 	return Provenance.findOne( 
-		{ mrOrigin: origin }, 
+		{ mrOrigin: origin,  wasInvalidatedBy: { $exists: false} }, 
 		{ sort: { provGeneratedAtTime: -1 }}
 	);
 };
