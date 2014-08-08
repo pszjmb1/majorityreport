@@ -1,12 +1,11 @@
 <template name='freeform'>
     {{> tools}}
     <div id="board">
-    {{#each provHadMember}}
-        {{#with entityWithAttributes}}
-            {{> entity}}
-        {{/with}}
-    {{/each}}
-    
+        {{#each provHadMember}}
+            {{#with entityWithAttributes}}
+                {{> entity}}
+            {{/with}}
+        {{/each}}
     </div>
 </template>
 
@@ -22,6 +21,17 @@
 <template name="media">
     <img src="{{provAtLocation}}" />
 </template>
+
+<template name="formAttribute">
+    <div id="{{mrOrigin}}-form-attr">
+        <form>
+            <input type="text" name="attribute-label" id="attribute-label" placeholder="{{label}}"/>
+            <input type="text" name="attribute-value" id="attribute-value" placeholder="{{value}}"/>
+            <button class="btn btn-success btn-sm" type="submit"><i class="fa fa-plus-circle"></i>Save Annotation</button>
+        </form>
+    </div>
+</template>
+
 
 <template name="tools">
     

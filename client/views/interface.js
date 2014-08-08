@@ -23,6 +23,76 @@ Template.freeform.created = function () {
 Template.freeform.rendered = function () {
     var _self = this,
         board = this.$('#board');
+
+    board.bind('entityAttributeChange', function() {
+        plumber.repaintEverything();
+    });
+
+    // draw connections
+    var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
+    relationsQuery.observe({ 
+        added: function(doc) {
+            var connection = plumber.getConnections(doc.mrOrigin);
+            if(connection.length > 0) {
+                connection = connection[0];
+            } else {
+                connection = drawRelation(doc);
+            }
+
+            if(connection) {
+                if(!_.isEmpty(doc.mrAttribute)) {
+                    var label = _.pairs(doc.mrAttribute)[0].join(": ");
+                    connection.setLabel(label);
+                }
+            }
+        }
+    });
+
+    function relationAttribute(relation) {
+        
+    }
+
+    function drawRelation(relation) {
+        var sourceElem = document.getElementById(relation.mrSource),
+            targetElem = document.getElementById(relation.mrTarget);
+
+        if(sourceElem && targetElem) {
+            var connection = plumber.connect({
+                scope: relation.mrOrigin,
+                source: sourceElem,
+                target: targetElem,
+                overlays: [ "Arrow" ]
+            });
+
+            connection.bind('click', function(conn, e) {
+                var dialog,
+                    existingElem = document.getElementById(relation.mrOrigin+"-form-attr");
+
+                // Add focus to the existing dialog
+                if(existingElem) {
+                    dialog = $(existingElem).closest('.ui-dialog')[0];
+                    $(dialog).effect('shake', {distance: 4, times: 2});
+
+                    return;
+                } 
+
+                // Create a new dialog if doesnt exist already
+                dialog = document.createElement('div');
+                UI.insert( UI.renderWithData(Template.formAttribute, relation), dialog);
+                $(dialog).appendTo(board);
+
+                $(dialog).dialog({
+                    autoOpen: true,
+                    close: function(e, ui) {
+                        $(this).remove();
+                    }
+                });
+            });
+
+            return connection;
+        }
+    }
+
 };
 
 Template.freeform.destroyed = function () {
@@ -38,9 +108,6 @@ Template.freeform.helpers({
         };
 
         if(info.attributes && info.entity) {return info; }
-    },
-    renderedEntities: function() {
-        return Session.get('renderedEntities');
     }
 });
 
@@ -69,6 +136,24 @@ Template.entity.rendered = function () {
     plumber.draggable(outerWrapper, { stop: updateEntityAttributes });
 
     target.bind('beforeDrop', addRelation);
+
+    function updateEntityAttributes(e, ui) {
+        var provAttributes = {
+            mrEntity: _self.data.entity.mrOrigin,
+            currentAttributeOrigin: _self.data.attributes.mrOrigin,
+            mrAttribute: {
+                width: innerWrapper.css('width'),
+                height: innerWrapper.css('height'),
+                top: outerWrapper.css('top'),
+                left: outerWrapper.css('left')
+            }
+        };
+
+        Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
+            if(error) 
+                return alert(error.reason);
+        });
+    }
 };
 
 Template.entity.helpers({
@@ -82,6 +167,8 @@ Template.entity.helpers({
         if(!this.attributes || _.isEmpty(this.attributes.mrAttribute)) {
             return;
         }
+        // Publish message to notify change in entity attirbute
+        $('#board').trigger('entityAttributeChange');
 
         var keys = ['width', 'height'],
             outerOffset = { width: 10, height: 55 };        
@@ -97,7 +184,47 @@ Template.entity.helpers({
             return attr;
         });
 
+        
+        
         return attrs.join(' ');
+    }
+});
+
+/**
+ * Forms
+ */
+
+Template.formAttribute.helpers({
+    label: function () {
+        if(this && !_.isEmpty(this.mrAttribute)) {
+            return _.keys(this.mrAttribute)[0];
+        } 
+        return "Label";
+    },
+    value: function () {
+        if(this && !_.isEmpty(this.mrAttribute)) {
+            return _.values(this.mrAttribute)[0];
+        } 
+        return "Value";
+    }
+});
+
+Template.formAttribute.events({
+    'submit form': function (e, tpl) {
+        e.preventDefault();
+        var label = tpl.$('input[name=attribute-label]').val(),
+            value = tpl.$('input[name=attribute-value]').val();
+
+        var provAttributes = {
+            currentRelationOrigin: this.mrOrigin,
+            attributeKey: label.toLowerCase(),
+            attributeValue: value
+        };
+
+        Meteor.call('relationRevisionAttribute', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
     }
 });
 
@@ -156,24 +283,6 @@ function addRelation(info) {
     Meteor.call('entityRelation', provAttributes, function (error, result) {
         if(error)
             return alert(error.reason);
-    });
-}
-
-function updateEntityAttributes(e, ui) {
-    var provAttributes = {
-        mrEntity: _self.data.entity.mrOrigin,
-        currentAttributeOrigin: _self.data.attributes.mrOrigin,
-        mrAttribute: {
-            width: innerWrapper.css('width'),
-            height: innerWrapper.css('height'),
-            top: outerWrapper.css('top'),
-            left: outerWrapper.css('left')
-        }
-    };
-
-    Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
-        if(error) 
-            alert(error.reason);
     });
 }
 

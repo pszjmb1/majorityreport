@@ -60,7 +60,7 @@ Meteor.publish('relations', function(origins) {
     
 });
 
-Meteor.publish('entityRelatives', function(origins) {
+Meteor.publish('relatives', function(origins) {
     if(!origins || _.isEmpty(origins)) { return; }
 
     return Provenance.find({
@@ -68,7 +68,5 @@ Meteor.publish('entityRelatives', function(origins) {
         provType: 'MR: Entity Relative', 
         wasInvalidatedBy: { $exists: false} 
     });
-
-
 
 });

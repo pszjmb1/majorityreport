@@ -255,9 +255,8 @@ Meteor.methods({
 			provGeneratedAtTime: now
 		};
 
-		delete entity._id;
-		var revisionId = Provenance.insert(entity);
-		Provenance.update(revisionId, {$set: newEntity});
+		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
+		var revisionId = Provenance.insert(entityEntry);
 
 		// Add an activity for inserting new attribute /////////////////////////
 		var activity = {
@@ -317,9 +316,8 @@ Meteor.methods({
 			provGeneratedAtTime: now
 		};
 
-		delete entity._id;
-		var revisionId = Provenance.insert(entity);
-		Provenance.update(revisionId, {$set: newEntity});
+		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
+		var revisionId = Provenance.insert(entityEntry);
 
 		// Add an activity for inserting new attribute /////////////////////////
 		var activity = {
@@ -372,10 +370,10 @@ Meteor.methods({
 		// Insert a new revision
 		var attribute = getLatestRevision(provAttributes.currentAttributeOrigin),
 			currentAttributeId = attribute._id;
-		delete attribute._id;
+		
+		var attributeEntry = _.extend(_.omit(attribute, '_id'), newAttribute);
 
-		var revisionId = Provenance.insert(attribute);
-		Provenance.update(revisionId, {$set: newAttribute });      
+		var revisionId = Provenance.insert(attributeEntry);
 				
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
@@ -415,7 +413,7 @@ Meteor.methods({
 			provGeneratedAtTime: now,
 			mrSource: provAttributes.source,
 			mrTarget: provAttributes.target,
-			mrAnnotation: {}
+			mrAttribute: {}
 		};
 
 		var relationId = Provenance.insert(relation);
@@ -471,9 +469,8 @@ Meteor.methods({
 
 				listToUpdate.push(relationId);
 
-				delete existingEntity._id;
-				var relationRevisionId = Provenance.insert(existingEntity);
-				Provenance.update(relationRevisionId, {$set: newEntity});
+				var revisionEntry = _.extend(_.omit(existingEntity, '_id'), newEntity);
+				var relationRevisionId = Provenance.insert(revisionEntry);
 
 				// Add a corresponding revision provenance /////////////////////////////
 				var relationRevisionActivity = {
@@ -530,8 +527,6 @@ Meteor.methods({
 				var collection = getRelationsList(),
 					currentCollectionId = collection._id;
 
-				delete collection._id;
-
 				var revision = {
 					provHadMember: collection.provHadMember,
 					provGeneratedAtTime: now
@@ -542,8 +537,8 @@ Meteor.methods({
 				};
 				revision.provHadMember.push(member);
 
-				var listRevisionId = Provenance.insert(collection);
-				Provenance.update(listRevisionId, {$set: revision});
+				collectionEntry = _.extend(_.omit(collection, '_id'), revision);
+				var listRevisionId = Provenance.insert(collectionEntry);
 
 				// Add a corresponding revision provenance /////////////////////////////
 				var listRevisionActivity = {
@@ -567,7 +562,7 @@ Meteor.methods({
 			}
 		}
 	},
-	relationRevisionAnnotation: function(provAttributes) {
+	relationRevisionAttribute: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
@@ -580,24 +575,23 @@ Meteor.methods({
 		
 		// Prepare the new information
 		var newEntity = {
-			mrAnnotation: {},
+			mrAttribute: {},
 			provGeneratedAtTime: now
 		};
-		newEntity.mrAnnotation[provAttributes.annotationKey] = provAttributes.annotationValue;
+		newEntity.mrAttribute[provAttributes.attributeKey] = provAttributes.attributeValue;
 
 
 		// Clone the latest version of the relation and update it
 		var relation = getLatestRevision(provAttributes.currentRelationOrigin),
-			currentRelationId = relation._id ;
-		delete relation._id;
-
-		var revisionId = Provenance.insert(relation);
-		Provenance.update(revisionId, {$set: newEntity });      
+			currentRelationId = relation._id,
+			relationEntry = _.extend(_.omit(relation, '_id'), newEntity);
+		
+		var revisionId = Provenance.insert(relationEntry);   
 				
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
 			provClasses:['Derivation'],
-			mrReason: 'Relation Annotation Update',
+			mrReason: 'Relation Attribute Update',
 			provAtTime : now,
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
@@ -723,16 +717,12 @@ Meteor.methods({
 		var currentMap = getLatestRevision(provAttributes.currentMapOrigin),
 			currentMapId = currentMap._id;
 
-
-		delete currentMap._id;
+		var revisedMap = {
+			provGeneratedAtTime: now, 
+			provHadMember: currentMap.provHadMember.push(markerId)
+		};
+		var mapEntry = _.extend(_.omit(currentMap, '_id'), revisedMap);
 		var mapRevisionId = Provenance.insert(currentMap);
-
-		Provenance.update(mapRevisionId, 
-			{ 
-				$set: {provGeneratedAtTime: now},
-				$push: {provHadMember: markerId} 
-			}
-		);
 
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
@@ -789,12 +779,11 @@ function reportRevision(provAttributes) {
 
 	// Clone the current crisis record to retain the original provenance details    
 	var crisis = Provenance.findOne(provAttributes.currentCrisisId),
-		currentCrisisId = crisis._id;
+		currentCrisisId = crisis._id,
+		crisisEntry = _.extend(_.omit(crisis, '_id'), crisisProperties);
 
-	delete crisis._id;
-	var revisionId = Provenance.insert(crisis);
-	Provenance.update(revisionId, {$set: crisisProperties});
-			
+	var revisionId = Provenance.insert(crisisEntry);
+	
 	// Add a corresponding revision provenance /////////////////////////////
 	var revisionActivity = {
 		provClasses:['Derivation'],
