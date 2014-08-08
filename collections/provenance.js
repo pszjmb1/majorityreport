@@ -13,15 +13,13 @@ getReports = function() {
 getLatestRevision = function(origin) {
 	if(!origin) { return; }
 	return Provenance.findOne( 
-		{ mrOrigin: origin,  wasInvalidatedBy: { $exists: false} }, 
-		{ sort: { provGeneratedAtTime: -1 }}
+		{ mrOrigin: origin,  wasInvalidatedBy: { $exists: false} }
 	);
 };
 
 getRelationsList = function() {
 	return Provenance.findOne(
-		{mrCollectionType: 'Relations'},
-		{sort: {provGeneratedAtTime: -1}}
+		{mrCollectionType: 'Relations', wasInvalidatedBy: { $exists: false} }
 	);
 };
 
@@ -445,6 +443,10 @@ Meteor.methods({
 			var now = new Date().getTime(),
 			existingEntity = (isSource) ? getEntityRelative(provAttributes.source) : getEntityRelative(provAttributes.target);
 
+			// Update relatives if the source/target entry already exists
+			// Otherwise, 
+			// - insert a new relative entry to as there isn't an existing one for the source/target entity
+			// - add the newly created entry to the Relations list
 			if(existingEntity) {
 				var listToUpdate,
 					existingId = existingEntity._id,
@@ -476,7 +478,7 @@ Meteor.methods({
 				// Add a corresponding revision provenance /////////////////////////////
 				var relationRevisionActivity = {
 					provClasses:['Derivation'],
-					mrReason: 'Media Relative Update',
+					mrReason: 'Entity Relative Update',
 					provAtTime : now,
 					provWasStartedBy: userProv._id,
 					provWasDerivedFrom: {
@@ -493,7 +495,6 @@ Meteor.methods({
 				return relationRevisionId;
 
 			} else {
-				// Insert a new relative entry as there isnt's a record for the media in question (the source media or target media)
 				var relativeEntry = {
 					provClasses: ['Entity'],
 					provType: 'MR: Entity Relative',

@@ -57,33 +57,18 @@ Template.entity.rendered = function () {
     });  
 
     // Attach plugins - draggable, resizable, jsPlumbs
+    var target = plumber.makeTarget(outerWrapper);
+    var source = plumber.makeSource(connector, {parent: 'parent'});
+
     innerWrapper.resizable({ 
         ghost: true,
         handles: "all",
         stop: updateEntityAttributes 
     });
+    
     plumber.draggable(outerWrapper, { stop: updateEntityAttributes });
-    plumber.makeTarget(outerWrapper);
-    plumber.makeSource(connector, {parent: outerWrapper});
 
-
-    function updateEntityAttributes(e, ui) {
-        var provAttributes = {
-            mrEntity: _self.data.entity.mrOrigin,
-            currentAttributeOrigin: _self.data.attributes.mrOrigin,
-            mrAttribute: {
-                width: innerWrapper.css('width'),
-                height: innerWrapper.css('height'),
-                top: outerWrapper.css('top'),
-                left: outerWrapper.css('left')
-            }
-        };
-
-        Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
-            if(error) 
-                alert(error.reason);
-        });
-    }
+    target.bind('beforeDrop', addRelation);
 };
 
 Template.entity.helpers({
@@ -162,7 +147,6 @@ Template.tools.events({
  * HELPERS/ COMMON METHODS 
  */
 function addRelation(info) {
-
     var provAttributes = {
         // Gather source id, in case of markers look to the "data-id" attribute
         source: $(info.source).attr('data-id') || info.sourceId,
@@ -175,6 +159,23 @@ function addRelation(info) {
     });
 }
 
+function updateEntityAttributes(e, ui) {
+    var provAttributes = {
+        mrEntity: _self.data.entity.mrOrigin,
+        currentAttributeOrigin: _self.data.attributes.mrOrigin,
+        mrAttribute: {
+            width: innerWrapper.css('width'),
+            height: innerWrapper.css('height'),
+            top: outerWrapper.css('top'),
+            left: outerWrapper.css('left')
+        }
+    };
+
+    Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
+        if(error) 
+            alert(error.reason);
+    });
+}
 
 function getOffsetRect(elem) {
     // Solution from http://javascript.info/tutorial/coordinates

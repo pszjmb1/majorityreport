@@ -8,6 +8,12 @@ Meteor.publish('provenance', function() {
 
 Meteor.publish('reports', getReports);
 
+Meteor.publish('relationsList', function() {
+    return Provenance.find(
+        {mrCollectionType: 'Relations', wasInvalidatedBy: { $exists: false} }
+    );
+});
+
 Meteor.publish('userAgents', function() {
     var agents = Provenance.find({provClasses: 'Agent'});
     var users = Meteor.users.find();
@@ -45,4 +51,24 @@ Meteor.publish('entitiesAndAttributes', function(origins) {
 
 Meteor.publish('relations', function(origins) {
     if(!origins || _.isEmpty(origins)) { return; }
+
+    return Provenance.find({
+        mrOrigin: {$in: origins}, 
+        provType: 'MR: Relation', 
+        wasInvalidatedBy: { $exists: false} 
+    });
+    
+});
+
+Meteor.publish('entityRelatives', function(origins) {
+    if(!origins || _.isEmpty(origins)) { return; }
+
+    return Provenance.find({
+        mrOrigin: {$in: origins}, 
+        provType: 'MR: Entity Relative', 
+        wasInvalidatedBy: { $exists: false} 
+    });
+
+
+
 });
