@@ -2,143 +2,25 @@
     {{> tools}}
     <div id="board">
     {{#each provHadMember}}
-        {{#with entityWithAttribute}}
+        {{#with entityWithAttributes}}
             {{> entity}}
         {{/with}}
     {{/each}}
-    {{!-- Ready the different relations related with the current media items --}}
-    {{#each renderedEntities}}
-        {{#with entityRelative this}}
-            {{ maintainRelations}}
-         {{/with}} 
-    {{/each}}
-
-    {{!-- Once the media items have been rendered, draw the different relations between them --}}
-    {{#if allEntitiesRendered}}
-        {{#each relations}}
-            {{#with relationDetails}}
-                {{#if isConnected}}
-                    {{ updateConnection annotation}}
-                {{ else }}
-                    {{ drawConnection annotation}}
-                {{/if}}
-            {{/with}}
-        {{/each}}
-    {{/if}}
-    <div class="form-annotate">
-        {{> formRelationAnnotate}}
-    </div>
     
     </div>
 </template>
 
 <template name="entity">
-    <div id="{{ this.entity.mrOrigin }}" class="wrapper-medium draggable" style="{{ pickStyles 'wrapper' }}">
-        <div class="resizable" style="{{ pickStyles 'item' }}">
-            {{#if entityOfType entityType 'image'}}
-                <img class="item-medium" src="{{ this.entity.provAtLocation }}" />
-            {{else}} {{#if entityOfType entityType 'map'}}
-                {{> entityMap this.entity}}
-            {{/if}}{{/if}}
+    <div id="{{ this.entity.mrOrigin }}" class="entity-outer" style="{{entityAttributes 'outer'}}">
+        <div class="entity-inner entity-item-{{entityType}}"  style="{{entityAttributes}}">
+               {{> UI.dynamic template=entityType data=this.entity }}
         </div>
         <div class="connector"></div>
-        {{#with this.entity}}
-            {{> meta }}
-        {{/with}}
     </div>
 </template>
 
-<template name="entityMap">
-    <div id="{{this.mrOrigin}}-map" class="map"></div>
-    {{#each provHadMember}}
-        {{#with compactInfo ..}}
-            {{> entityMarker}}
-        {{/with}}
-    {{/each}}
-</template>
-
-<template name="entityMarker">
-    {{#if isMarkerAlreadyRendered}}
-        {{maintain}}
-    {{/if}}
-</template>
-
-<template name="markerPopup">
-    <div class="marker-meta">
-        {{#with this}}
-            {{> meta}}
-            <h5>Relatives:</h5>
-            {{#with relatives}}
-                {{#each entities this.mrTarget}}
-                    <div class="relation-item-marker relation-item-marker-target">{{this.mrTarget}}</div>
-                {{/each}}
-            {{/with}}
-        {{/with}}
-    </div>
-</template>
-
-
-<template name="meta">
-    <div class="meta-medium">
-        {{#if title}}
-            <div class="media-title"><h5>{{title}}</h5></div>
-        {{/if}}
-        <button class="btn btn-default btn-xs show-attributes"><i class="fa fa-info-circle"></i> Add Attribute</button>
-        {{#if isMarkerPopup}}
-            <ul class="attributes">
-                {{#each attributes}}
-                    <li>
-                        {{#with detailsWithContext ..}}
-                            {{> attributeItem}}
-                        {{/with}}
-                    </li>
-                {{/each}}
-            </ul>
-            <div class="medium-attributes">
-                {{#with this}}
-                    {{> formAttribute}}
-                {{/with}}
-            </div> 
-        {{else}}
-            <div class="medium-attributes">
-                {{#with this}}
-                    {{> formAttribute}}
-                {{/with}}
-                <ul class="attributes">
-                    {{#each attributes}}
-                        <li>
-                            {{#with detailsWithContext ..}}
-                                {{> attributeItem}}
-                            {{/with}}
-                        </li>
-                    {{/each}}
-                </ul>
-            </div> 
-        {{/if}}
-           
-    </div>
-</template>
-
-<template name="formAttribute">
-    <form name="form-attribute">
-        <input type="text" name="attrKey" placeholder="Label"/>
-        <input type="text" name="attrValue" placeholder="Content"/>
-        <button class="btn btn-success" type="submit"><i class="fa fa-plus-circle"></i> Attributes</button>
-    </form>
-</template>
-
-<template name="attributeItem">
-    <i class="fa fa-minus-square-o remove-attribute"></i>
-    <span class="label" data-key={{key}}>{{key}}</span> <span class="value">{{value}}</span>
-</template>
-
-<template name="formRelationAnnotate">
-    <form>
-        <input type="text" name="annotation-label" id="annotation-label" placeholder="Label"/>
-        <input type="text" name="annotation-value" id="annotation-value" placeholder="Value"/>
-        <button class="btn btn-success" type="submit"><i class="fa fa-plus-circle"></i>Save Annotation</button>
-        <input type="hidden" data-relation="" name="annotation-relation-id" />
-    </form>
+<template name="media">
+    <img src="{{provAtLocation}}" />
 </template>
 
 <template name="tools">

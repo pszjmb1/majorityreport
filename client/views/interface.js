@@ -1,35 +1,11 @@
-/**
- * Implements the freeform interface with relations between media
- * 
- * Templates:
- * [1]: freeform
- * - delegates media rendering to the "media" template
- * - maintains relationships related to the current media using Session vars 
- * - handles drawing of the relations between media items
- * - the ability to annotate relations, wraps the annotation form in a *dialog*
- * [2]: formRelationAnnotate
- * - simply renders the fields required for adding/changin a relation annotation
- * - activated/initialised/called as a dialog from the 'freeform' template
- * - deals with db operations (adding/updating) relating to annotations
- * [3]: entities
- * - simply presents options to add different kinds of media
- * - handles corresponding operations for inserting an item within a report
- * [4]: media 
- * [5]: meta - displays media attributes and allows insertion/deletion/update
- * [6]: formAttribute - corresponds to the meta template
- * [7]: attributeItem - corresponds to the meta template
- * [8]: entityMap - Renders map and binds related operations
- *
- * Makes use of jQuery UI and jsPlumb 
- * - Always maintains a single instace of jsPlumb
- * - each relation is given its own scope in regards to jsPlumb
- */
-
 var plumber, maps = {}, markers = {};
 
+UI.registerHelper('printObject', function(obj) {
+    return JSON.stringify(obj);
+});
+
 Template.freeform.created = function () {
-    Session.set('relations', []);
-    Session.set('renderedEntityItems', []);
+    Session.set('renderedEntities', []);
 
     jsPlumb.ready(function() {
         plumber = jsPlumb.getInstance({
@@ -47,56 +23,6 @@ Template.freeform.created = function () {
 Template.freeform.rendered = function () {
     var _self = this,
         board = this.$('#board');
-    
-
-    // Prepare the modal form for annotating relations
-    var dialog = _self.$('.form-annotate');
-    dialog.dialog({ 
-        autoOpen: false,
-        open: function(e) {
-            var relationOrigin = dialog.find('input[name=annotation-relation-id]').attr('data-relation'),
-                relation = getLatestRevision(relationOrigin);
-
-            //  If annotation exists, prepopulate the modal form with existing values
-            if(relation.mrAnnotation && !_.isEmpty(relation.mrAnnotation)) {
-                var fieldLabel = dialog.find('input[name=annotation-label]'),
-                    fieldValue = dialog.find('input[name=annotation-value]'),
-                    annotation = _.pairs(relation.mrAnnotation)[0];
-                fieldLabel.val(annotation[0]);
-                fieldValue.val(annotation[1]);
-            }
-        }
-    });
-
-
-    // Selectable 
-    board.selectable({filter: '.wrapper-medium'});
-
-    // Listen to changes in child elements 
-    board.bind('entity-changed', function() {
-        // Redraw relations/connections on every resizing or dragging
-        plumber.repaintEverything();
-
-        // Adjust board height to allow for selecting divs 
-        // based on solution from: http://stackoverflow.com/a/24922818
-        // -- (http://jsfiddle.net/genkilabs/WCw8E/2/)
-        var offset = 40,
-            finalWidth = $(window).width() - board.position().left - offset,
-            finalHeight = $(window).height() - board.position().top - offset;
-
-        board.find('.ui-draggable').each(function() {
-            var itemWidth = $(this).position().left + $(this).width() - board.position().left + offset,
-                itemHeight = $(this).position().top + $(this).height() - board.position().top + offset;
-
-            if(finalWidth < itemWidth) { finalWidth = itemWidth; }
-            if(finalHeight < itemHeight) { finalHeight = itemHeight; }
-        });
-
-        if(board.width() != finalWidth) { board.width(finalWidth); }
-        if(board.height() != finalHeight) { board.height(finalHeight); }
-
-    });    
-    
 };
 
 Template.freeform.destroyed = function () {
@@ -105,474 +31,92 @@ Template.freeform.destroyed = function () {
 
 
 Template.freeform.helpers({
-    allEntitiesRendered: function() {
-        if(this.provHadMember) {   
-            return (this.provHadMember.length === (Session.get('renderedEntityItems')).length);
-        }
-    },
-    entityWithAttribute: function() {
-        return {
+    entityWithAttributes: function() {
+        var info = {
             attributes: getLatestRevision(this.mrAttribute),
             entity: getLatestRevision(this.mrEntity),
         };
+
+        if(info.attributes && info.entity) {return info; }
     },
     renderedEntities: function() {
-        return Session.get('renderedEntityItems');
-    },
-    entityRelative: function(entity) {
-        return getEntityRelative(entity);  
-    }, 
-    maintainRelations: function() {
-        // Get the relevant targets and sources for the current media
-        // and combine them into one single array
-        // Once the array is ready accumulate only the unique relations that are present accross different media
-        var sourceAndTarget = _.flatten(_.extend(this.mrSource, this.mrTarget)),
-            relations = Session.get('relations'),
-            newRels = _.union(relations, sourceAndTarget);
-
-        Session.set('relations', newRels);
-    },
-    relations: function() {
-        return Session.get('relations');
-    },
-    relationDetails: function() {
-        return getLatestRevision(this.valueOf());
-    },
-    isConnected: function() {
-        return (plumber.select({scope: this.mrOrigin}).length > 0);
-    },
-    annotation: function() {
-        if(this.mrAnnotation && !_.isEmpty(this.mrAnnotation) ) {
-            var annotation = _.pairs(this.mrAnnotation)[0];
-            return annotation[0] +": "+ annotation[1];
-        }
-    },
-    drawConnection: function(annotation) {
-        var _self = this;
-        var sourceElem = document.getElementById(_self.mrSource),
-            targetElem = document.getElementById(_self.mrTarget);
-
-        // Draw a new connection only if it hasn't been drawn before
-        if(sourceElem && targetElem) {
-            var connection = plumber.connect({
-                scope: _self.mrOrigin,
-                source: sourceElem,
-                target: targetElem,
-                overlays: [
-                    "Arrow",
-                    ["Label", {cssClass: "connection-annotation"}]
-                ]
-            });
-
-            // Set the annotation if it exists
-            if(annotation) { connection.setLabel(annotation); }
-
-            // Ensure the ability to annotate a relationship
-            connection.bind('click', function(conn, evt) {
-                var dialog = $('.form-annotate'),
-                    fieldLabel = dialog.find('input[name=annotation-label]'),
-                    fieldValue = dialog.find('input[name=annotation-value]'),
-                    fieldRelation = dialog.find('input[name=annotation-relation-id]');
-
-                // Pass the relation reference to the form 
-                //   for the purpose of updating the apporirate relation.
-                fieldRelation.attr('data-relation', _self.mrOrigin);
-                dialog.dialog("open");
-            });
-        }
-    },
-    updateConnection: function(annotation) {
-        if(annotation) {
-            plumber.select({scope: this.mrOrigin}).setLabel(annotation);
-        }
+        return Session.get('renderedEntities');
     }
-
 });
 
-Template.entity.rendered = function() {
-    // Select the elements that are present only within this template instance
+/**  Render entities - media, maps */
+Template.entity.rendered = function () {
     var _self = this,
-        dragger = _self.$('.draggable'),
-        resizer = _self.$('.resizable'),
-        wrapper = _self.$('.wrapper-medium'),
-        connector = _self.$('.connector');
+        outerWrapper = _self.$('.entity-outer'),
+        innerWrapper = _self.$('.entity-inner'),
+        connector = _self.$('.connector'); 
 
-    Meteor.defer(function(){
-        var renderedMedia = Session.get('renderedEntityItems');
-        renderedMedia.push(_self.data.entity.mrOrigin);
-        Session.set('renderedEntityItems', renderedMedia);
-    });
+    Meteor.defer(function() {
+        var renderedList = Session.get('renderedEntities');
+        renderedList.push(_self.data.entity.mrOrigin);
+    });  
 
-    var target = plumber.makeTarget(wrapper);
-    var source = plumber.makeSource(connector, {parent: wrapper});
-
-    plumber.draggable(dragger, {
-        // containment: 'parent',
-        start: function(){ 
-            $(this).addClass('dragging-active'); 
-        },
-        stop: function(){ 
-            // Fire custom event to handle every change in entity styles
-            $('#board').trigger('entity-changed');
-            $(this).removeClass('dragging-active'); 
-            updateMediaProperties();
-        },
-    });
-
-    resizer.resizable({
+    // Attach plugins - draggable, resizable, jsPlumbs
+    innerWrapper.resizable({ 
         ghost: true,
         handles: "all",
-        start: function(){ $(this).addClass('resizing-active'); },
-        stop: function(){ 
-            var parentDimensionOffset = {
-                width: 10,
-                height: 40
-            };
-
-            $(this).removeClass('resizing-active');
-            updateMediaProperties();
-        },
+        stop: updateEntityAttributes 
     });
+    plumber.draggable(outerWrapper, { stop: updateEntityAttributes });
+    plumber.makeTarget(outerWrapper);
+    plumber.makeSource(connector, {parent: outerWrapper});
 
-    target.bind('beforeDrop', function(info) {
-        addRelation(info);
-    });
 
-    function updateMediaProperties() {
+    function updateEntityAttributes(e, ui) {
         var provAttributes = {
-            mrMedia: _self.data.entity.mrOrigin,
-            currentAttributeId: _self.data.attributes._id,
+            mrEntity: _self.data.entity.mrOrigin,
             currentAttributeOrigin: _self.data.attributes.mrOrigin,
             mrAttribute: {
-                width: resizer.css('width'),
-                height: resizer.css('height'),
-                top: dragger.css('top'),
-                left: dragger.css('left')
+                width: innerWrapper.css('width'),
+                height: innerWrapper.css('height'),
+                top: outerWrapper.css('top'),
+                left: outerWrapper.css('left')
             }
         };
-        
-        // Update the properties in the db and create a new revision for the changes
-        Meteor.call('mediaReportAttributeRevision', provAttributes, function(error, id) {
-            if (error)
-                return alert(error.reason);
+
+        Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
+            if(error) 
+                alert(error.reason);
         });
     }
-
 };
 
 Template.entity.helpers({
-    pickStyles: function(itemScope) {
-        if(_.isEmpty(this.attributes.mrAttribute)) {
+    entityType: function () {
+        if(this.entity) {
+            var type = this.entity.mrCollectionType || this.entity.provType.replace('MR: ', '');
+            if(type) { return type.toLowerCase(); }
+        }
+    },
+    entityAttributes: function(type) {
+        if(!this.attributes || _.isEmpty(this.attributes.mrAttribute)) {
             return;
         }
-        // Fire custom event to handle every change in entity styles
-        $('#board').trigger('entity-changed');
 
-        // Prepare and return appropriate styles
-        var wrapperOffset = { width: 0, height: 55 },
-            keys = ['top', 'left', 'z-index', 'width', 'height'];
-        
-        // Return width and height styles for item, otherwise the positional styles
-        if(itemScope === 'item') { keys = ['width', 'height']; }
+        var keys = ['width', 'height'],
+            outerOffset = { width: 10, height: 55 };        
+        if(type === 'outer') { keys = keys.concat(['top', 'left', 'z-index']); }
 
-        return _.map(_(this.attributes.mrAttribute).pick(keys), function(value, index){ 
-                if(itemScope === 'wrapper' && wrapperOffset[index] !== undefined) 
-                    value = parseInt(value, 10) + wrapperOffset[index] + "px";
-
-                var prop = index +":"+ value; 
-                return prop;
-            }).join(';');
-    },
-    entityOfType: function(type, isType) {
-        return (type === isType);
-    },
-    entityType: function() {
-        var entity = this.entity;
-        if(entity.provType && entity.provType === 'MR: Media') {
-            return 'image';
-        } else if(entity.mrCollectionType && entity.mrCollectionType === "Map") {
-            return 'map';
-        }
-    }, 
-
-});
-
-
-Template.entityMap.rendered = function () {
-    var _self = this,
-        containerId = _self.data.mrOrigin + "-map",
-        map, tileLayer, markersLayer;
-
-    L.Icon.Default.imagePath = '../packages/leaflet/images';
-
-    // setup default map
-    map = L.map(containerId, {
-        center: [20.0, 5.0],
-        minZoom: 2,
-        zoom: 2,
-        doubleClickZoom: false
-    });
-    
-    maps[containerId] = map;
-
-    // Add the tile layer
-    tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
-        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
-         ' | '+ 'Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
-        subdomains: ['otile1','otile2','otile3','otile4']
-    }).addTo(map);
-
-    // Add a search layer
-    map.addControl(new L.Control.Search({
-        url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
-        jsonpParam: 'json_callback',
-        propertyName: 'display_name',
-        propertyLoc: ['lat','lon']
-    }));
-
-    // bind events
-    map.on({
-        dblclick: function(info) { insertMarker(info.latlng); }
-    });
-
-    function insertMarker(latlng) {
-        provAttributes = {
-            currentMapId: _self.data._id,
-            currentMapOrigin: _self.data.mrOrigin,
-            mrLatLng: {
-                lat: latlng.lat,
-                lng: latlng.lng
+        // Convert key/vals to styles 
+        var attrs = _.map(_.pick(this.attributes.mrAttribute, keys), function(value, key) {
+            if(type === 'outer' && outerOffset[key] !== undefined) {
+                value = parseInt(value, 10) + outerOffset[key];
             }
-        };
-        Meteor.call('addMapMarker', provAttributes, function (error, result) {
-            if(error) 
-                return alert(error.reason);
-        });
-    }
 
-};
-
-Template.entityMap.helpers({
-    compactInfo: function (context) {
-        return _.extend(getLatestRevision(this.valueOf()), {mapOrigin: context.mrOrigin});
-    }
-});
-
-Template.entityMarker.rendered = function () {
-    var _self = this;
-
-    Meteor.defer(function() {
-        var mapContainer = _self.data.mapOrigin +"-map",
-            map = maps[mapContainer],
-            marker, popup;
-
-        marker = L.marker(_.flatten(_self.data.mrLatLng)).addTo(map);
-        // Keep tracker of the marker instance
-        markers[_self.data.mrOrigin] = marker;
-
-        // Prepare marker popup
-        var popUpContent = document.createElement('div');
-        UI.insert(UI.renderWithData(Template.markerPopup, _self.data), popUpContent);
-        
-        popup = L.popup({
-            keepInView: true,
-            autoPan: false,
-            className: 'marker-popup'
-        }).setContent(popUpContent);
-
-        marker.bindPopup(popup);
-        marker.on('mouseover', function(e) {
-            this.openPopup();
+            var attr = key +":"+ value +';';
+            return attr;
         });
 
-        // bind any events 
-        $(marker._icon).on('load', function(e) {
-            var elem = $(e.target),
-                connector = document.createElement('div');
-
-            $(elem).attr({ "data-id": _self.data.mrOrigin });
-            var source = plumber.makeSource(elem, {parent: elem});
-        });
-    });
-       
-
-};
-
-Template.entityMarker.helpers({
-    isMarkerAlreadyRendered: function() {
-        return _.has(markers, this.mrOrigin);
-    },
-    maintain: function () {
-        var marker = markers[this.mrOrigin],
-            popup = marker.getPopup();
-
-        var popUpContent = document.createElement('div');
-        UI.insert(UI.renderWithData(Template.markerPopup, this), popUpContent);
-        popup.setContent(popUpContent).update();
+        return attrs.join(' ');
     }
 });
 
-Template.markerPopup.helpers({
-    relatives: function () {
-        return getEntityRelative(this.mrOrigin);
-    },
-    relative: function() {
-        console.log(this);
-    },
-    entities: function(entities) {
-        return _.map(_.flatten(entities), function(relation) {
-            return getLatestRevision(relation);
-        });
-    }
-});
-
-Template.markerPopup.events({
-    'mouseover .relation-item-marker-target': function(e, tpl) {
-        var _self = this,
-            className = "highlight-relative",
-            targetElem = document.getElementById(_self.mrTarget),
-            sourceElem = document.createElement('div'),
-            offset = getOffsetRect(e.target);
-
-        $(sourceElem)
-            .attr('id', _self.mrSource)
-            .offset({
-                top: offset.top, 
-                left: offset.left + e.target.getBoundingClientRect().width,
-            })
-            .addClass('marker-relative-endpoint')
-            .appendTo($(e.target));
-
-        if(targetElem) {
-            $(targetElem).addClass(className);
-            
-            var connection = plumber.connect({
-                scope: _self.mrOrigin,
-                source: sourceElem,
-                target: targetElem,
-                overlays: [
-                    "Arrow",
-                    ["Label", {cssClass: "connection-annotation"}]
-                ]
-            });
-        }
-    },
-    'mouseout .relation-item-marker-target': function(e, tpl) {
-        var className = "highlight-relative",
-            relativeElem = document.getElementById(this.mrTarget),
-            source = document.getElementById(this.mrSource),
-            connection = plumber.getConnections(this.mrOrigin)[0];
-
-        $(source).remove();
-        
-        if(connection) { 
-            plumber.detach(connection, {
-                forceDetach: true
-            });
-        }
-
-        if(relativeElem) {
-            $(relativeElem).removeClass(className);
-        }
-    },
-    
-});
-
-Template.meta.rendered = function () {
-    var _self = this;
-    // Set up our dialog
-    var dialog = _self.$('.medium-attributes').dialog({
-        autoOpen: false,
-        show: {effect: 'fade', duration: 200, ease: 'easeinQuint'},
-        hide: {effect: 'fade', duration: 200, ease: 'easeOutQuint'}
-    });
-
-    // Set up the trigger for our dialog
-    _self.$(".show-attributes").on("click", function(e) {
-        e.preventDefault();
-        dialog.dialog("open");
-    });
-};
-
-Template.meta.helpers({
-    title: function(){
-        return _.result(this.mrAttribute, 'title');
-    },
-    isMarkerPopup: function() {
-        return (this.provType === 'MR: Marker');
-    },
-    shortdesc: function(){
-        return _.result(this.mrAttribute, 'shortdesc');
-    },
-    attributes: function () {
-        return _(this.mrAttribute).map(function(val, key){
-                return {key: key, value: val};
-            });
-    },
-    detailsWithContext: function(entity) {
-        return _(this).extend({ mrEntity : entity});
-    }
-});
-
-Template.formAttribute.events({
-    'submit form': function (e, tpl) {
-        e.preventDefault();
-        var attrKey = tpl.$('input[name=attrKey]').val(),
-            attrValue = tpl.$('input[name=attrValue]').val();
-            
-        var provAttributes = {
-            currentEntityId: this._id,
-            currentEntityOrigin: this.mrOrigin,
-            attrKey: attrKey.toLowerCase(),
-            attrValue: attrValue
-        };
-
-        Meteor.call('entityAttribute', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
-    }
-});
-
-Template.attributeItem.events({
-    'click .remove-attribute': function (e, tpl) {
-       e.preventDefault();
-       var attrKey = this.key;
-
-       var provAttributes = {
-            currentEntityId: this.mrEntity._id,
-            currentEntityOrigin: this.mrEntity.mrOrigin,
-            attrKey: attrKey
-        };
-
-        Meteor.call('entityAttributeRemove', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
-    }
-});
-
-Template.formRelationAnnotate.events({
-    'click .btn': function (e, tpl) {
-        e.preventDefault();
-        
-        var annotationKey = tpl.$('input[name=annotation-label]').val(),
-            annotationValue = tpl.$('input[name=annotation-value]').val().toLowerCase(),
-            relationId = tpl.$('input[name=annotation-relation-id]').attr('data-relation');
-
-        var provAttributes = {
-            currentRelationOrigin: relationId,
-            annotationKey: annotationKey.toLowerCase(),
-            annotationValue: annotationValue
-        };
-
-        Meteor.call('relationRevisionAnnotation', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
-    }
-});
-
+/**  Tools */
 Template.tools.events({
     'submit form[name=media]': function (e, tpl) {
         e.preventDefault();
@@ -617,7 +161,6 @@ Template.tools.events({
 /**
  * HELPERS/ COMMON METHODS 
  */
-
 function addRelation(info) {
 
     var provAttributes = {

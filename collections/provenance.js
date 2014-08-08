@@ -191,7 +191,7 @@ Meteor.methods({
 		// its attributes **relative** to the report, i.e. position, dimensions
 		var entityAttribute = {
 			provClasses: ['Entity'],
-			provType: 'MR: Media Report Attributes',
+			provType: 'MR: Entity Report Attributes',
 			provGeneratedAtTime: now,
 			mrAttribute: {}
 		}; 
@@ -354,7 +354,7 @@ Meteor.methods({
 
 		return revisionId;
 	},
-	mediaReportAttributeRevision: function(provAttributes) {
+	entityReportAttributeRevision: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
@@ -382,7 +382,7 @@ Meteor.methods({
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
 			provClasses:['Derivation'],
-			mrReason: 'Media Report Attribute Update',
+			mrReason: 'Entity Report Attribute Update',
 			provAtTime : now,
 			provWasStartedBy: currentUser._id,
 			provWasDerivedFrom: {
@@ -653,7 +653,7 @@ Meteor.methods({
 		// its attributes **relative** to the report, i.e. position, dimensions
 		var mapAttribute = {
 			provClasses: ['Entity'],
-			provType: 'MR: Map Properties',
+			provType: 'MR: Entity Report Attributes',
 			provGeneratedAtTime: now,
 			mrAttribute: {}
 		}; 

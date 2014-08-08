@@ -8,13 +8,21 @@ Meteor.publish('provenance', function() {
 
 Meteor.publish('reports', getReports);
 
-Meteor.publish('agents', function() {
-    return Provenance.find({provClasses: 'Agent'});
+Meteor.publish('userAgents', function() {
+    var agents = Provenance.find({provClasses: 'Agent'});
+    var users = Meteor.users.find();
+
+    return [ agents, users];
 });
 
 Meteor.publish('activities', function(origins) {
     if(!origins || _.isEmpty(origins)) { return; }
     return Provenance.find( {provClasses: "Activity", provGenerated: {$in: _.unique(origins)}} );
+});
+
+Meteor.publish('activity', function(origin) {
+    if(!origin) { return; }
+    return Provenance.find( {provClasses: "Activity", provGenerated: origin} );
 });
 
 
@@ -32,4 +40,9 @@ Meteor.publish('entitiesAndAttributes', function(origins) {
     return Provenance.find(
         {mrOrigin: {$in: _.unique(origins)}, wasInvalidatedBy: { $exists: false} }
     );
+});
+
+
+Meteor.publish('relations', function(origins) {
+    if(!origins || _.isEmpty(origins)) { return; }
 });
