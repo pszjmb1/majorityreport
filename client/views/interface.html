@@ -28,16 +28,41 @@
 
 <template name="markerPopup">
     <div class="marker-tools">
-        <button class="add-atrribute"><i class="fa"></i>Add Attribute</button>
-        <a class="btn btn-default add-relation"><i class="fa"></i>Add Relation</a>
-        <button class="remove-marker"><i class="fa"></i>Remove Marker</button>
+        <a class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</a>
+        <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
     </div>
-    <div class="attributes">
-        {{printObject attributes}}
-    </div>
-    <div class="relations">
-        {{printObject relations 'mrTarget'}}
-    </div>
+    {{> displayAttributes this}}
+    {{> displayRelations this}}
+</template>
+
+<template name="displayAttributes">
+    {{#if isValid attributes}}
+        <div class="attributes">
+            <h4>Attributes</h4>
+            {{#each attributes}}
+                <span class="label label-info">{{label}}: {{value}}  <a href="#" class="remove-attribute">x</a> </span>
+            {{/each}}
+        </div>
+    {{/if}}
+</template>
+
+<template name="displayRelations">
+    {{#if isValid relations}}
+        <div class="relations">
+            <h4>Relatives</h4>
+            {{#each relations 'mrTarget'}}
+                <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
+            {{/each}}
+        </div>
+    {{/if}}
+</template>
+
+<template name="displayThumbnail">
+    {{#if isEntityType "media"}}
+        <img src="{{provAtLocation}}" class="entity-thumbnail entity-thumbnail-media">
+    {{else}} {{#if isEntityType "map"}}
+        <i class="fa fa-globe fa-3x"></i>
+    {{/if}}{{/if}}
 </template>
 
 <template name="formAttribute">

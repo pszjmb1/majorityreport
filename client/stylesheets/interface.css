@@ -1,7 +1,11 @@
+#board { 
+	position: relative;
+}
+
 .entity-outer {
-	padding: 5px;
+	padding: 3px;
 	position: absolute;
-	border: 1px solid #efefef;
+	border: 2px dashed rgba(255,255,255, 0.0);
 }
 
 .entity-outer:hover {
@@ -29,27 +33,12 @@
 }
 
 /*Medium meta/attributes */
-ul.attributes,
-ul.attributes li {
-	margin: 0;
-	list-style: none;
+.attributes span.label {
+	font-size: 11px;
+	display: inline-block;
+	margin-bottom: 4px;
+	margin-right: 5px;
 }
-
-ul.attributes li { 
-	clear: both;
-	border-bottom: 1px dotted #ccc;
-	padding: 5px 0;
-}
-
-ul.attributes li .remove-attribute {
-	float: right;
-}
-
-ul.attributes li .remove-attribute:hover {
-	color: red;
-	cursor: pointer;
-}
-
 
 /*Plumbing*/
 .connector {
@@ -69,19 +58,35 @@ ul.attributes li .remove-attribute:hover {
 	width: 250px;
 	max-width: 250px;
 }
-.relation-item-marker {
-	padding: 5px;
-	margin-bottom: 5px;
+
+
+.relative-entity-item {
+	line-height: 0;
+	width: 34px;
+	height: 34px;
+	opacity: 0.7;
+	margin-right: 5px;
+	border-radius: 50%;
+	overflow: hidden;
+	display: inline-block;
 }
-.relation-item-marker:hover {
-	background-color: #fa8;
+
+.relative-entity-item > img.entity-thumbnail-media {
+	width: 100%;
+	height: auto;
 }
-.highlight-relative {
-	border: 2px dashed #ca8;
+
+.relative-entity-item:hover {
+	cursor: hand;
+	opacity: 1;
 }
 
 .marker-relative-endpoint {
 	position: fixed;
+}
+
+.highlight-entity {
+	border: 2px dashed #ca8;
 }
 
 /* Temporary */

@@ -28,7 +28,6 @@ getEntityRelative = function(entity) {
 	var relative,
 	rList = getRelationsList();
 	if(rList && rList.provHadMember) {
-		console.log(_.contains(_.pluck(_.flatten(rList.provHadMember), 'mrEntity'), entity), entity);
 		relative = _.findWhere(rList.provHadMember, {mrEntity: entity});
 	
 		if(relative && relative.mrRelative) 
@@ -313,7 +312,7 @@ Meteor.methods({
 
 		var newEntity = {
 			// Remove the attribute key from the existing list/object
-			mrAttribute: _(existingAttrs).omit(provAttributes.attrKey),
+			mrAttribute: _.omit(existingAttrs, provAttributes.attrKey),
 			provGeneratedAtTime: now
 		};
 
@@ -613,7 +612,7 @@ Meteor.methods({
 		//Invalidate the previous version
 		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
-		return revisionId;
+		// return revisionId;
 	},
 	crisisReportMap: function(provAttributes) {
 		var user = Meteor.user();

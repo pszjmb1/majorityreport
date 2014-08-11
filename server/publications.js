@@ -77,14 +77,3 @@ Meteor.publish('relatives', function(origins) {
     );
 
 });
-
-Meteor.publish('selectEntities', function(origins){
-    if(!origins || _.isEmpty(origins)) { return; } 
-    return Provenance.find(
-        {
-            mrOrigin: {$in: origins}, 
-            wasInvalidatedBy: { $exists: false} 
-        },
-        { sort: {provGeneratedAtTime: -1}}
-    );
-});

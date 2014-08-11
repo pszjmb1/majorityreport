@@ -1,8 +1,21 @@
 var plumber, maps = {}, markers = {};
 
-UI.registerHelper('printObject', function(obj, keys) {
-    if(keys) { obj = _.pick(obj, keys); }
+UI.registerHelper('printObject', function(obj) {
     return JSON.stringify(obj);
+});
+
+UI.registerHelper('isValid', function(item) {
+    if(item !== undefined || item !== null) {
+        if(_.isArray(item) || _.isObject(item)) {
+            if(!_.isEmpty(item))
+                return true;
+            else
+                return false;
+        } else {
+            return true;
+        }
+    }
+    return false;
 });
 
 Template.freeform.created = function () {
@@ -236,6 +249,7 @@ Template.map.rendered = function () {
         added: processMarker,
         changed: processMarker,
     });
+
     function processMarker(doc) {
         // if origin id is not present, return
         // if the marker is not a member of the map, return 
@@ -303,15 +317,7 @@ Template.markerPopup.rendered = function () {
 };
 
 Template.markerPopup.helpers({
-    attributes: function() {
-        if(this.mrAttribute)
-            return this.mrAttribute;
-    },
-    relations: function() {
-        if(this.mrOrigin) {
-            return getEntityRelative(this.mrOrigin);
-        }
-    }
+
 });
 
 Template.markerPopup.events({
@@ -331,19 +337,122 @@ Template.markerPopup.events({
 });
 
 /**
+ * Shared Templates
+ */
+Template.displayAttributes.helpers({
+    attributes: function() {
+        if(!_.isEmpty(this.mrAttribute)) {
+            var output = _.map(this.mrAttribute, function(value, label) {
+                return {label: label, value: value};
+            });
+            return output;
+        }
+    },
+});
+
+Template.displayAttributes.events({
+    'click .remove-attribute': function (e,tpl) {
+        e.preventDefault();
+        var attrKey = this.label;
+
+        var provAttributes = {
+            currentEntityOrigin: tpl.data.mrOrigin,
+            attrKey: attrKey
+        };
+
+        Meteor.call('entityAttributeRemove', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+    }
+});
+
+Template.displayRelations.helpers({
+    relations: function(key) {
+        if(this.mrOrigin) {
+            var list = getEntityRelative(this.mrOrigin);
+            if(list && list[key]) {
+                var relationOrigins = _.flatten(list[key]);
+                return Provenance.find(
+                    {mrOrigin: {$in: relationOrigins}, provType: 'MR: Relation', wasInvalidatedBy: {$exists: false}}
+                );
+            }
+
+        }   
+    },
+    getEntity: function(item) {
+        return getLatestRevision(item);
+    }
+});
+
+Template.displayRelations.events({
+    'mouseover .relative-entity-item': function (e,tpl) {
+        var _self = this,
+            endpointClassname = 'endpoint-marker',
+            relativeClassName = 'highlight-entity',
+            sourceElem = document.createElement('div'),
+            targetElem = document.getElementById(_self.mrTarget),
+            offset = getOffsetRect(e.currentTarget);
+
+        $(sourceElem)
+            .attr('id', _self.mrSource)
+            .offset({
+                top: offset.top, 
+                left: offset.left + e.target.getBoundingClientRect().width,
+            })
+            .appendTo($(e.target));
+
+        if(targetElem) {
+            $(targetElem).addClass(relativeClassName);
+
+            plumber.connect({
+                scope: _self.mrOrigin,
+                source: sourceElem,
+                target: targetElem
+            });
+        }
+    },
+    'mouseout .relative-entity-item': function(e, tpl) {
+        var _self = this,
+            relativeClassName = 'highlight-entity',
+            sourceElem = document.getElementById(_self.mrSource),
+            targetElem = document.getElementById(_self.mrTarget),
+            connection = plumber.getConnections(_self.mrOrigin)[0];
+
+        $(sourceElem).remove();
+
+        if(connection) {
+            plumber.detach(connection);
+        }
+
+        if(targetElem) { 
+            $(targetElem).removeClass(relativeClassName);
+        }
+
+    }
+
+});
+
+Template.displayThumbnail.helpers({
+    isEntityType: function(type) {
+        return (getEntityType(this) === type);
+    },
+});
+
+/**
  * Forms
  */
 
 Template.formAttribute.helpers({
     label: function () {
         if(this && !_.isEmpty(this.mrAttribute)) {
-            return _.keys(this.mrAttribute)[0];
+            return _.keys(this.mrAttribute)[_.toArray(this.mrAttribute).length - 1];
         } 
         return "Label";
     },
     value: function () {
         if(this && !_.isEmpty(this.mrAttribute)) {
-            return _.values(this.mrAttribute)[0];
+            return _.values(this.mrAttribute)[_.toArray(this.mrAttribute).length - 1];
         } 
         return "Value";
     }
