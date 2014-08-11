@@ -14,6 +14,7 @@
         <div class="entity-inner entity-item-{{entityType}}"  style="{{entityAttributes}}">
                {{> UI.dynamic template=entityType data=this.entity }}
         </div>
+        <button class="entity-info btn btn-default btn-xs"><i class="fa fa-info-circle"></i> Info</button>
         <div class="connector"></div>
     </div>
 </template>
@@ -26,13 +27,16 @@
     <div id="{{mrOrigin}}-map" class="map"></div>
 </template>
 
-<template name="markerPopup">
-    <div class="marker-tools">
-        <a class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</a>
-        <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
-    </div>
-    {{> displayAttributes this}}
-    {{> displayRelations this}}
+<template name="entityInfo">
+    {{#with latestVersion}}
+        <div class="entity-info-tools">
+            <a class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</a>
+            <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
+        </div>
+        {{> displayAttributes this}}
+        {{> displayRelations this}}
+    {{/with}}
+    
 </template>
 
 <template name="displayAttributes">
@@ -66,7 +70,7 @@
 </template>
 
 <template name="formAttribute">
-    <div id="{{mrOrigin}}-form-attr">
+    <div>
         <form>
             <input type="text" name="attribute-label" id="attribute-label" placeholder="{{label}}"/>
             <input type="text" name="attribute-value" id="attribute-value" placeholder="{{value}}"/>

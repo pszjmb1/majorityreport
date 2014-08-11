@@ -80,28 +80,7 @@ Template.freeform.rendered = function () {
             });
 
             connection.bind('click', function(conn, e) {
-                var dialog,
-                    existingElem = document.getElementById(relation.mrOrigin+"-form-attr");
-
-                // Add focus to the existing dialog
-                if(existingElem) {
-                    dialog = $(existingElem).closest('.ui-dialog')[0];
-                    $(dialog).effect('shake', {distance: 4, times: 2});
-
-                    return;
-                } 
-
-                // Create a new dialog with attribute form if doesnt exist already
-                dialog = document.createElement('div');
-                UI.insert( UI.renderWithData(Template.formAttribute, relation), dialog);
-                $(dialog).appendTo(board);
-
-                $(dialog).dialog({
-                    autoOpen: true,
-                    close: function(e, ui) {
-                        $(this).remove();
-                    }
-                });
+                setUpDialog('formAttribute', relation, 'form-attr');
             });
 
             return connection;
@@ -198,6 +177,12 @@ Template.entity.helpers({
     }
 });
 
+Template.entity.events({
+    'click .entity-info': function (e,tpl) {
+        setUpDialog('entityInfo', this.entity);
+    }
+});
+
 
 /**
  * Maps & Markers
@@ -280,7 +265,7 @@ Template.map.rendered = function () {
 
         // Prepare marker popup
         var popupContent = document.createElement('div');
-        UI.insert(UI.renderWithData(Template.markerPopup, doc), popupContent);
+        UI.insert(UI.renderWithData(Template.entityInfo, doc), popupContent);
         popup.setContent(popupContent);
 
     }
@@ -306,7 +291,7 @@ Template.map.rendered = function () {
 /**
  * Marker Popup
  */
-Template.markerPopup.rendered = function () {
+Template.entityInfo.rendered = function () {
     var _self = this,
         relationElem = _self.$('.add-relation');
     
@@ -316,23 +301,16 @@ Template.markerPopup.rendered = function () {
 
 };
 
-Template.markerPopup.helpers({
-
+Template.entityInfo.helpers({
+    latestVersion: function() {
+        return getLatestRevision(this.mrOrigin);
+    }
 });
 
-Template.markerPopup.events({
+Template.entityInfo.events({
     'click .add-atrribute': function(e, tpl) {
-        // Create a new dialog with attribute form if doesnt exist already
-        dialog = document.createElement('div');
-        UI.insert( UI.renderWithData(Template.formAttribute, this), dialog);
-        $(dialog).appendTo($('#board'));
-
-        $(dialog).dialog({
-            autoOpen: true,
-            close: function(e, ui) {
-                $(this).remove();
-            }
-        });
+        setUpDialog('formAttribute', this, 'form-attr');
+        
     }
 });
 
@@ -534,6 +512,37 @@ function getEntityType(entity) {
         var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
         if(type) { return type.toLowerCase(); }
     }
+}
+
+function setUpDialog(template, entity, selectorSuffix) {
+    var dialog,
+        appendToElem = $('#board'),
+        suffix = selectorSuffix || 'dialog',
+        selector = entity.mrOrigin +'-'+ suffix,
+        existingElem = document.getElementById(selector);
+
+    // Add focus to the existing dialog
+    if(existingElem) {
+        dialog = $(existingElem).closest('.ui-dialog')[0];
+        $(dialog).effect('shake', {distance: 4, times: 2});
+
+        return;
+    } 
+
+    // Create a new dialog with attribute form if doesnt exist already
+    dialog = document.createElement('div');
+    UI.insert( UI.renderWithData(Template[template], entity), dialog);
+
+    $(dialog)
+        .attr('id', selector)
+        .appendTo(appendToElem);
+
+    $(dialog).dialog({
+        autoOpen: true,
+        close: function(e, ui) {
+            $(this).remove();
+        }
+    });
 }
 
 function addToRenderedList(entity) {
