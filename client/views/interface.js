@@ -48,10 +48,6 @@ Template.freeform.rendered = function () {
         }
     });
 
-    function relationAttribute(relation) {
-        
-    }
-
     function drawRelation(relation) {
         var sourceElem = document.getElementById(relation.mrSource),
             targetElem = document.getElementById(relation.mrTarget);
@@ -121,6 +117,7 @@ Template.entity.rendered = function () {
     Meteor.defer(function() {
         var renderedList = Session.get('renderedEntities');
         renderedList.push(_self.data.entity.mrOrigin);
+        Session.set('renderedEntities', renderedList);
     });  
 
     // Attach plugins - draggable, resizable, jsPlumbs
