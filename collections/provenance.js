@@ -27,8 +27,8 @@ getRelationsList = function() {
 getEntityRelative = function(entity) {
 	var relative,
 	rList = getRelationsList();
-
 	if(rList && rList.provHadMember) {
+		console.log(_.contains(_.pluck(_.flatten(rList.provHadMember), 'mrEntity'), entity), entity);
 		relative = _.findWhere(rList.provHadMember, {mrEntity: entity});
 	
 		if(relative && relative.mrRelative) 

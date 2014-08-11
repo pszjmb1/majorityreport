@@ -1,6 +1,7 @@
 var plumber, maps = {}, markers = {};
 
-UI.registerHelper('printObject', function(obj) {
+UI.registerHelper('printObject', function(obj, keys) {
+    if(keys) { obj = _.pick(obj, keys); }
     return JSON.stringify(obj);
 });
 
@@ -119,9 +120,7 @@ Template.entity.rendered = function () {
         connector = _self.$('.connector'); 
 
     Meteor.defer(function() {
-        var renderedList = Session.get('renderedEntities');
-        renderedList.push(_self.data.entity.mrOrigin);
-        Session.set('renderedEntities', renderedList);
+        addToRenderedList(_self.data.entity.mrOrigin);
     });  
 
     // Attach plugins - draggable, resizable, jsPlumbs
@@ -182,8 +181,6 @@ Template.entity.helpers({
             return attr;
         });
 
-        
-        
         return attrs.join(' ');
     }
 });
@@ -262,7 +259,9 @@ Template.map.rendered = function () {
                 className: 'marker-popup'
             });
             // bind popup to marker
-            marker.bindPopup(popup);   
+            marker.bindPopup(popup);
+
+            addToRenderedList(doc.mrOrigin);
         }
 
         // Prepare marker popup
@@ -298,14 +297,20 @@ Template.markerPopup.rendered = function () {
         relationElem = _self.$('.add-relation');
     
     // make relation endpoint
+    relationElem.attr({ "data-id": _self.data.mrOrigin });
     plumber.makeSource(relationElem, {parent: relationElem});
 
 };
 
 Template.markerPopup.helpers({
-    attributes: function () {
+    attributes: function() {
         if(this.mrAttribute)
             return this.mrAttribute;
+    },
+    relations: function() {
+        if(this.mrOrigin) {
+            return getEntityRelative(this.mrOrigin);
+        }
     }
 });
 
@@ -322,13 +327,7 @@ Template.markerPopup.events({
                 $(this).remove();
             }
         });
-    },
-    'mouseover .add-relation': function (e,tpl) {
-        $(e.target).attr('id', this.mrOrigin);
-    }, 
-    'mouseout .add-relation': function(e, tpl) {
-        $(e.target).removeAttr('id');
-    },
+    }
 });
 
 /**
@@ -428,13 +427,18 @@ function getEntityType(entity) {
     }
 }
 
+function addToRenderedList(entity) {
+    var renderedList = Session.get('renderedEntities');
+    renderedList.push(entity);
+    Session.set('renderedEntities', renderedList);
+}
+
 function addRelation(info) {
     var provAttributes = {
         // Gather source id, in case of markers look to the "data-id" attribute
         source: $(info.source).attr('data-id') || info.sourceId,
         target: info.targetId
     };
-
     Meteor.call('entityRelation', provAttributes, function (error, result) {
         if(error)
             return alert(error.reason);
