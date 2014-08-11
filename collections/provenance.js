@@ -64,7 +64,11 @@ Meteor.methods({
 		// Enter new crisis entity ///////////////////////////////////////////////
 		var now = new Date().getTime();
 		// Extend the whitelisted attributes
+		// 
+		var crisisId = new Meteor.Collection.ObjectID();
 		var crisis = _.extend(_.pick(provAttributes, 'dctermsTitle', 'dctermsDescription'), {
+			_id: crisisId,
+			mrOrigin: crisisId,
 			provClasses: ['Entity'],
 			provType: 'Collection',
 			provGeneratedAtTime: now, 
@@ -73,11 +77,7 @@ Meteor.methods({
 		});
 
 		// Insert the crisis
-		var crisisId = Provenance.insert(crisis);
-		
-		// Assign an origin provenance ID to be able properly track related revisions, 
-		// remains the same across related revisions
-		Provenance.update(crisisId, {$set: {mrOrigin: crisisId}});
+		Provenance.insert(crisis);
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var userProv = Provenance.findOne({mrUserId:user._id});
@@ -158,15 +158,17 @@ Meteor.methods({
 		} else {
 			// Insert new media entity ///////////////////////////////////////////////
 			// Extend the whitelisted attributes
+			mediaId = new Meteor.Collection.ObjectID();
 			var media = _.extend(_.pick(provAttributes, 'dctermsFormat', 'provAtLocation'), {
+				_id: mediaId,
+				mrOrigin: mediaId,
 				provClasses: ['Entity'],
 				provType: 'MR: Media',
 				provGeneratedAtTime: now,
 				mrAttribute: {}
 			});
 			
-			mediaId = Provenance.insert(media);
-			Provenance.update(mediaId, {$set: {mrOrigin: mediaId}});
+			Provenance.insert(media);
 
 			// Add a corresponding creation provenance activity ////////////////////
 			var enterActivity = {
@@ -187,15 +189,17 @@ Meteor.methods({
 		// Insert Media into the Report //////////////////////////////////////////
 		// Prepare entity that defines mediaId and 
 		// its attributes **relative** to the report, i.e. position, dimensions
+		var entityAttributeId = new Meteor.Collection.ObjectID();
 		var entityAttribute = {
+			_id: entityAttributeId,
+			mrOrigin: entityAttributeId,
 			provClasses: ['Entity'],
 			provType: 'MR: Entity Report Attributes',
 			provGeneratedAtTime: now,
 			mrAttribute: {}
 		}; 
 
-		var entityAttributeId = Provenance.insert(entityAttribute);
-		Provenance.update(entityAttributeId, {$set: {mrOrigin: entityAttributeId}});
+		Provenance.insert(entityAttribute);
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var activity = {
@@ -407,7 +411,10 @@ Meteor.methods({
 			targetRelation;
 
 		// Insert relation entity
+		var relationId = new Meteor.Collection.ObjectID();
 		var relation = {
+			_id: relationId,
+			mrOrigin: relationId,
 			provClasses: ['Entity'],
 			provType: 'MR: Relation',
 			provGeneratedAtTime: now,
@@ -416,8 +423,7 @@ Meteor.methods({
 			mrAttribute: {}
 		};
 
-		var relationId = Provenance.insert(relation);
-		Provenance.update(relationId, {$set: {mrOrigin: relationId} }); 
+		Provenance.insert(relation);
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var activity = {
@@ -492,7 +498,10 @@ Meteor.methods({
 				return relationRevisionId;
 
 			} else {
+				var relativeId = new Meteor.Collection.ObjectID();
 				var relativeEntry = {
+					_id: relativeId,
+					mrOrigin: relativeId,
 					provClasses: ['Entity'],
 					provType: 'MR: Entity Relative',
 					provGeneratedAtTime: now,
@@ -508,8 +517,7 @@ Meteor.methods({
 					relativeEntry.mrSource[provAttributes.source] = [relationId];
 				}
 				
-				var relativeId = Provenance.insert(relativeEntry);
-				Provenance.update(relativeId, {$set: {mrOrigin: relativeId} });
+				Provenance.insert(relativeEntry);
 
 				// Add a corresponding creation provenance activity ////////////////////
 				var activity = {
@@ -621,7 +629,10 @@ Meteor.methods({
 
 		// Insert new map entity ///////////////////////////////////////////////
 		// Extend the whitelisted attributes
+		var mapId = new Meteor.Collection.ObjectID();
 		var map = {
+			_id: mapId,
+			mrOrigin: mapId,
 			provClasses: ['Entity'],
 			provType: 'Collection',
 			mrCollectionType: 'Map',
@@ -629,8 +640,7 @@ Meteor.methods({
 			mrAttribute: {},
 			provHadMember: []
 		};
-		var mapId = Provenance.insert(map);
-		Provenance.update(mapId, {$set: {mrOrigin: mapId}});
+		Provenance.insert(map);
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var mapActivity = {
@@ -646,15 +656,18 @@ Meteor.methods({
 
 		// Prepare entity that defines map and 
 		// its attributes **relative** to the report, i.e. position, dimensions
+		
+		var mapAttributeId = new Meteor.Collection.ObjectID();
 		var mapAttribute = {
+			_id: mapAttributeId,
+			mrOrigin: mapAttributeId,
 			provClasses: ['Entity'],
 			provType: 'MR: Entity Report Attributes',
 			provGeneratedAtTime: now,
 			mrAttribute: {}
 		}; 
 
-		var mapAttributeId = Provenance.insert(mapAttribute);
-		Provenance.update(mapAttributeId, {$set: {mrOrigin: mapAttributeId}});
+		Provenance.insert(mapAttribute);
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var attrActivity = {
@@ -688,7 +701,10 @@ Meteor.methods({
 		var now = new Date().getTime(),
 			userProv = Provenance.findOne({mrUserId:user._id});
 
+		var markerId = new Meteor.Collection.ObjectID();
 		var marker = {
+			_id: markerId,
+			mrOrigin: markerId,
 			provClasses: ['Entity'],
 			provType: 'MR: Marker',
 			provGeneratedAtTime: now,
@@ -696,8 +712,9 @@ Meteor.methods({
 			mrAttribute: {}
 		};
 
-		var markerId = Provenance.insert(marker);
-		Provenance.update(markerId, {$set: {mrOrigin: markerId}});
+		// Insert
+		Provenance.insert(marker);
+
 
 		// Add a corresponding creation provenance activity ////////////////////
 		var activity = {

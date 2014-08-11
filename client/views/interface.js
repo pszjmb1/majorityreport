@@ -32,10 +32,13 @@ Template.freeform.rendered = function () {
     var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
     relationsQuery.observe({ 
         added: function(doc) {
+            console.log("done", doc);
             var connection = plumber.getConnections(doc.mrOrigin);
             if(connection.length > 0) {
+                console.log("exists");
                 connection = connection[0];
             } else {
+                console.log("donot exists");
                 connection = drawRelation(doc);
             }
 
@@ -231,7 +234,7 @@ Template.formAttribute.events({
 Template.map.rendered = function () {
     var _self = this,
         containerSelector = _self.data.mrOrigin +'-map',
-        map, tileLayer, markersLayer;
+        map, tileLayer;
 
     L.Icon.Default.imagePath = '../packages/leaflet/images';
 
@@ -258,10 +261,30 @@ Template.map.rendered = function () {
     }));
 
     // bind events
-    map.on({
-        dblclick: function(info) { insertMarker(info.latlng); }
+    map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
+
+    // Render markers if any
+    console.log(_self.data.provHadMember);
+    var markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
+    markersQuery.observe({
+        added: function (doc) {
+            var marker = L.marker(_.flatten(doc.mrLatLng)).addTo(map);
+            // bind any events 
+            $(marker._icon).on('load', function(e) {
+                var elem = $(e.target),
+                    connector = document.createElement('div');
+
+                $(elem).attr({ "data-id": _self.data.mrOrigin });
+                var source = plumber.makeSource(elem, {parent: elem});
+            });
+        },
+        removed: function (doc) {
+            // ...
+        },
     });
 
+
+    // Insert marker function
     function insertMarker(latlng) {
         provAttributes = {
             currentMapOrigin: _self.data.mrOrigin,
