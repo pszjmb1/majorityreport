@@ -31,25 +31,27 @@ Template.freeform.rendered = function () {
     // draw connections
     var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
     relationsQuery.observe({ 
-        added: function(doc) {
-            console.log("done", doc);
-            var connection = plumber.getConnections(doc.mrOrigin);
-            if(connection.length > 0) {
-                console.log("exists");
-                connection = connection[0];
-            } else {
-                console.log("donot exists");
-                connection = drawRelation(doc);
-            }
+        added: processRelation,
+        changed: processRelation,
+    });
 
-            if(connection) {
-                if(!_.isEmpty(doc.mrAttribute)) {
-                    var label = _.pairs(doc.mrAttribute)[0].join(": ");
-                    connection.setLabel(label);
-                }
+    function processRelation(doc) {
+        if(doc.mrOrigin === undefined) { return; }
+
+        var connection = plumber.getConnections(doc.mrOrigin);
+        if(connection.length > 0) {
+            connection = connection[0];
+        } else {
+            connection = drawRelation(doc);
+        }
+
+        if(connection) {
+            if(!_.isEmpty(doc.mrAttribute)) {
+                var label = _.pairs(doc.mrAttribute)[0].join(": ");
+                connection.setLabel(label);
             }
         }
-    });
+    }
 
     function drawRelation(relation) {
         var sourceElem = document.getElementById(relation.mrSource),
@@ -263,12 +265,38 @@ Template.map.rendered = function () {
     // bind events
     map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
 
-    // Render markers if any
-    console.log(_self.data.provHadMember);
-    var markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
+
+    /**
+     * MARKERS
+     */
+    var mapMarkerOrigins = _self.data.mrOrigin;
+    Deps.autorun(function () {
+        mapMarkerOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
+    });
+
+    markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
     markersQuery.observe({
-        added: function (doc) {
-            var marker = L.marker(_.flatten(doc.mrLatLng)).addTo(map);
+        added: processMarker,
+        changed: processMarker,
+        removed: function (doc) {
+            // ...
+        },
+    });
+    function processMarker(doc) {
+        // if origin id is not present, return
+        // if the marker is not a member of the map, return 
+        if(doc.mrOrigin === undefined || !_.contains(mapMarkerOrigins, doc.mrOrigin)) { 
+            return; 
+        }
+
+        var marker;
+        if(markers[doc.mrOrigin] !== undefined) {
+            marker = markers[doc.mrOrigin];
+        } else {
+            marker = L.marker(_.flatten(doc.mrLatLng)).addTo(map);
+            // keep the marker for updating later
+            markers[doc.mrOrigin] = marker;
+
             // bind any events 
             $(marker._icon).on('load', function(e) {
                 var elem = $(e.target),
@@ -277,11 +305,8 @@ Template.map.rendered = function () {
                 $(elem).attr({ "data-id": _self.data.mrOrigin });
                 var source = plumber.makeSource(elem, {parent: elem});
             });
-        },
-        removed: function (doc) {
-            // ...
-        },
-    });
+        }
+    }
 
 
     // Insert marker function
