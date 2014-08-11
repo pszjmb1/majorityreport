@@ -21,8 +21,21 @@
 <template name="media">
     <img src="{{provAtLocation}}" />
 </template>
+
 <template name="map">
     <div id="{{mrOrigin}}-map" class="map"></div>
+</template>
+
+<template name="markerPopup">
+    <div class="marker-tools">
+        <button class="add-atrribute"><i class="fa"></i>Add Attribute</button>
+        <a class="btn btn-default add-relation"><i class="fa"></i>Add Relation</a>
+        <button class="remove-marker"><i class="fa"></i>Remove Marker</button>
+    </div>
+    <div class="attributes">
+        {{printObject attributes}}
+    </div>
+    <div class="attributes"></div>
 </template>
 
 <template name="formAttribute">

@@ -13,7 +13,8 @@ getReports = function() {
 getLatestRevision = function(origin) {
 	if(!origin) { return; }
 	return Provenance.findOne( 
-		{ mrOrigin: origin,  wasInvalidatedBy: { $exists: false} }
+		{ mrOrigin: origin,  wasInvalidatedBy: { $exists: false} },
+		{ sort: {provGeneratedAtTime: -1}}
 	);
 };
 
@@ -562,41 +563,47 @@ Meteor.methods({
 			}
 		}
 	},
-	relationRevisionAttribute: function(provAttributes) {
+	entityRevisionAttribute: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
-			throw new Meteor.Error(401, "Please login to annotate a relation");
+			throw new Meteor.Error(401, "Please login to add a new attribute");
 
 		// TODO: ensure that the key and value are valid
 
 		var now = new Date().getTime(),
 			userProv = Provenance.findOne({mrUserId: user._id});
 		
+
+
+		// Clone the latest version of the entity and update it
+		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
+			currentEntityId = entity._id;
+		
 		// Prepare the new information
 		var newEntity = {
 			mrAttribute: {},
 			provGeneratedAtTime: now
 		};
+		if(provAttributes.multipleAttributes) {
+			newEntity.mrAttribute = entity.mrAttribute;
+		}
 		newEntity.mrAttribute[provAttributes.attributeKey] = provAttributes.attributeValue;
 
 
-		// Clone the latest version of the relation and update it
-		var relation = getLatestRevision(provAttributes.currentRelationOrigin),
-			currentRelationId = relation._id,
-			relationEntry = _.extend(_.omit(relation, '_id'), newEntity);
-		
-		var revisionId = Provenance.insert(relationEntry);   
+
+		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
+		var revisionId = Provenance.insert(entityEntry);   
 				
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {
 			provClasses:['Derivation'],
-			mrReason: 'Relation Attribute Update',
+			mrReason: 'Entity Attribute Update',
 			provAtTime : now,
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
 				provGenerated: revisionId, 
-				provDerivedFrom: currentRelationId, 
+				provDerivedFrom: currentEntityId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
@@ -604,7 +611,7 @@ Meteor.methods({
 		Provenance.insert(revisionActivity);
 
 		//Invalidate the previous version
-		Provenance.update(currentRelationId, {$set: {wasInvalidatedBy: revisionActivity}});
+		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
 	},

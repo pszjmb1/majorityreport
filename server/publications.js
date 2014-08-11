@@ -44,7 +44,8 @@ Meteor.publish('report', function(origin) {
 Meteor.publish('entitiesAndAttributes', function(origins) {
     if(!origins || _.isEmpty(origins)) { return; }
     return Provenance.find(
-        {mrOrigin: {$in: _.unique(origins)}, wasInvalidatedBy: { $exists: false} }
+        {mrOrigin: {$in: _.unique(origins)}, wasInvalidatedBy: { $exists: false} },
+        { sort: {provGeneratedAtTime: -1}}
     );
 });
 
@@ -52,29 +53,38 @@ Meteor.publish('entitiesAndAttributes', function(origins) {
 Meteor.publish('relations', function(origins) {
     if(!origins || _.isEmpty(origins)) { return; }
 
-    return Provenance.find({
-        mrOrigin: {$in: origins}, 
-        provType: 'MR: Relation', 
-        wasInvalidatedBy: { $exists: false} 
-    });
+    return Provenance.find(
+        {
+            mrOrigin: {$in: origins}, 
+            provType: 'MR: Relation', 
+            wasInvalidatedBy: { $exists: false} 
+        },
+        { sort: {provGeneratedAtTime: -1}}
+    );
     
 });
 
 Meteor.publish('relatives', function(origins) {
     if(!origins || _.isEmpty(origins)) { return; }
 
-    return Provenance.find({
-        mrOrigin: {$in: origins}, 
-        provType: 'MR: Entity Relative', 
-        wasInvalidatedBy: { $exists: false} 
-    });
+    return Provenance.find(
+        {
+            mrOrigin: {$in: origins}, 
+            provType: 'MR: Entity Relative', 
+            wasInvalidatedBy: { $exists: false} 
+        },
+        { sort: {provGeneratedAtTime: -1}}
+    );
 
 });
 
 Meteor.publish('selectEntities', function(origins){
     if(!origins || _.isEmpty(origins)) { return; } 
-    return Provenance.find({
-        mrOrigin: {$in: origins}, 
-        wasInvalidatedBy: { $exists: false} 
-    });
+    return Provenance.find(
+        {
+            mrOrigin: {$in: origins}, 
+            wasInvalidatedBy: { $exists: false} 
+        },
+        { sort: {provGeneratedAtTime: -1}}
+    );
 });

@@ -28,7 +28,7 @@ Template.freeform.rendered = function () {
         plumber.repaintEverything();
     });
 
-    // draw connections
+    // draw connections/relations
     var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
     relationsQuery.observe({ 
         added: processRelation,
@@ -77,7 +77,7 @@ Template.freeform.rendered = function () {
                     return;
                 } 
 
-                // Create a new dialog if doesnt exist already
+                // Create a new dialog with attribute form if doesnt exist already
                 dialog = document.createElement('div');
                 UI.insert( UI.renderWithData(Template.formAttribute, relation), dialog);
                 $(dialog).appendTo(board);
@@ -93,7 +93,6 @@ Template.freeform.rendered = function () {
             return connection;
         }
     }
-
 };
 
 Template.freeform.destroyed = function () {
@@ -160,10 +159,7 @@ Template.entity.rendered = function () {
 
 Template.entity.helpers({
     entityType: function () {
-        if(this.entity) {
-            var type = this.entity.mrCollectionType || this.entity.provType.replace('MR: ', '');
-            if(type) { return type.toLowerCase(); }
-        }
+        return getEntityType(this.entity);
     },
     entityAttributes: function(type) {
         if(!this.attributes || _.isEmpty(this.attributes.mrAttribute)) {
@@ -192,6 +188,149 @@ Template.entity.helpers({
     }
 });
 
+
+/**
+ * Maps & Markers
+ */
+Template.map.rendered = function () {
+    var _self = this,
+        containerSelector = _self.data.mrOrigin +'-map',
+        map, tileLayer;
+
+    L.Icon.Default.imagePath = '../packages/leaflet/images';
+
+    // set up the map
+    map = L.map(containerSelector, {
+        center: [20.0, 5.0],
+        minZoom: 1, zoom: 2,
+        doubleClickZoom: false
+    });
+
+    // Add the tile layer
+    tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
+        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
+         ' | '+ 'Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
+        subdomains: ['otile1','otile2','otile3','otile4']
+    }).addTo(map);
+
+    // Add a search layer
+    map.addControl(new L.Control.Search({
+        url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+        jsonpParam: 'json_callback',
+        propertyName: 'display_name',
+        propertyLoc: ['lat','lon']
+    }));
+
+    // bind events to map
+    map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
+
+
+    /**
+     * MARKERS
+     */
+    var mapMarkerOrigins = _self.data.mrOrigin;
+    Deps.autorun(function () {
+        // Keep track of markers within the map (additions/removals) 
+        mapMarkerOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
+    });
+
+    markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
+    markersQuery.observe({
+        added: processMarker,
+        changed: processMarker,
+    });
+    function processMarker(doc) {
+        // if origin id is not present, return
+        // if the marker is not a member of the map, return 
+        if(doc.mrOrigin === undefined || !_.contains(mapMarkerOrigins, doc.mrOrigin)) { 
+            return; 
+        }
+
+        // Update or insert marker
+        var marker, popup;
+        if(markers[doc.mrOrigin] !== undefined) {
+            marker = markers[doc.mrOrigin];
+            popup = marker.getPopup();
+        } else {
+            marker = L.marker(_.flatten(doc.mrLatLng)).addTo(map);
+            // keep the marker for updating later
+            markers[doc.mrOrigin] = marker;
+
+            popup = L.popup({
+                keepInView: true,
+                autoPan: false,
+                className: 'marker-popup'
+            });
+            // bind popup to marker
+            marker.bindPopup(popup);   
+        }
+
+        // Prepare marker popup
+        var popupContent = document.createElement('div');
+        UI.insert(UI.renderWithData(Template.markerPopup, doc), popupContent);
+        popup.setContent(popupContent);
+
+    }
+
+
+    // Insert marker function
+    function insertMarker(latlng) {
+        provAttributes = {
+            currentMapOrigin: _self.data.mrOrigin,
+            mrLatLng: {
+                lat: latlng.lat,
+                lng: latlng.lng
+            }
+        };
+        Meteor.call('addMapMarker', provAttributes, function (error, result) {
+            if(error) 
+                return alert(error.reason);
+        });
+    }
+
+};
+
+/**
+ * Marker Popup
+ */
+Template.markerPopup.rendered = function () {
+    var _self = this,
+        relationElem = _self.$('.add-relation');
+    
+    // make relation endpoint
+    plumber.makeSource(relationElem, {parent: relationElem});
+
+};
+
+Template.markerPopup.helpers({
+    attributes: function () {
+        if(this.mrAttribute)
+            return this.mrAttribute;
+    }
+});
+
+Template.markerPopup.events({
+    'click .add-atrribute': function(e, tpl) {
+        // Create a new dialog with attribute form if doesnt exist already
+        dialog = document.createElement('div');
+        UI.insert( UI.renderWithData(Template.formAttribute, this), dialog);
+        $(dialog).appendTo($('#board'));
+
+        $(dialog).dialog({
+            autoOpen: true,
+            close: function(e, ui) {
+                $(this).remove();
+            }
+        });
+    },
+    'mouseover .add-relation': function (e,tpl) {
+        $(e.target).attr('id', this.mrOrigin);
+    }, 
+    'mouseout .add-relation': function(e, tpl) {
+        $(e.target).removeAttr('id');
+    },
+});
+
 /**
  * Forms
  */
@@ -218,113 +357,24 @@ Template.formAttribute.events({
             value = tpl.$('input[name=attribute-value]').val();
 
         var provAttributes = {
-            currentRelationOrigin: this.mrOrigin,
+            currentEntityOrigin: this.mrOrigin,
             attributeKey: label.toLowerCase(),
             attributeValue: value
         };
 
-        Meteor.call('relationRevisionAttribute', provAttributes, function (error, result) {
+        // Indicate whether or not the entity can accept multiple attributes
+        var singleAttributeEntities = ['relation'],
+            entityType = getEntityType(this);
+        
+        provAttributes.multipleAttributes = (_.contains(singleAttributeEntities, entityType)) ? false : true;
+
+        Meteor.call('entityRevisionAttribute', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
         });
     }
 });
 
-/**
- * Maps & Markers
- */
-Template.map.rendered = function () {
-    var _self = this,
-        containerSelector = _self.data.mrOrigin +'-map',
-        map, tileLayer;
-
-    L.Icon.Default.imagePath = '../packages/leaflet/images';
-
-    // set up the map
-    map = L.map(containerSelector, {
-        center: [20.0, 5.0],
-        minZoom: 1, zoom: 2,
-        doubleClickZoom: false
-    });
-
-    // Add the tile layer
-    tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
-        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
-         ' | '+ 'Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
-        subdomains: ['otile1','otile2','otile3','otile4']
-    }).addTo(map);
-
-     // Add a search layer
-    map.addControl(new L.Control.Search({
-        url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
-        jsonpParam: 'json_callback',
-        propertyName: 'display_name',
-        propertyLoc: ['lat','lon']
-    }));
-
-    // bind events
-    map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
-
-
-    /**
-     * MARKERS
-     */
-    var mapMarkerOrigins = _self.data.mrOrigin;
-    Deps.autorun(function () {
-        mapMarkerOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
-    });
-
-    markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
-    markersQuery.observe({
-        added: processMarker,
-        changed: processMarker,
-        removed: function (doc) {
-            // ...
-        },
-    });
-    function processMarker(doc) {
-        // if origin id is not present, return
-        // if the marker is not a member of the map, return 
-        if(doc.mrOrigin === undefined || !_.contains(mapMarkerOrigins, doc.mrOrigin)) { 
-            return; 
-        }
-
-        var marker;
-        if(markers[doc.mrOrigin] !== undefined) {
-            marker = markers[doc.mrOrigin];
-        } else {
-            marker = L.marker(_.flatten(doc.mrLatLng)).addTo(map);
-            // keep the marker for updating later
-            markers[doc.mrOrigin] = marker;
-
-            // bind any events 
-            $(marker._icon).on('load', function(e) {
-                var elem = $(e.target),
-                    connector = document.createElement('div');
-
-                $(elem).attr({ "data-id": _self.data.mrOrigin });
-                var source = plumber.makeSource(elem, {parent: elem});
-            });
-        }
-    }
-
-
-    // Insert marker function
-    function insertMarker(latlng) {
-        provAttributes = {
-            currentMapOrigin: _self.data.mrOrigin,
-            mrLatLng: {
-                lat: latlng.lat,
-                lng: latlng.lng
-            }
-        };
-        Meteor.call('addMapMarker', provAttributes, function (error, result) {
-            if(error) 
-                return alert(error.reason);
-        });
-    }
-
-};
 
 /**  Tools */
 Template.tools.events({
@@ -371,6 +421,13 @@ Template.tools.events({
 /**
  * HELPERS/ COMMON METHODS 
  */
+function getEntityType(entity) {
+    if(entity) {
+        var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
+        if(type) { return type.toLowerCase(); }
+    }
+}
+
 function addRelation(info) {
     var provAttributes = {
         // Gather source id, in case of markers look to the "data-id" attribute
