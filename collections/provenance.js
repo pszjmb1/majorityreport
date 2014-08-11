@@ -675,9 +675,7 @@ Meteor.methods({
 				mrAttribute: mapAttributeId
 			};
 
-		Provenance.update(revisionId, 
-			{ $push: {provHadMember: entity} } 
-		);
+		Provenance.update(revisionId, { $push: {provHadMember: entity} } );
 
 		return mapId;
 	},
@@ -719,10 +717,12 @@ Meteor.methods({
 
 		var revisedMap = {
 			provGeneratedAtTime: now, 
-			provHadMember: currentMap.provHadMember.push(markerId)
+			provHadMember: currentMap.provHadMember || []
 		};
+		revisedMap.provHadMember.push(markerId);
+
 		var mapEntry = _.extend(_.omit(currentMap, '_id'), revisedMap);
-		var mapRevisionId = Provenance.insert(currentMap);
+		var mapRevisionId = Provenance.insert(mapEntry);
 
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = {

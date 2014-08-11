@@ -174,7 +174,7 @@ Template.entity.helpers({
         // Convert key/vals to styles 
         var attrs = _.map(_.pick(this.attributes.mrAttribute, keys), function(value, key) {
             if(type === 'outer' && outerOffset[key] !== undefined) {
-                value = parseInt(value, 10) + outerOffset[key];
+                value = parseInt(value, 10) + outerOffset[key] + 'px';
             }
 
             var attr = key +":"+ value +';';
@@ -224,6 +224,59 @@ Template.formAttribute.events({
         });
     }
 });
+
+/**
+ * Maps & Markers
+ */
+Template.map.rendered = function () {
+    var _self = this,
+        containerSelector = _self.data.mrOrigin +'-map',
+        map, tileLayer, markersLayer;
+
+    L.Icon.Default.imagePath = '../packages/leaflet/images';
+
+    // set up the map
+    map = L.map(containerSelector, {
+        center: [20.0, 5.0],
+        minZoom: 1, zoom: 2,
+        doubleClickZoom: false
+    });
+
+    // Add the tile layer
+    tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
+        attribution: 'Tiles Courtesy of <a href="http://www.mapquest.com/">MapQuest</a> &mdash; Map data &copy; <a href="http://openstreetmap.org">OpenStreetMap</a> contributors, <a href="http://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'+
+         ' | '+ 'Nominatim Search Courtesy of <a href="http://www.mapquest.com/" target="_blank">MapQuest</a> <img src="http://developer.mapquest.com/content/osm/mq_logo.png">',
+        subdomains: ['otile1','otile2','otile3','otile4']
+    }).addTo(map);
+
+     // Add a search layer
+    map.addControl(new L.Control.Search({
+        url: 'http://nominatim.openstreetmap.org/search?format=json&q={s}',
+        jsonpParam: 'json_callback',
+        propertyName: 'display_name',
+        propertyLoc: ['lat','lon']
+    }));
+
+    // bind events
+    map.on({
+        dblclick: function(info) { insertMarker(info.latlng); }
+    });
+
+    function insertMarker(latlng) {
+        provAttributes = {
+            currentMapOrigin: _self.data.mrOrigin,
+            mrLatLng: {
+                lat: latlng.lat,
+                lng: latlng.lng
+            }
+        };
+        Meteor.call('addMapMarker', provAttributes, function (error, result) {
+            if(error) 
+                return alert(error.reason);
+        });
+    }
+
+};
 
 /**  Tools */
 Template.tools.events({
