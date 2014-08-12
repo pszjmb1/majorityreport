@@ -179,7 +179,8 @@ Template.entity.helpers({
 
 Template.entity.events({
     'click .entity-info': function (e,tpl) {
-        setUpDialog('entityInfo', this.entity);
+        e.preventDefault();
+        setUpDialog('entityInfo', _.extend(this.entity, {showRelations: false}));
     }
 });
 
@@ -296,15 +297,21 @@ Template.entityInfo.rendered = function () {
         relationElem = _self.$('.add-relation');
     
     // make relation endpoint
-    relationElem.attr({ "data-id": _self.data.mrOrigin });
-    plumber.makeSource(relationElem, {parent: relationElem});
-
+    if(relationElem.length > 0) {
+        relationElem.attr({ "data-id": _self.data.mrOrigin });
+        plumber.makeSource(relationElem, {parent: relationElem});
+    }
 };
 
 Template.entityInfo.helpers({
     latestVersion: function() {
-        return getLatestRevision(this.mrOrigin);
-    }
+        var latest = getLatestRevision(this.mrOrigin);
+        return _.extend(latest, _.pick(this, 'showRelations'));
+    },
+    showRelations: function() {
+        var output = (this.showRelations !== undefined) ? this.showRelations : true;
+        return output;
+    },
 });
 
 Template.entityInfo.events({

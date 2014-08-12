@@ -29,12 +29,17 @@
 
 <template name="entityInfo">
     {{#with latestVersion}}
+        {{!-- Only show relation control and list for markers or other specific scenarios --}}
         <div class="entity-info-tools">
             <a class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</a>
-            <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
+            {{#if showRelations}}
+                <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
+            {{/if}}
         </div>
         {{> displayAttributes this}}
-        {{> displayRelations this}}
+        {{#if showRelations}}
+            {{> displayRelations this}}
+        {{/if}}
     {{/with}}
     
 </template>
