@@ -184,11 +184,20 @@ Template.entity.events({
     }
 });
 
+Template.media.helpers({
+    isEntityType: function(checkType) {
+        var type = getEntityType(this);
+        if(type === 'media') {
+            type = getMediaFormat(this.dctermsFormat);
+        }
+        return (type === checkType);
+    }
+});
 
 /**
  * Maps & Markers
  */
-Template.mapEntity.rendered = function () {
+Template.map.rendered = function () {
     var _self = this,
         containerSelector = _self.data.mrOrigin +'-map',
         map, tileLayer;
@@ -419,8 +428,12 @@ Template.displayRelations.events({
 });
 
 Template.displayThumbnail.helpers({
-    isEntityType: function(type) {
-        return (getEntityType(this, {appendSuffix: false}) === type);
+    isEntityType: function(checkType) {
+        var type = getEntityType(this);
+        if(type === 'media') {
+            type = getMediaFormat(this.dctermsFormat);
+        }
+        return (type === checkType);
     },
 });
 
@@ -540,19 +553,17 @@ Template.tools.events({
 /**
  * HELPERS/ COMMON METHODS 
  */
-function getEntityType(entity, opts) {
+function getEntityType(entity) {
     if(entity) {
-        var options = opts || {},
-            type = (entity.mrCollectionType || entity.provType.replace('MR: ', '')).toLowerCase();
+        var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
+        return type.toLowerCase();
+    }
+}
 
-        if(type === 'media') { 
-            type = entity.dctermsFormat.split('/')[0];
-        }
-
-        options.appendSuffix = (options.appendSuffix !== undefined) ? options.appendSuffix : true;
-        if(options.appendSuffix === true) { type += "Entity"; }
-
-        return type; 
+function getMediaFormat(dctermsFormat) {
+    if(dctermsFormat) {
+        var format = dctermsFormat.split('/')[0];
+        return format.toLowerCase();
     }
 }
 

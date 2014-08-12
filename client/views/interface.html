@@ -19,15 +19,17 @@
     </div>
 </template>
 
-<template name="textEntity">
-    {{mrContent}}
+<template name="media">
+    {{#if isEntityType "image"}}
+        <img src="{{provAtLocation}}" />
+    {{else}}{{#if isEntityType "text"}}
+        {{mrContent}}
+    {{else}}{{#if isEntityType "video"}}
+        <iframe width="100%" height="100%" src="{{provAtLocation}}" frameborder="0" allowfullscreen></iframe>
+    {{/if}}{{/if}}{{/if}}
 </template>
 
-<template name="imageEntity">
-    <img src="{{provAtLocation}}" />
-</template>
-
-<template name="mapEntity">
+<template name="map">
     <div id="{{mrOrigin}}-map" class="map"></div>
 </template>
 
@@ -45,7 +47,6 @@
             {{> displayRelations this}}
         {{/if}}
     {{/with}}
-    
 </template>
 
 <template name="displayAttributes">
@@ -73,9 +74,19 @@
 <template name="displayThumbnail">
     {{#if isEntityType "image"}}
         <img src="{{provAtLocation}}" class="entity-thumbnail entity-thumbnail-media">
+    {{else}}{{#if isEntityType "text"}}
+        <span class="fa-stack fa-lg">
+            <i class="fa fa-circle fa-stack-2x"></i>
+            <i class="fa fa-paragraph fa-stack-1x fa-inverse"></i>
+        </span>
+    {{else}} {{#if isEntityType "video"}}
+        <span class="fa-stack fa-lg">
+            <i class="fa fa-circle fa-stack-2x"></i>
+            <i class="fa fa-video-camera fa-stack-1x fa-inverse"></i>
+        </span>
     {{else}} {{#if isEntityType "map"}}
         <i class="fa fa-globe fa-3x"></i>
-    {{/if}}{{/if}}
+    {{/if}}{{/if}}{{/if}}{{/if}}
 </template>
 
 <template name="formAttribute">
@@ -93,7 +104,7 @@
     {{!-- Text --}}
     <div class="btn-group">
         <button type="button" class="entity-text btn dropdown-toggle" data-toggle="dropdown">
-            <i class="fa fa-align-left"></i> Add Text <span class="caret"></span>
+            <i class="fa fa-paragraph"></i> Add Text <span class="caret"></span>
         </button>
         <div class="dropdown-menu dropdown-form" role="menu">
             <form name="text">
