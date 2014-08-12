@@ -222,6 +222,102 @@ Meteor.methods({
 
 		return mediaId;
 	},
+	crisisReportText: function(provAttributes) {
+		var user = Meteor.user(),
+			existingText = Provenance.findOne({mrContent: provAttributes.mrContent});
+		
+		// Validate input ////////////////////////////////////////////////////////
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+
+		// ensure the crisis has a mrContent
+		if (!provAttributes.mrContent)
+			throw new Meteor.Error(422, 'Please fill in the text');
+			
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id}),
+			textId;
+
+		// Ensure text already exists in the current report
+		if(existingText) {
+			// Keep track of the existing text id in case text doesn't exist in the current report
+			textId = existingText.mrOrigin;
+
+			var report = getLatestRevision(provAttributes.currentCrisisOrigin);
+			if( _.findWhere(report.provHadMember, {mrEntity: textId}) ) {
+				throw new Meteor.Error(422, 'Media already exists in the current report', textId);
+			}
+
+		} else {
+			// Insert new text entity ///////////////////////////////////////////////
+			// Extend the whitelisted attributes
+			var text = _.extend(_.pick(provAttributes, 'mrContent'), {
+				provClasses: ['Entity'],
+				provType: 'MR: Media',
+				dctermsFormat: 'text/html',
+				provGeneratedAtTime: now,
+				mrAttribute: {}
+			});
+			
+			textId = Provenance.insert(text);
+			Provenance.update(textId, {$set: {mrOrigin: textId}});
+
+			// Add a corresponding creation provenance activity ////////////////////
+			var enterActivity = {
+				provClasses:['Activity'],
+				provType:'MR: Media Insertion',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provGenerated: textId
+			};
+
+			Provenance.insert(enterActivity);
+
+			// TODO: Insert text into a global text provCollection
+		}
+
+
+		// Insert Media into the Report //////////////////////////////////////////
+		// Prepare entity that defines textId and 
+		// its attributes **relative** to the report, i.e. position, dimensions
+		var entityAttribute = {
+			provClasses: ['Entity'],
+			provType: 'MR: Entity Report Attributes',
+			provGeneratedAtTime: now,
+			mrAttribute: {}
+		}; 
+
+		var entityAttributeId = Provenance.insert(entityAttribute);
+		Provenance.update(entityAttributeId, {$set: {mrOrigin: entityAttributeId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var activity = {
+			provClasses:['Activity'],
+			provType:'MR: Media Report Attributes Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: entityAttributeId
+		};
+		
+		Provenance.insert(activity);
+
+		// Prepare new revision of the report before inserting the entityAttribute entity
+		var revisionId = reportRevision(provAttributes),
+			entity = {
+				mrEntity: textId,
+				mrAttribute: entityAttributeId
+			};
+
+		Provenance.update(revisionId, 
+			{ $push: {provHadMember: entity} } 
+		);
+
+		return textId;
+	},
 	entityAttribute: function (provAttributes) {
 		var user = Meteor.user();
 

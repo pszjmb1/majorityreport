@@ -188,7 +188,7 @@ Template.entity.events({
 /**
  * Maps & Markers
  */
-Template.map.rendered = function () {
+Template.mapEntity.rendered = function () {
     var _self = this,
         containerSelector = _self.data.mrOrigin +'-map',
         map, tileLayer;
@@ -420,7 +420,7 @@ Template.displayRelations.events({
 
 Template.displayThumbnail.helpers({
     isEntityType: function(type) {
-        return (getEntityType(this) === type);
+        return (getEntityType(this, {appendSuffix: false}) === type);
     },
 });
 
@@ -470,11 +470,37 @@ Template.formAttribute.events({
 
 
 /**  Tools */
+Template.tools.rendered = function () {
+    var _self = this;
+
+    _self.$('.dropdown-menu textarea').on('click', function(e) {
+        e.stopPropagation();
+    });
+};
+
 Template.tools.events({
+    'submit form[name=text]': function (e, tpl) {
+        e.preventDefault();
+        var textContent = $(e.target).find('textarea[name=textContent]').val();
+
+        var provAttributes = {
+            currentCrisisId: this._id,
+            currentCrisisOrigin: this.mrOrigin,
+            mrContent: textContent,
+            dctermsTitle: this.dctermsTitle,
+            dctermsDescription: this.dctermsDescription,
+        };
+
+        Meteor.call('crisisReportText', provAttributes, function(error, id) {
+            if (error)
+                return alert(error.reason);
+        });
+
+    },
     'submit form[name=media]': function (e, tpl) {
         e.preventDefault();
         var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
-                mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
+            mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
 
         // Insert appropriate provenances for the entity and the activity: revision, entity, membership
         var provAttributes = {
@@ -514,10 +540,19 @@ Template.tools.events({
 /**
  * HELPERS/ COMMON METHODS 
  */
-function getEntityType(entity) {
+function getEntityType(entity, opts) {
     if(entity) {
-        var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
-        if(type) { return type.toLowerCase(); }
+        var options = opts || {},
+            type = (entity.mrCollectionType || entity.provType.replace('MR: ', '')).toLowerCase();
+
+        if(type === 'media') { 
+            type = entity.dctermsFormat.split('/')[0];
+        }
+
+        options.appendSuffix = (options.appendSuffix !== undefined) ? options.appendSuffix : true;
+        if(options.appendSuffix === true) { type += "Entity"; }
+
+        return type; 
     }
 }
 

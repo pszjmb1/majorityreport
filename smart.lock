@@ -44,13 +44,13 @@
       },
       "leaflet-search": {
         "git": "https://github.com/stefanocudini/leaflet-search.git",
-        "tag": "v1.5.3",
-        "commit": "34c1c9c17b00aac44bb0b9c8eb0774fab6b1890a"
+        "tag": "v1.5.5",
+        "commit": "85d146311686d1e827e50556698e720e560d9f7f"
       },
       "accounts-ui-bootstrap-3": {
         "git": "https://github.com/mangasocial/meteor-accounts-ui-bootstrap-3.git",
-        "tag": "v0.3.3",
-        "commit": "2e50b605d8d5ed68e48c4529a65f13552d8af3f9"
+        "tag": "v0.3.4",
+        "commit": "9f006ee48d869877d90d54ac75b54550a587df8f"
       },
       "iron-layout": {
         "git": "https://github.com/EventedMind/iron-layout.git",

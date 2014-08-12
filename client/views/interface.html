@@ -19,11 +19,15 @@
     </div>
 </template>
 
-<template name="media">
+<template name="textEntity">
+    {{mrContent}}
+</template>
+
+<template name="imageEntity">
     <img src="{{provAtLocation}}" />
 </template>
 
-<template name="map">
+<template name="mapEntity">
     <div id="{{mrOrigin}}-map" class="map"></div>
 </template>
 
@@ -67,7 +71,7 @@
 </template>
 
 <template name="displayThumbnail">
-    {{#if isEntityType "media"}}
+    {{#if isEntityType "image"}}
         <img src="{{provAtLocation}}" class="entity-thumbnail entity-thumbnail-media">
     {{else}} {{#if isEntityType "map"}}
         <i class="fa fa-globe fa-3x"></i>
@@ -86,7 +90,19 @@
 
 
 <template name="tools">
-    
+    {{!-- Text --}}
+    <div class="btn-group">
+        <button type="button" class="entity-text btn dropdown-toggle" data-toggle="dropdown">
+            <i class="fa fa-align-left"></i> Add Text <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu dropdown-form" role="menu">
+            <form name="text">
+                <textarea name="textContent" cols="20" rows="5"></textarea>
+                <button class="btn" type="submit">Submit</button>
+            </form>
+        </div>
+    </div>
+    {{!-- Media (images/videos/audios) --}}
     <div class="btn-group">
         <form name="media" class="form-inline">
             <div class="input-group">
@@ -94,13 +110,16 @@
                 <div class="input-group-btn">
                     <select class="form-control" name="mediaFormat">
                         <option value="image/jpeg">Image (.jpg)</option>
+                        <option value="video/flv">Video (flv)</option>
+                        <option value="video/fla">Video (fla)</option>
                     </select>
                     <button class="btn" type="submit"><i class="fa fa-image"></i>  Add Media</button>
                 </div>      
             </div>
         </form> 
     </div>    
-
+    {{!-- Maps --}}
     <button type="button" class="entity-map btn"><i class="fa fa-map-marker"></i> Add Map</button>
+    {{!-- Misc. --}}
     <button type="button" class="entity-group btn"><i class="fa fa-folder-open-o"></i> Group</button>
 </template>

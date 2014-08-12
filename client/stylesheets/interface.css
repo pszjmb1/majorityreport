@@ -32,6 +32,11 @@
 	margin: 0 auto;
 }
 
+.dropdown-form {
+	padding: 5px;
+	z-index: 1001;
+}
+
 /*Medium meta/attributes */
 .attributes span.label {
 	font-size: 11px;
