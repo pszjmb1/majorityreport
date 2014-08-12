@@ -1,0 +1,15 @@
+{
+  "meteor": {},
+  "dependencies": {
+    "basePackages": {
+      "visjs": {
+        "path": "."
+      }
+    },
+    "packages": {
+      "visjs": {
+        "path": "."
+      }
+    }
+  }
+}

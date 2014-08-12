@@ -1,0 +1,9 @@
+{
+  "name": "visjs",
+  "description": "vis.js - A dynamic, browser-based visualization library.",
+  "homepage": "http://visjs.org/",
+  "author": "Sangeet Gyawali <sangeight@gmail.com> (http://sangeight.com)",
+  "version": "0.0.1",
+  "git": "https://github.com/almende/vis.git",
+  "packages": {}
+}
