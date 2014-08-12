@@ -34,7 +34,6 @@
 </template>
 
 <template name="timeline">
-    timeline
     <div id="{{mrOrigin}}-timeline" class="timeline"></div>
 </template>
 
@@ -104,6 +103,14 @@
     </div>
 </template>
 
+<template name="formEvent">
+    <form name="event">
+        <input type="text" name="event-title" id="event-title" placeholder="{{title}}"/>
+        <div class="input-group">
+            {{!-- date/time picker --}}
+        </div>
+    </form>
+</template>
 
 <template name="tools">
     {{!-- Text --}}

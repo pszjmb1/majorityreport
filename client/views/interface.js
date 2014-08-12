@@ -1,4 +1,5 @@
-var plumber, maps = {}, markers = {};
+var boardSelector = '#board',
+    plumber, maps = {}, markers = {};
 
 UI.registerHelper('printObject', function(obj) {
     return JSON.stringify(obj);
@@ -36,7 +37,7 @@ Template.freeform.created = function () {
 
 Template.freeform.rendered = function () {
     var _self = this,
-        board = this.$('#board');
+        board = this.$(boardSelector);
 
     board.bind('entityAttributeChange', function() {
         plumber.repaintEverything();
@@ -157,7 +158,7 @@ Template.entity.helpers({
             return;
         }
         // Publish message to notify change in entity attirbute
-        $('#board').trigger('entityAttributeChange');
+        $(boardSelector).trigger('entityAttributeChange');
 
         var keys = ['width', 'height'],
             outerOffset = { width: 10, height: 55 };        
@@ -294,6 +295,44 @@ Template.map.rendered = function () {
             if(error) 
                 return alert(error.reason);
         });
+    }
+
+};
+
+/**
+ * Timeline
+ */
+Template.timeline.rendered = function () {
+    var _self = this,
+        containerSelector = _self.data.mrOrigin +'-timeline',
+        container = document.getElementById(containerSelector),
+        data = new vis.DataSet([]),
+        options, timeline;
+
+    options = {
+        height: '150px',
+        orientation: 'top',
+        showCurrentTime: true,
+        editable: true,
+        onAdd: addEvent,
+        // onMove: function(item, callback){},
+        // onUpdate: function(item, callback){},
+        // onRemove: function(item, callback){},
+    };
+       
+    timeline = new vis.Timeline(container, data, options);
+
+    // Set timeline height on resize. Auto resize on width is already support by vis.js
+    $(boardSelector).on('entityAttributeChange', function() {
+        var parentBox = container.parentNode.getBoundingClientRect();
+        if($(container).height() !== parentBox.height) {
+            timeline.setOptions({height: parentBox.height});
+        }
+    });
+
+    // Operations for adding a new timeline event
+    function addEvent(item, callback) {
+        
     }
 
 };
@@ -583,7 +622,7 @@ function getMediaFormat(dctermsFormat) {
 
 function setUpDialog(template, entity, selectorSuffix) {
     var dialog,
-        appendToElem = $('#board'),
+        appendToElem = $(boardSelector),
         suffix = selectorSuffix || 'dialog',
         selector = entity.mrOrigin +'-'+ suffix,
         existingElem = document.getElementById(selector);

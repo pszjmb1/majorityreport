@@ -10,7 +10,7 @@
       "leaflet": {},
       "leaflet-search": {},
       "accounts-ui-bootstrap-3": {},
-      "timeline-js": {}
+      "bootstrap3-datetimepicker": {}
     },
     "packages": {
       "iron-router": {
@@ -53,10 +53,10 @@
         "tag": "v0.3.4",
         "commit": "9f006ee48d869877d90d54ac75b54550a587df8f"
       },
-      "timeline-js": {
-        "git": "https://github.com/andrei-miulescu/timeline-js.git",
-        "tag": "v0.0.7",
-        "commit": "50a695ecbcf0d79e731ac77e53447537e430febb"
+      "bootstrap3-datetimepicker": {
+        "git": "https://github.com/tsega/meteor-bootstrap3-datetimepicker.git",
+        "tag": "v0.3.0",
+        "commit": "a0b5e8aaa117555672bb5a479b3842bb97e3f3b5"
       },
       "iron-layout": {
         "git": "https://github.com/EventedMind/iron-layout.git",
