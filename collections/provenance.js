@@ -318,179 +318,6 @@ Meteor.methods({
 
 		return textId;
 	},
-	entityAttribute: function (provAttributes) {
-		var user = Meteor.user();
-
-		// ensure the user is logged in
-		if (!user)
-			throw new Meteor.Error(401, "Please login to add an attribute");
-
-		// ensure that the key of the attribute is entered
-		if (!provAttributes.attrKey)
-			throw new Meteor.Error(422, "Please enter the attribute label");
-		
-		// ensure that the value of the attribute is entered
-		if (!provAttributes.attrValue)
-			throw new Meteor.Error(422, "Please enter the attribute content");
-
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId:user._id});
-			attribute = {};
-
-		// Set up the new attributes as an object
-		attribute[provAttributes.attrKey] = provAttributes.attrValue;
-		
-		// Get the exisiting attributes so that we can extend it with our new attribute before updating
-		// Create a new revision
-		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
-			currentEntityId = entity._id,
-			existingAttrs = entity.mrAttribute;
-
-		var newEntity = {
-			mrAttribute: _(existingAttrs).extend(attribute),
-			provGeneratedAtTime: now
-		};
-
-		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
-		var revisionId = Provenance.insert(entityEntry);
-
-		// Add an activity for inserting new attribute /////////////////////////
-		var activity = {
-			provClasses:['Activity'],
-			provType: 'MR: Entity Attribute Insertion',
-			provStartedAtTime: now,
-			provEndedAtTime: now,
-			provWasStartedBy: userProv._id,
-			provGenerated: revisionId
-		};
-
-		Provenance.insert(activity);
-
-		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
-			provClasses:['Derivation'],
-			mrReason: 'Entity Update',
-			provAtTime : now,
-			provWasStartedBy: userProv._id,
-			provWasDerivedFrom: {
-				provGenerated: revisionId, 
-				provDerivedFrom: currentEntityId, 
-				provAttributes: [{provType: 'provRevision'}]
-			}
-		};
-		Provenance.insert(revisionActivity);
-
-		//Invalidate the previous version
-		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
-
-		return revisionId;
-	},
-	entityAttributeRemove: function (provAttributes) {
-		var user = Meteor.user();
-
-		// ensure the user is logged in
-		if (!user)
-			throw new Meteor.Error(401, "Please login to remove the attribute");
-
-		// ensure that the key of the attribute is entered
-		if (!provAttributes.attrKey)
-			throw new Meteor.Error(422, "Please select an appropriate attribute label");
-
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId:user._id});
-			attribute = {};
-		
-		// Get the exisiting attributes so that we can extend it with our new attribute before updating
-		// Insert a new revision
-		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
-			currentEntityId = entity._id,
-			existingAttrs = entity.mrAttribute;
-
-		var newEntity = {
-			// Remove the attribute key from the existing list/object
-			mrAttribute: _.omit(existingAttrs, provAttributes.attrKey),
-			provGeneratedAtTime: now
-		};
-
-		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
-		var revisionId = Provenance.insert(entityEntry);
-
-		// Add an activity for inserting new attribute /////////////////////////
-		var activity = {
-			provClasses:['Activity'],
-			provType: 'MR: Entity Attribute Deletion',
-			provStartedAtTime: now,
-			provEndedAtTime: now,
-			provWasStartedBy: userProv._id,
-			provGenerated: revisionId
-		};
-
-		Provenance.insert(activity);
-		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
-			provClasses:['Derivation'],
-			mrReason: 'Entity Update',
-			provAtTime : now,
-			provWasStartedBy: userProv._id,
-			provWasDerivedFrom: {
-				provGenerated: revisionId, 
-				provDerivedFrom: currentEntityId, 
-				provAttributes: [{provType: 'provRevision'}]
-			}
-		};
-
-		Provenance.insert(revisionActivity);
-
-		//Invalidate the previous version
-		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
-
-		return revisionId;
-	},
-	entityReportAttributeRevision: function(provAttributes) {
-		var user = Meteor.user();
-		// ensure the user is logged in
-		if (!user)
-			throw new Meteor.Error(401, "Please login to update the report");
-		
-		var now = new Date().getTime(),
-			currentUser = Provenance.findOne({mrUserId: user._id});
-
-		
-		// Prepare the new information
-		var newAttribute = {
-			mrAttribute: provAttributes.mrAttribute,
-			provGeneratedAtTime: now
-		};
-
-		// Clone the latest media attribute and update them
-		// Insert a new revision
-		var attribute = getLatestRevision(provAttributes.currentAttributeOrigin),
-			currentAttributeId = attribute._id;
-		
-		var attributeEntry = _.extend(_.omit(attribute, '_id'), newAttribute);
-
-		var revisionId = Provenance.insert(attributeEntry);
-				
-		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
-			provClasses:['Derivation'],
-			mrReason: 'Entity Report Attribute Update',
-			provAtTime : now,
-			provWasStartedBy: currentUser._id,
-			provWasDerivedFrom: {
-				provGenerated: revisionId, 
-				provDerivedFrom: currentAttributeId, 
-				provAttributes: [{provType: 'provRevision'}]
-			}
-		};
-
-		Provenance.insert(revisionActivity);
-
-		//Invalidate the previous version
-		Provenance.update(currentAttributeId, {$set: {wasInvalidatedBy: revisionActivity}});
-
-		return revisionId;
-	},
 	entityRelation: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
@@ -710,6 +537,115 @@ Meteor.methods({
 
 		// return revisionId;
 	},
+	entityAttributeRemove: function (provAttributes) {
+		var user = Meteor.user();
+
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to remove the attribute");
+
+		// ensure that the key of the attribute is entered
+		if (!provAttributes.attrKey)
+			throw new Meteor.Error(422, "Please select an appropriate attribute label");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+			attribute = {};
+		
+		// Get the exisiting attributes so that we can extend it with our new attribute before updating
+		// Insert a new revision
+		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
+			currentEntityId = entity._id,
+			existingAttrs = entity.mrAttribute;
+
+		var newEntity = {
+			// Remove the attribute key from the existing list/object
+			mrAttribute: _.omit(existingAttrs, provAttributes.attrKey),
+			provGeneratedAtTime: now
+		};
+
+		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
+		var revisionId = Provenance.insert(entityEntry);
+
+		// Add an activity for inserting new attribute /////////////////////////
+		var activity = {
+			provClasses:['Activity'],
+			provType: 'MR: Entity Attribute Deletion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: revisionId
+		};
+
+		Provenance.insert(activity);
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: 'Entity Update',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: currentEntityId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
+
+		return revisionId;
+	},
+	/**
+	 * Update entities' attribute relative to report (i.e. position, dimension etc..)
+	 */
+	entityReportAttributeRevision: function(provAttributes) {
+		var user = Meteor.user();
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to update the report");
+		
+		var now = new Date().getTime(),
+			currentUser = Provenance.findOne({mrUserId: user._id});
+
+		
+		// Prepare the new information
+		var newAttribute = {
+			mrAttribute: provAttributes.mrAttribute,
+			provGeneratedAtTime: now
+		};
+
+		// Clone the latest media attribute and update them
+		// Insert a new revision
+		var attribute = getLatestRevision(provAttributes.currentAttributeOrigin),
+			currentAttributeId = attribute._id;
+		
+		var attributeEntry = _.extend(_.omit(attribute, '_id'), newAttribute);
+
+		var revisionId = Provenance.insert(attributeEntry);
+				
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: 'Entity Report Attribute Update',
+			provAtTime : now,
+			provWasStartedBy: currentUser._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: currentAttributeId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentAttributeId, {$set: {wasInvalidatedBy: revisionActivity}});
+
+		return revisionId;
+	},
 	crisisReportMap: function(provAttributes) {
 		var user = Meteor.user();
 		
@@ -781,7 +717,7 @@ Meteor.methods({
 
 		return mapId;
 	},
-	'addMapMarker': function(provAttributes) {
+	crisisMapMarker: function(provAttributes) {
 		var user = Meteor.user();
 		
 		// ensure the user is logged in
@@ -845,7 +781,77 @@ Meteor.methods({
 		Provenance.update(currentMapId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return markerId;
-	}
+	},
+	crisisReportTimeline: function(provAttributes) {
+		var user = Meteor.user();
+		
+		// Validate input ////////////////////////////////////////////////////////
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+			
+		// Insert new timeline entity ///////////////////////////////////////////////
+		var timeline = {
+			provClasses: ['Entity'],
+			provType: 'Collection',
+			mrCollectionType: 'Timeline',
+			provGeneratedAtTime: now,
+			mrAttribute: {},
+			provHadMember: []
+		};
+		var timelineId = Provenance.insert(timeline);
+		Provenance.update(timelineId, {$set: {mrOrigin: timelineId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var timelineActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Timeline Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: timelineId
+		};
+
+		Provenance.insert(timelineActivity);
+
+		// Prepare entity that defines timeline and 
+		// its attributes **relative** to the report, i.e. position, dimensions
+		var timelineAttribute = {
+			provClasses: ['Entity'],
+			provType: 'MR: Entity Report Attributes',
+			provGeneratedAtTime: now,
+			mrAttribute: {}
+		}; 
+
+		var timelineAttributeId = Provenance.insert(timelineAttribute);
+		Provenance.update(timelineAttributeId, {$set: {mrOrigin: timelineAttributeId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var attrActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Timeline Attribute Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: timelineAttributeId
+		};
+		
+		Provenance.insert(attrActivity);
+
+		// Prepare new revision of the report before inserting the mediaAttribute entity
+		var revisionId = reportRevision(provAttributes),
+			entity = { 
+				mrEntity: timelineId,
+				mrAttribute: timelineAttributeId
+			};
+
+		Provenance.update(revisionId, { $push: {provHadMember: entity} } );
+
+		return timelineId;
+	},
 
 });
 

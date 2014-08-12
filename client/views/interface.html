@@ -33,6 +33,11 @@
     <div id="{{mrOrigin}}-map" class="map"></div>
 </template>
 
+<template name="timeline">
+    timeline
+    <div id="{{mrOrigin}}-timeline" class="timeline"></div>
+</template>
+
 <template name="entityInfo">
     {{#with latestVersion}}
         {{!-- Only show relation control and list for markers or other specific scenarios --}}
@@ -103,13 +108,13 @@
 <template name="tools">
     {{!-- Text --}}
     <div class="btn-group">
-        <button type="button" class="entity-text btn dropdown-toggle" data-toggle="dropdown">
+        <button type="button" class="entity-text btn btn-sm dropdown-toggle" data-toggle="dropdown">
             <i class="fa fa-paragraph"></i> Add Text <span class="caret"></span>
         </button>
         <div class="dropdown-menu dropdown-form" role="menu">
             <form name="text">
                 <textarea name="textContent" cols="20" rows="5"></textarea>
-                <button class="btn" type="submit">Submit</button>
+                <button class="btn btn-sm btn-success btn-block" type="submit">Submit</button>
             </form>
         </div>
     </div>
@@ -117,20 +122,22 @@
     <div class="btn-group">
         <form name="media" class="form-inline">
             <div class="input-group">
-                <input type="textfield" class="form-control" placeholder="Media URL" name="mediaUrl" />
+                <input type="textfield" class="form-control input-sm" placeholder="Media URL" name="mediaUrl" />
                 <div class="input-group-btn">
-                    <select class="form-control" name="mediaFormat">
+                    <select class="form-control input-sm" name="mediaFormat">
                         <option value="image/jpeg">Image (.jpg)</option>
                         <option value="video/flv">Video (flv)</option>
                         <option value="video/fla">Video (fla)</option>
                     </select>
-                    <button class="btn" type="submit"><i class="fa fa-image"></i>  Add Media</button>
+                    <button class="btn btn-sm" type="submit"><i class="fa fa-image"></i>  Add Media</button>
                 </div>      
             </div>
         </form> 
     </div>    
     {{!-- Maps --}}
-    <button type="button" class="entity-map btn"><i class="fa fa-map-marker"></i> Add Map</button>
+    <button type="button" class="entity-map btn btn-sm"><i class="fa fa-map-marker"></i> Add Map</button>
+    {{!-- Timeline --}}
+    <button type="button" class="entity-timeline btn btn-sm"><i class="fa fa-exchange"></i> Add Timeline</button>
     {{!-- Misc. --}}
-    <button type="button" class="entity-group btn"><i class="fa fa-folder-open-o"></i> Group</button>
+    <button type="button" class="entity-group btn btn-sm"><i class="fa fa-folder-open-o"></i> Group</button>
 </template>

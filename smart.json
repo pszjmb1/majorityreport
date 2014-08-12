@@ -7,6 +7,7 @@
     "fontawesome4": {},
     "leaflet": {},
     "leaflet-search": {},
-    "accounts-ui-bootstrap-3": {}
+    "accounts-ui-bootstrap-3": {},
+    "timeline-js": {}
   }
 }

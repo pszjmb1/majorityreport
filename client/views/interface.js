@@ -290,7 +290,7 @@ Template.map.rendered = function () {
                 lng: latlng.lng
             }
         };
-        Meteor.call('addMapMarker', provAttributes, function (error, result) {
+        Meteor.call('crisisMapMarker', provAttributes, function (error, result) {
             if(error) 
                 return alert(error.reason);
         });
@@ -544,7 +544,21 @@ Template.tools.events({
             if(error)
                 return alert(error.reason);
         });
+    },
+    'click .entity-timeline': function(e, tpl) {
+        e.preventDefault();
 
+        var provAttributes = {
+            currentCrisisId: this._id,
+            currentCrisisOrigin: this.mrOrigin,
+            dctermsTitle: this.dctermsTitle,
+            dctermsDescription: this.dctermsDescription
+        };
+
+        Meteor.call('crisisReportTimeline', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
     }
 });
 
