@@ -98,17 +98,29 @@
         <form>
             <input type="text" name="attribute-label" id="attribute-label" placeholder="{{label}}"/>
             <input type="text" name="attribute-value" id="attribute-value" placeholder="{{value}}"/>
-            <button class="btn btn-success btn-sm" type="submit"><i class="fa fa-plus-circle"></i>Save Annotation</button>
+            <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Save Annotation</button>
         </form>
     </div>
 </template>
 
 <template name="formEvent">
     <form name="event">
-        <input type="text" name="event-title" id="event-title" placeholder="{{title}}"/>
-        <div class="input-group">
-            {{!-- date/time picker --}}
+        <div class="form-group">
+            <input type="text" name="event-title" id="event-title" placeholder="Event Title" value="{{title}}"/>
         </div>
+        <div class="form-group">
+            <div class="input-group date start-date">
+                <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                <input type="text" name="event-start-date" placeholder="Start Date" value="{{startDate}}" class="form-control input-sm">
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="input-group date end-date">
+                <span class="input-group-addon"><i class="fa fa-calendar"></i></span>
+                <input type="text" name="event-end-date" placeholder="End Date" value="{{endDate}}" class="form-control input-sm">
+            </div>
+        </div>
+        <button class="btn btn-success btn-sm btn-block" type="submit"><i class="fa fa-check"></i> Add Event</button>
     </form>
 </template>
 
@@ -121,7 +133,7 @@
         <div class="dropdown-menu dropdown-form" role="menu">
             <form name="text">
                 <textarea name="textContent" cols="20" rows="5"></textarea>
-                <button class="btn btn-sm btn-success btn-block" type="submit">Submit</button>
+                <button class="btn btn-sm btn-success btn-block" type="submit"><i class="fa fa-check"></i> Submit</button>
             </form>
         </div>
     </div>

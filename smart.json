@@ -8,6 +8,7 @@
     "leaflet": {},
     "leaflet-search": {},
     "accounts-ui-bootstrap-3": {},
-    "bootstrap3-datetimepicker": {}
+    "bootstrap3-datetimepicker": {},
+    "momentjs": {}
   }
 }

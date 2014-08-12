@@ -852,6 +852,70 @@ Meteor.methods({
 
 		return timelineId;
 	},
+	crisisTimelineEvent: function(provAttributes) {
+		var user = Meteor.user();
+		
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+
+		var eventEntity = _.extend(_.pick(provAttributes, 'dctermsTitle', 'mrStartDate', 'mrEndDate'), {
+			provClasses: ['Entity'],
+			provType: 'MR: Event',
+			provGeneratedAtTime: now,
+			mrAttribute: {}
+		});
+
+		var eventId = Provenance.insert(eventEntity);
+		Provenance.update(eventId, {$set: {mrOrigin: eventId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var activity = {
+			provClasses:['Activity'],
+			provType:'MR: Event Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: eventId
+		};
+
+		Provenance.insert(activity);
+
+		// Update the map with new event
+		var currentTimeline = getLatestRevision(provAttributes.currentTimelineOrigin),
+			currentTimelineId = currentTimeline._id;
+
+		var revisedTimeline = {
+			provGeneratedAtTime: now, 
+			provHadMember: currentTimeline.provHadMember
+		};
+		revisedTimeline.provHadMember.push(eventId);
+		
+		var timelineEntry = _.extend(_.omit(currentTimeline, '_id'), revisedTimeline);
+		var timelineRevisionId = Provenance.insert(timelineEntry);
+
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: provAttributes.reason,
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: timelineRevisionId, 
+				provDerivedFrom: currentTimelineId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentTimelineId, {$set: {wasInvalidatedBy: revisionActivity}});
+
+		return eventId;
+	},
 
 });
 

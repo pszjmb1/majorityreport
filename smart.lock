@@ -10,7 +10,8 @@
       "leaflet": {},
       "leaflet-search": {},
       "accounts-ui-bootstrap-3": {},
-      "bootstrap3-datetimepicker": {}
+      "bootstrap3-datetimepicker": {},
+      "momentjs": {}
     },
     "packages": {
       "iron-router": {
@@ -57,6 +58,11 @@
         "git": "https://github.com/tsega/meteor-bootstrap3-datetimepicker.git",
         "tag": "v0.3.0",
         "commit": "a0b5e8aaa117555672bb5a479b3842bb97e3f3b5"
+      },
+      "momentjs": {
+        "git": "https://github.com/crapthings/meteor-momentjs.git",
+        "tag": "v2.1.0.2",
+        "commit": "59a762e297082eea8b8cae00374c2b7ac6f89529"
       },
       "iron-layout": {
         "git": "https://github.com/EventedMind/iron-layout.git",

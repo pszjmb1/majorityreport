@@ -1,5 +1,7 @@
 var boardSelector = '#board',
-    plumber, maps = {}, markers = {};
+    plumber, maps = {}, markers = {},
+    dateFormat = "ddd, Do MMM YYYY",
+    dateWithTimeFormat = "ddd, Do MMM YYYY - HH:mm";
 
 UI.registerHelper('printObject', function(obj) {
     return JSON.stringify(obj);
@@ -234,13 +236,13 @@ Template.map.rendered = function () {
     /**
      * MARKERS
      */
-    var mapMarkerOrigins = _self.data.mrOrigin;
+    var mapMarkerOrigins = [];
     Deps.autorun(function () {
         // Keep track of markers within the map (additions/removals) 
         mapMarkerOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
     });
 
-    markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
+    var markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
     markersQuery.observe({
         added: processMarker,
         changed: processMarker,
@@ -330,9 +332,45 @@ Template.timeline.rendered = function () {
         }
     });
 
+    /**
+     * Events
+     */
+    var timelineEventOrigins = [];
+    Deps.autorun(function () {
+        // Keep track of markers within the timeline (additions/removals) 
+        timelineEventOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
+    });
+
+    var eventsQuery = Provenance.find({provType: 'MR: Event', wasInvalidatedBy: { $exists: false} });
+    eventsQuery.observe({
+        added: processEvents,
+        changed: processEvents,
+    });
+
+    function processEvents(doc) {
+        // if origin id is not present, return
+        // if the event is not a member of the current timleine, return 
+        if(doc.mrOrigin === undefined || !_.contains(timelineEventOrigins, doc.mrOrigin)) { 
+            return; 
+        }
+
+        var eventEntity = { 
+            id: doc.mrOrigin, 
+            content: doc.dctermsTitle, 
+            start: moment(doc.mrStartDate).toDate()
+        };
+
+        if(doc.mrEndDate) {
+            eventEntity.end = moment(doc.mrEndDate).toDate();
+        }
+
+        data.add([eventEntity]);
+        timeline.fit();
+    }
+
     // Operations for adding a new timeline event
-    function addEvent(item, callback) {
-        
+    function addEvent(item) {
+        var dialog = setUpDialog('formEvent', _.extend(_self.data, item), 'form-event');
     }
 
 };
@@ -520,6 +558,71 @@ Template.formAttribute.events({
     }
 });
 
+Template.formEvent.rendered = function () {
+    var _self = this,
+        startElem = _self.$('.start-date'),
+        endElem = _self.$('.end-date'),
+        options = { 
+            format: dateWithTimeFormat,
+            sideBySide: true,
+        };
+
+    startElem.datetimepicker(options);
+    endElem.datetimepicker(options);
+
+    startElem.on("load, dp.change",function (e) {
+       endElem.data("DateTimePicker").setMinDate(e.date);
+    });
+    endElem.on("dp.change",function (e) {
+       startElem.data("DateTimePicker").setMaxDate(e.date);
+    });
+};
+
+Template.formEvent.helpers({
+    title: function () {
+        if(this.dctermsTitle) { return this.dctermsTitle; }
+    },
+    startDate: function() {
+        var date = this.start || this.mrStartDate;
+        if(date) {
+            return moment(date).format(dateWithTimeFormat);
+        }
+    },
+    endDate: function() {
+        var date = this.end || this.mrEndDate;
+        if(date) {
+            return moment(date).format(dateWithTimeFormat);
+        }
+    }
+});
+
+Template.formEvent.events({
+    'submit form[name=event]': function(e, tpl) {
+        e.preventDefault();
+
+        var title = tpl.$('input[name=event-title]').val(),
+            fieldStartDate = tpl.$('input[name=event-start-date]').val(),
+            fieldEndDate = tpl.$('input[name=event-end-date]').val(),
+            startDate = tpl.$('.start-date').data("DateTimePicker").getDate(),
+            endDate = tpl.$('.end-date').data("DateTimePicker").getDate();
+
+        // TODO: Check/Valid inputs
+
+        var provAttributes = {
+            currentTimelineOrigin: this.mrOrigin,
+            dctermsTitle: title,
+            mrStartDate: moment(startDate).toDate()
+        };
+
+        if(fieldEndDate && endDate) { provAttributes.mrEndDate = moment(endDate).toDate(); }
+        console.log(provAttributes);
+        Meteor.call('crisisTimelineEvent', provAttributes, function (error, result) {
+            if(error) 
+                return alert(error.reason);
+        });
+    }
+});
+
 
 /**  Tools */
 Template.tools.rendered = function () {
@@ -533,7 +636,7 @@ Template.tools.rendered = function () {
 Template.tools.events({
     'submit form[name=text]': function (e, tpl) {
         e.preventDefault();
-        var textContent = $(e.target).find('textarea[name=textContent]').val();
+        var textContent = tpl.$('textarea[name=textContent]').val();
 
         var provAttributes = {
             currentCrisisId: this._id,
@@ -631,7 +734,6 @@ function setUpDialog(template, entity, selectorSuffix) {
     if(existingElem) {
         dialog = $(existingElem).closest('.ui-dialog')[0];
         $(dialog).effect('shake', {distance: 4, times: 2});
-
         return;
     } 
 
@@ -649,6 +751,8 @@ function setUpDialog(template, entity, selectorSuffix) {
             $(this).remove();
         }
     });
+
+    return dialog;
 }
 
 function addToRenderedList(entity) {
