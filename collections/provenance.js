@@ -916,6 +916,48 @@ Meteor.methods({
 
 		return eventId;
 	},
+	crisisTimelineEventRevision: function(provAttributes) {
+		var user = Meteor.user();
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to update event");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id});
+
+		// Clone the latest version of the entity and update it
+		var eventEntity = getLatestRevision(provAttributes.currentEventOrigin),
+			currentEventEntityId = eventEntity._id;
+		
+		// Prepare the new information
+		var newEventEntity = _.extend(
+			_.pick(provAttributes, 'dctermsTitle', 'mrStartDate', 'mrEndDate'), 
+			{ provGeneratedAtTime: now }
+		);
+
+		var eventEntityEntry = _.extend(_.omit(eventEntity, '_id'), newEventEntity);
+		var revisionId = Provenance.insert(eventEntityEntry);   
+				
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: 'Event Details Update',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: currentEventEntityId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentEventEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
+
+		return revisionId;
+	},
 
 });
 

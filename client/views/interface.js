@@ -7,18 +7,10 @@ UI.registerHelper('printObject', function(obj) {
     return JSON.stringify(obj);
 });
 
-UI.registerHelper('isValid', function(item) {
-    if(item !== undefined || item !== null) {
-        if(_.isArray(item) || _.isObject(item)) {
-            if(!_.isEmpty(item))
-                return true;
-            else
-                return false;
-        } else {
-            return true;
-        }
+UI.registerHelper('prettyDate', function(date) {
+    if(moment(date).isValid()) {
+        return moment(date).format(dateWithTimeFormat);
     }
-    return false;
 });
 
 Template.freeform.created = function () {
@@ -183,7 +175,7 @@ Template.entity.helpers({
 Template.entity.events({
     'click .entity-info': function (e,tpl) {
         e.preventDefault();
-        setUpDialog('entityInfo', _.extend(this.entity, {showRelations: false}));
+        setUpDialog('entityInfo', this.entity);
     }
 });
 
@@ -273,6 +265,7 @@ Template.map.rendered = function () {
             // bind popup to marker
             marker.bindPopup(popup);
 
+            // Add to the rendered list for subscriptions
             addToRenderedList(doc.mrOrigin);
         }
 
@@ -308,22 +301,30 @@ Template.timeline.rendered = function () {
     var _self = this,
         containerSelector = _self.data.mrOrigin +'-timeline',
         container = document.getElementById(containerSelector),
-        data = new vis.DataSet([]),
+        timelineData = new vis.DataSet([]),
         options, timeline;
 
     options = {
         height: '150px',
         orientation: 'top',
         showCurrentTime: true,
-        editable: true,
+        editable: {
+            add: true,
+            updateTime: false,
+            updateGroup: false,
+            remove: false
+        },
+        zoomMin: 1000000,
+        zoomMax: 1000000000000,
         onAdd: addEvent,
+        onUpdate: viewEditEvent,
         // onMove: function(item, callback){},
-        // onUpdate: function(item, callback){},
         // onRemove: function(item, callback){},
     };
        
-    timeline = new vis.Timeline(container, data, options);
+    timeline = new vis.Timeline(container, timelineData, options);
 
+    // Bind events
     // Set timeline height on resize. Auto resize on width is already support by vis.js
     $(boardSelector).on('entityAttributeChange', function() {
         var parentBox = container.parentNode.getBoundingClientRect();
@@ -333,12 +334,13 @@ Template.timeline.rendered = function () {
     });
 
     /**
-     * Events
+     * Timeline Events
      */
     var timelineEventOrigins = [];
     Deps.autorun(function () {
         // Keep track of markers within the timeline (additions/removals) 
-        timelineEventOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
+        var latest = getLatestRevision(_self.data.mrOrigin);
+        if(latest) { timelineEventOrigins = latest.provHadMember; }
     });
 
     var eventsQuery = Provenance.find({provType: 'MR: Event', wasInvalidatedBy: { $exists: false} });
@@ -354,23 +356,31 @@ Template.timeline.rendered = function () {
             return; 
         }
 
+        // Prepare data for timeline
         var eventEntity = { 
             id: doc.mrOrigin, 
             content: doc.dctermsTitle, 
             start: moment(doc.mrStartDate).toDate()
         };
-
-        if(doc.mrEndDate) {
-            eventEntity.end = moment(doc.mrEndDate).toDate();
-        }
-
-        data.add([eventEntity]);
+        if(doc.mrEndDate) { eventEntity.end = moment(doc.mrEndDate).toDate(); }
+        // Add or update the new data to the time line
+        // DataSet object determines whether to add or update automatically.
+        timelineData.update(eventEntity);  
         timeline.fit();
+
+        // Make sure the enity is in the rendered list, to subscribe for data reliably
+        addToRenderedList(doc.mrOrigin);
     }
 
     // Operations for adding a new timeline event
-    function addEvent(item) {
-        var dialog = setUpDialog('formEvent', _.extend(_self.data, item), 'form-event');
+    function addEvent(info) {
+        var dialog = setUpDialog('formEvent', _.extend(_self.data, info), 'form-event');
+    }
+
+    function viewEditEvent(info, callback) {
+        if(info) {
+            var dialog = setUpDialog('entityInfo', getLatestRevision(info.id));
+        }
     }
 
 };
@@ -391,12 +401,21 @@ Template.entityInfo.rendered = function () {
 
 Template.entityInfo.helpers({
     latestVersion: function() {
-        var latest = getLatestRevision(this.mrOrigin);
-        return _.extend(latest, _.pick(this, 'showRelations'));
+        return getLatestRevision(this.mrOrigin);
+    },
+    isEntityType: function(checkType) {
+        var type = getEntityType(this);
+        if(type === 'media') {
+            type = getMediaFormat(this.dctermsFormat);
+        }
+        return (type === checkType);
     },
     showRelations: function() {
-        var output = (this.showRelations !== undefined) ? this.showRelations : true;
-        return output;
+        var showRelationsFor = ['event', 'marker'],
+            type = getEntityType(this);
+        if(_.contains( showRelationsFor, type)) { return true; }
+
+        return false;
     },
 });
 
@@ -504,6 +523,18 @@ Template.displayRelations.events({
 
 });
 
+Template.displayEventInfo.helpers({
+    exists: function(item){
+        return (item !== undefined && item !== null);
+    }
+});
+Template.displayEventInfo.events({
+    'click .edit-event': function(e, tpl) {
+        e.preventDefault();
+        var dialog = setUpDialog('formEvent', this, 'form-event-edit');
+    }
+});
+
 Template.displayThumbnail.helpers({
     isEntityType: function(checkType) {
         var type = getEntityType(this);
@@ -562,20 +593,32 @@ Template.formEvent.rendered = function () {
     var _self = this,
         startElem = _self.$('.start-date'),
         endElem = _self.$('.end-date'),
+        initialStartDate = _self.data.start || _self.data.mrStartDate,
+        initialEndDate = _self.data.end || _self.data.mrEndDate,
         options = { 
             format: dateWithTimeFormat,
             sideBySide: true,
         };
-
+    
     startElem.datetimepicker(options);
     endElem.datetimepicker(options);
+
+    if(initialStartDate) {
+        endElem.data("DateTimePicker").setMinDate(initialStartDate);
+    }
+    if(initialEndDate) {
+        startElem.data("DateTimePicker").setMaxDate(initialEndDate);
+    }
+
 
     startElem.on("load, dp.change",function (e) {
        endElem.data("DateTimePicker").setMinDate(e.date);
     });
+
     endElem.on("dp.change",function (e) {
        startElem.data("DateTimePicker").setMaxDate(e.date);
     });
+
 };
 
 Template.formEvent.helpers({
@@ -599,7 +642,11 @@ Template.formEvent.helpers({
 Template.formEvent.events({
     'submit form[name=event]': function(e, tpl) {
         e.preventDefault();
+        
+        var isUpdateOperation = false;
+        if(this.provType === 'MR: Event') { isUpdateOperation = true; }
 
+        // Gather values
         var title = tpl.$('input[name=event-title]').val(),
             fieldStartDate = tpl.$('input[name=event-start-date]').val(),
             fieldEndDate = tpl.$('input[name=event-end-date]').val(),
@@ -607,16 +654,20 @@ Template.formEvent.events({
             endDate = tpl.$('.end-date').data("DateTimePicker").getDate();
 
         // TODO: Check/Valid inputs
-
+        // Prepare information bundle for db operation
         var provAttributes = {
-            currentTimelineOrigin: this.mrOrigin,
-            dctermsTitle: title,
-            mrStartDate: moment(startDate).toDate()
-        };
+                dctermsTitle: title,
+                mrStartDate: moment(startDate).toDate()
+            },
+            originField = (isUpdateOperation) ? 'currentEventOrigin' : 'currentTimelineOrigin';
 
+        provAttributes[originField] = this.mrOrigin;
         if(fieldEndDate && endDate) { provAttributes.mrEndDate = moment(endDate).toDate(); }
-        console.log(provAttributes);
-        Meteor.call('crisisTimelineEvent', provAttributes, function (error, result) {
+
+        // Determine which method to call
+        var method = (isUpdateOperation) ? 'crisisTimelineEventRevision' : 'crisisTimelineEvent';
+
+        Meteor.call(method, provAttributes, function (error, result) {
             if(error) 
                 return alert(error.reason);
         });
@@ -755,10 +806,13 @@ function setUpDialog(template, entity, selectorSuffix) {
     return dialog;
 }
 
+
 function addToRenderedList(entity) {
     var renderedList = Session.get('renderedEntities');
-    renderedList.push(entity);
-    Session.set('renderedEntities', renderedList);
+    if(!_.contains(renderedList, entity)) {
+        renderedList.push(entity);
+        Session.set('renderedEntities', renderedList);
+    }
 }
 
 function addRelation(info) {

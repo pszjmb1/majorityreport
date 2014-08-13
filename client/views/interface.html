@@ -25,7 +25,7 @@
     {{else}}{{#if isEntityType "text"}}
         {{mrContent}}
     {{else}}{{#if isEntityType "video"}}
-        <iframe width="100%" height="100%" src="{{provAtLocation}}" frameborder="0" allowfullscreen></iframe>
+        <iframe width="100%" height="100%" src="{{provAtLocation}}" frameborder="0" allowfullscreen class="embed-responsive-item"></iframe>
     {{/if}}{{/if}}{{/if}}
 </template>
 
@@ -40,12 +40,18 @@
 <template name="entityInfo">
     {{#with latestVersion}}
         {{!-- Only show relation control and list for markers or other specific scenarios --}}
+        {{!-- Entity options --}}
         <div class="entity-info-tools">
             <a class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</a>
             {{#if showRelations}}
                 <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
             {{/if}}
         </div>
+
+        {{!-- Entity Information --}}
+        {{#if isEntityType 'event'}}
+            {{> displayEventInfo this}}
+        {{/if}}
         {{> displayAttributes this}}
         {{#if showRelations}}
             {{> displayRelations this}}
@@ -54,25 +60,36 @@
 </template>
 
 <template name="displayAttributes">
-    {{#if isValid attributes}}
-        <div class="attributes">
-            <h4>Attributes</h4>
-            {{#each attributes}}
-                <span class="label label-info">{{label}}: {{value}}  <a href="#" class="remove-attribute">x</a> </span>
-            {{/each}}
-        </div>
-    {{/if}}
+    <div class="attributes">
+        <h4>Attributes</h4>
+        {{#each attributes}}
+            <span class="label label-info">{{label}}: {{value}}  <a href="#" class="remove-attribute">x</a> </span>
+        {{/each}}
+    </div>
 </template>
 
 <template name="displayRelations">
-    {{#if isValid relations}}
-        <div class="relations">
-            <h4>Relatives</h4>
-            {{#each relations 'mrTarget'}}
-                <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
-            {{/each}}
+    <div class="relations">
+        <h4>Relatives</h4>
+        {{#each relations 'mrTarget'}}
+            <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
+        {{/each}}
+    </div>
+</template>
+
+<template name="displayEventInfo">
+    <div class="event-info">
+        <h4>Event: {{dctermsTitle}}</h4>
+        <div class="well well-sm">
+            <p>
+                <i class="fa fa-clock-o"></i>
+                {{prettyDate mrStartDate}} 
+                {{#if exists mrEndDate}} - {{prettyDate mrEndDate}} {{/if}}
+            </p>
+            <a class="btn btn-default btn-xs edit-event"><i class="fa"></i>Edit Event</a>
         </div>
-    {{/if}}
+    </div>
+    
 </template>
 
 <template name="displayThumbnail">
@@ -120,7 +137,7 @@
                 <input type="text" name="event-end-date" placeholder="End Date" value="{{endDate}}" class="form-control input-sm">
             </div>
         </div>
-        <button class="btn btn-success btn-sm btn-block" type="submit"><i class="fa fa-check"></i> Add Event</button>
+        <button class="btn btn-success btn-sm btn-block" type="submit"><i class="fa fa-check"></i> Save Event</button>
     </form>
 </template>
 
