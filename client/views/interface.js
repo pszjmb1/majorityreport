@@ -310,7 +310,7 @@ Template.timeline.rendered = function () {
         showCurrentTime: true,
         editable: {
             add: true,
-            updateTime: false,
+            updateTime: true,
             updateGroup: false,
             remove: false
         },
@@ -318,7 +318,7 @@ Template.timeline.rendered = function () {
         zoomMax: 1000000000000,
         onAdd: addEvent,
         onUpdate: viewEditEvent,
-        // onMove: function(item, callback){},
+        onMove: updateEventDateTime,
         // onRemove: function(item, callback){},
     };
        
@@ -381,6 +381,18 @@ Template.timeline.rendered = function () {
         if(info) {
             var dialog = setUpDialog('entityInfo', getLatestRevision(info.id));
         }
+    }
+
+    function updateEventDateTime(info) {
+        var provAttributes = {
+            currentEventOrigin: info.id,
+            dctermsTitle: info.content,
+            mrStartDate: moment(info.start).toDate()
+        };
+
+        if(info.end) { provAttributes.mrEndDate = moment(info.end).toDate(); }
+
+        addUpdateTimelineEvent(provAttributes);
     }
 
 };
@@ -664,13 +676,8 @@ Template.formEvent.events({
         provAttributes[originField] = this.mrOrigin;
         if(fieldEndDate && endDate) { provAttributes.mrEndDate = moment(endDate).toDate(); }
 
-        // Determine which method to call
-        var method = (isUpdateOperation) ? 'crisisTimelineEventRevision' : 'crisisTimelineEvent';
+        var result = addUpdateTimelineEvent(provAttributes);  
 
-        Meteor.call(method, provAttributes, function (error, result) {
-            if(error) 
-                return alert(error.reason);
-        });
     }
 });
 
@@ -755,7 +762,33 @@ Template.tools.events({
     }
 });
 
+/**
+ * Shared DB Operation helpers
+ */
+function addRelation(info) {
+    var provAttributes = {
+        // Gather source id, in case of markers look to the "data-id" attribute
+        source: $(info.source).attr('data-id') || info.sourceId,
+        target: info.targetId
+    };
+    Meteor.call('entityRelation', provAttributes, function (error, result) {
+        if(error)
+            return alert(error.reason);
+    });
+}
 
+function addUpdateTimelineEvent(provAttributes) {
+    var isUpdateOperation = false;
+    if(_.has(provAttributes, 'currentEventOrigin')) { isUpdateOperation = true; }
+
+    // Determine which method to call
+    var method = (isUpdateOperation) ? 'crisisTimelineEventRevision' : 'crisisTimelineEvent';
+
+    Meteor.call(method, provAttributes, function (error, result) {
+        if(error) 
+            return alert(error.reason);
+    });
+}
 
 /**
  * HELPERS/ COMMON METHODS 
@@ -813,18 +846,6 @@ function addToRenderedList(entity) {
         renderedList.push(entity);
         Session.set('renderedEntities', renderedList);
     }
-}
-
-function addRelation(info) {
-    var provAttributes = {
-        // Gather source id, in case of markers look to the "data-id" attribute
-        source: $(info.source).attr('data-id') || info.sourceId,
-        target: info.targetId
-    };
-    Meteor.call('entityRelation', provAttributes, function (error, result) {
-        if(error)
-            return alert(error.reason);
-    });
 }
 
 function getOffsetRect(elem) {
