@@ -11,11 +11,19 @@
 
 <template name="entity">
     <div id="{{ this.entity.mrOrigin }}" class="entity-outer" style="{{entityAttributes 'outer'}}">
+        <div class="entity-controls">
+            <div class="btn-group">
+                <a class="entity-info btn btn-primary btn-xs"><i class="fa fa-info-circle"></i></a>
+                <span class="faux-dragger btn btn-primary btn-xs"><i class="fa fa-arrows"></i></span>
+                <span class="connector btn btn-primary btn-xs"><i class="fa fa-random"></i></span>
+            </div>
+            {{#if title}}
+                <span class="label label-default">{{ title }}</span>
+            {{/if}}
+        </div>
         <div class="entity-inner entity-item-{{entityType}}"  style="{{entityAttributes}}">
                {{> UI.dynamic template=entityType data=this.entity }}
         </div>
-        <button class="entity-info btn btn-default btn-xs"><i class="fa fa-info-circle"></i> Info</button>
-        <div class="connector"></div>
     </div>
 </template>
 
@@ -84,7 +92,7 @@
             <p>
                 <i class="fa fa-clock-o"></i>
                 {{prettyDate mrStartDate}} 
-                {{#if exists mrEndDate}} - {{prettyDate mrEndDate}} {{/if}}
+                {{#if mrEndDate}} - {{prettyDate mrEndDate}} {{/if}}
             </p>
             <a class="btn btn-default btn-xs edit-event"><i class="fa"></i>Edit Event</a>
         </div>
@@ -107,7 +115,12 @@
         </span>
     {{else}} {{#if isEntityType "map"}}
         <i class="fa fa-globe fa-3x"></i>
-    {{/if}}{{/if}}{{/if}}{{/if}}
+    {{else}} {{#if isEntityType "timeline"}}
+        <span class="fa-stack fa-lg">
+            <i class="fa fa-circle fa-stack-2x"></i>
+            <i class="fa fa-exchange fa-stack-1x fa-inverse"></i>
+        </span>
+    {{/if}}{{/if}}{{/if}}{{/if}}{{/if}}
 </template>
 
 <template name="formAttribute">

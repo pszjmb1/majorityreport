@@ -112,7 +112,7 @@ Template.entity.rendered = function () {
 
     // Attach plugins - draggable, resizable, jsPlumbs
     var target = plumber.makeTarget(outerWrapper);
-    var source = plumber.makeSource(connector, {parent: 'parent'});
+    var source = plumber.makeSource(connector, {parent: outerWrapper});
 
     innerWrapper.resizable({ 
         ghost: true,
@@ -120,7 +120,10 @@ Template.entity.rendered = function () {
         stop: updateEntityAttributes 
     });
     
-    plumber.draggable(outerWrapper, { stop: updateEntityAttributes });
+    plumber.draggable(outerWrapper, { 
+        cancel: '.entity-item-timeline',
+        stop: updateEntityAttributes 
+    });
 
     target.bind('beforeDrop', addRelation);
 
@@ -147,6 +150,11 @@ Template.entity.helpers({
     entityType: function () {
         return getEntityType(this.entity);
     },
+    title: function() {
+        if(_.has(this.entity.mrAttribute, 'title')) {
+            return this.entity.mrAttribute.title;
+        }
+    },
     entityAttributes: function(type) {
         if(!this.attributes || _.isEmpty(this.attributes.mrAttribute)) {
             return;
@@ -155,7 +163,7 @@ Template.entity.helpers({
         $(boardSelector).trigger('entityAttributeChange');
 
         var keys = ['width', 'height'],
-            outerOffset = { width: 10, height: 55 };        
+            outerOffset = { width: 10, height: 10 };        
         if(type === 'outer') { keys = keys.concat(['top', 'left', 'z-index']); }
 
         // Convert key/vals to styles 
@@ -179,6 +187,9 @@ Template.entity.events({
     }
 });
 
+/**
+ * Media items
+ */
 Template.media.helpers({
     isEntityType: function(checkType) {
         var type = getEntityType(this);
@@ -231,7 +242,8 @@ Template.map.rendered = function () {
     var mapMarkerOrigins = [];
     Deps.autorun(function () {
         // Keep track of markers within the map (additions/removals) 
-        mapMarkerOrigins = getLatestRevision(_self.data.mrOrigin).provHadMember || [];
+        var latest = getLatestRevision(_self.data.mrOrigin);
+        if(latest) { mapMarkerOrigins = latest.provHadMember; }
     });
 
     var markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
@@ -535,11 +547,6 @@ Template.displayRelations.events({
 
 });
 
-Template.displayEventInfo.helpers({
-    exists: function(item){
-        return (item !== undefined && item !== null);
-    }
-});
 Template.displayEventInfo.events({
     'click .edit-event': function(e, tpl) {
         e.preventDefault();
