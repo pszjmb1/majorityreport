@@ -3,16 +3,12 @@
 }
 
 .entity-outer {
-	padding: 3px;
 	position: absolute;
-	border: 2px dashed rgba(255,255,255, 0.0);
-	background-color: #f8f8f8;
 	opacity: 0.7;
 	z-index: 99;
 }
 
 .entity-outer:hover {
-	border-color: #0cc;
 	opacity: 1;
 	z-index: 999;
 }
@@ -26,11 +22,18 @@
 
 .entity-controls {
 	padding: 3px 5px;
-	position: absolute;
-	margin-top: -33px;
-	margin-left: -3px;
 	background-color: #c0c0c0;
-	width: 100%;
+}
+
+.entity-inner {
+	padding: 3px;
+	border: 2px dashed rgba(255,255,255, 0.0);
+	background-color: #f8f8f8;
+}
+
+.entity-inner:hover,
+.entity-outer:hover .entity-inner {
+	border-color: #0cc;
 }
 
 .entity-item-media > img {

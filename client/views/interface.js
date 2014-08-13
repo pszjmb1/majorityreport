@@ -163,7 +163,7 @@ Template.entity.helpers({
         $(boardSelector).trigger('entityAttributeChange');
 
         var keys = ['width', 'height'],
-            outerOffset = { width: 10, height: 10 };        
+            outerOffset = { width: 0, height: 50 };        
         if(type === 'outer') { keys = keys.concat(['top', 'left', 'z-index']); }
 
         // Convert key/vals to styles 
