@@ -1,5 +1,16 @@
+body, html {
+	min-height: 100%;
+	height: 100%;
+}
+
+body > .container, #main {
+	height: 100%;
+}
+
 #board { 
 	position: relative;
+	height: 100%;
+	border: 1px solid rgba(0,0,0,0.3);
 }
 
 .entity-outer {
@@ -32,7 +43,8 @@
 }
 
 .entity-inner:hover,
-.entity-outer:hover .entity-inner {
+.entity-outer:hover .entity-inner,
+.entity-outer.ui-selecting .entity-inner {
 	border-color: #0cc;
 }
 
@@ -49,6 +61,11 @@
 
 .ui-resizable {
 	margin: 0 auto;
+}
+
+.entity-outer.ui-selectee {
+	opacity: 0.9;
+	background-color: #77f;
 }
 
 .dropdown-form {

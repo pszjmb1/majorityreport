@@ -19,12 +19,18 @@ Template.freeform.created = function () {
     jsPlumb.ready(function() {
         plumber = jsPlumb.getInstance({
             Anchor: 'Continuous',
+            Connector:[ "Bezier", { curviness: 50 } ],
             DragOptions : { cursor: "crosshair" },
             PaintStyle : {
-                lineWidth:13,
-                strokeStyle: '#ac8'
+                lineWidth: 5,
+                strokeStyle: '#77a',
+                // gradient:{stops:[[0,'#656'], [0.5, '#77a']]},
             },
-            EndpointStyles : [{ fillStyle:"#ac8" }, { fillStyle:"#ac8" }]
+            EndpointStyles : [{ fillStyle:"#77a" }, { fillStyle:"#77a" }],
+            Endpoint:[ "Dot", { radius: 10 } ], 
+            Overlays: [
+                ['Arrow', {width: 15, height: 5}]
+            ]
         });
     }); 
 };
@@ -36,6 +42,7 @@ Template.freeform.rendered = function () {
     board.bind('entityAttributeChange', function() {
         plumber.repaintEverything();
     });
+
 
     // draw connections/relations
     var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
@@ -71,7 +78,6 @@ Template.freeform.rendered = function () {
                 scope: relation.mrOrigin,
                 source: sourceElem,
                 target: targetElem,
-                overlays: [ "Arrow" ]
             });
 
             connection.bind('click', function(conn, e) {
