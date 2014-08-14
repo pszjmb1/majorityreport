@@ -7,10 +7,21 @@ body > .container, #main {
 	height: 100%;
 }
 
-#board { 
-	position: relative;
-	height: 100%;
-	border: 1px solid rgba(0,0,0,0.3);
+#board.ui-selectable {
+    border: 1px black dotted;
+    margin: 20px 0;
+	height: 700px;
+}
+
+#board .ui-selecting {
+	background-color: #0cc;
+}
+#board .ui-selecting > * {
+	opacity: 0.7
+}
+
+#board .ui-selected {
+	background-color: #0cc;
 }
 
 .entity-outer {
@@ -61,11 +72,6 @@ body > .container, #main {
 
 .ui-resizable {
 	margin: 0 auto;
-}
-
-.entity-outer.ui-selectee {
-	opacity: 0.9;
-	background-color: #77f;
 }
 
 .dropdown-form {

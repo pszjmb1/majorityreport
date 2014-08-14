@@ -39,10 +39,11 @@ Template.freeform.rendered = function () {
     var _self = this,
         board = this.$(boardSelector);
 
+    board.selectable({ filter: '.entity-outer' });
+
     board.bind('entityAttributeChange', function() {
         plumber.repaintEverything();
     });
-
 
     // draw connections/relations
     var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
@@ -697,7 +698,20 @@ Template.formEvent.events({
 
 /**  Tools */
 Template.tools.rendered = function () {
-    var _self = this;
+    var _self = this,
+        btnEntityGroup = _self.$('.entity-group');
+
+    btnEntityGroup.attr('disabled', true);
+
+    $(board).on('selectableselecting selectableunselecting', function(e, ui) {
+        console.log("yo");
+        if( $(".ui-selecting").length > 1 || $(".ui-selected").length > 1 ) {
+            btnEntityGroup.attr('disabled', false);
+        } else {
+            btnEntityGroup.attr('disabled', true);
+        }
+    });
+
 
     _self.$('.dropdown-menu textarea').on('click', function(e) {
         e.stopPropagation();
