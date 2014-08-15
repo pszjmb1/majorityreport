@@ -9,6 +9,7 @@
     "leaflet-search": {},
     "accounts-ui-bootstrap-3": {},
     "bootstrap3-datetimepicker": {},
-    "momentjs": {}
+    "momentjs": {},
+    "kadira": {}
   }
 }

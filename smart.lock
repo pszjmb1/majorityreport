@@ -11,7 +11,8 @@
       "leaflet-search": {},
       "accounts-ui-bootstrap-3": {},
       "bootstrap3-datetimepicker": {},
-      "momentjs": {}
+      "momentjs": {},
+      "kadira": {}
     },
     "packages": {
       "iron-router": {
@@ -63,6 +64,11 @@
         "git": "https://github.com/crapthings/meteor-momentjs.git",
         "tag": "v2.1.0.2",
         "commit": "59a762e297082eea8b8cae00374c2b7ac6f89529"
+      },
+      "kadira": {
+        "git": "https://github.com/meteorhacks/kadira.git",
+        "tag": "v2.4.13",
+        "commit": "1f3c1a427084af5a2eca2e299eb65bc01387df8a"
       },
       "iron-layout": {
         "git": "https://github.com/EventedMind/iron-layout.git",
