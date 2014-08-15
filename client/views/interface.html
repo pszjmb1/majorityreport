@@ -50,20 +50,20 @@
         {{!-- Only show relation control and list for markers or other specific scenarios --}}
         {{!-- Entity options --}}
         <div class="entity-info-tools">
+            <a href="#" class="btn btn-default btn-xs edit-entity"><i class="fa fa-pen"> Edit Enitty</i></a>
             <a class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</a>
-            {{#if showRelations}}
-                <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
-            {{/if}}
+            <a class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</a>
+        </div>
+         <div class="edit-entity-form collapse">
+            {{> UI.dynamic template=entityFormTemplate data=this}}
         </div>
 
-        {{!-- Entity Information --}}
-        {{#if isEntityType 'event'}}
-            {{> displayEventInfo this}}
-        {{/if}}
+        <div class="entity-info">
+            {{> UI.dynamic template=entityInfoTemplate data=this}}
+        </div>
+
         {{> displayAttributes this}}
-        {{#if showRelations}}
-            {{> displayRelations this}}
-        {{/if}}
+        {{> displayRelations this}}
     {{/with}}
 </template>
 
@@ -78,23 +78,20 @@
 
 <template name="displayRelations">
     <div class="relations">
-        <h4>Relatives</h4>
+        <h4>Relations</h4>
         {{#each relations 'mrTarget'}}
             <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
         {{/each}}
     </div>
 </template>
 
-<template name="displayEventInfo">
+<template name="entityEventInfo">
     <div class="event-info">
         <h4>Event: {{dctermsTitle}}</h4>
         <div class="well well-sm">
-            <p>
-                <i class="fa fa-clock-o"></i>
-                {{prettyDate mrStartDate}} 
-                {{#if mrEndDate}} - {{prettyDate mrEndDate}} {{/if}}
-            </p>
-            <a class="btn btn-default btn-xs edit-event"><i class="fa"></i>Edit Event</a>
+            <i class="fa fa-clock-o"></i>
+            {{prettyDate mrStartDate}} 
+            {{#if mrEndDate}} - {{prettyDate mrEndDate}} {{/if}}
         </div>
     </div>
     

@@ -3,6 +3,11 @@ var boardSelector = '#board',
     dateFormat = "ddd, Do MMM YYYY",
     dateWithTimeFormat = "ddd, Do MMM YYYY - HH:mm";
 
+
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
 UI.registerHelper('printObject', function(obj) {
     return JSON.stringify(obj);
 });
@@ -41,7 +46,7 @@ Template.freeform.rendered = function () {
 
     board.selectable({ filter: '.entity-outer' });
 
-    board.bind('entityAttributeChange', function() {
+    board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
     });
 
@@ -167,7 +172,7 @@ Template.entity.helpers({
             return;
         }
         // Publish message to notify change in entity attirbute
-        $(boardSelector).trigger('entityAttributeChange');
+        $(boardSelector).trigger('entityAttributeChange', this.entity.mrOrigin);
 
         var keys = ['width', 'height'],
             outerOffset = { width: 0, height: 50 };        
@@ -241,7 +246,12 @@ Template.map.rendered = function () {
 
     // bind events to map
     map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
-
+    $(boardSelector).bind('entityAttributeChange', function(event, entityOrigin) {
+        if(entityOrigin === _self.data.mrOrigin) {
+            console.log("Change");
+            L.Util.requestAnimFrame(map.invalidateSize, map, !1, map._container);
+        }
+    });
 
     /**
      * MARKERS
@@ -345,7 +355,7 @@ Template.timeline.rendered = function () {
 
     // Bind events
     // Set timeline height on resize. Auto resize on width is already support by vis.js
-    $(boardSelector).on('entityAttributeChange', function() {
+    $(boardSelector).on('entityAttributeChange', function(event, entityOrigin) {
         var parentBox = container.parentNode.getBoundingClientRect();
         if($(container).height() !== parentBox.height) {
             timeline.setOptions({height: parentBox.height});
@@ -421,13 +431,23 @@ Template.timeline.rendered = function () {
  */
 Template.entityInfo.rendered = function () {
     var _self = this,
-        relationElem = _self.$('.add-relation');
+        relationElem = _self.$('.add-relation'),
+        editButton = _self.$('a.edit-entity'),
+        editEntityForm = _self.$('.edit-entity-form');
     
     // make relation endpoint
     if(relationElem.length > 0) {
         relationElem.attr({ "data-id": _self.data.mrOrigin });
         plumber.makeSource(relationElem, {parent: relationElem});
     }
+
+    // Collapsible edit forms
+    if(editButton && editEntityForm) {
+        editButton.on('click', function(e) {
+            editEntityForm.collapse('toggle');
+        });
+    }
+    
 };
 
 Template.entityInfo.helpers({
@@ -448,6 +468,24 @@ Template.entityInfo.helpers({
 
         return false;
     },
+    entityInfoTemplate: function() {
+        var type = getEntityType(this);
+        if(type === 'media') {
+            type = getMediaFormat(this.dctermsFormat);
+        }
+
+        type = type.capitalize();
+        return "entity"+ type +"Info";
+    },
+    entityFormTemplate: function() {
+        var type = getEntityType(this);
+        if(type === 'media') {
+            type = getMediaFormat(this.dctermsFormat);
+        }
+
+        type = type.capitalize();
+        return "form"+ type;
+    }
 });
 
 Template.entityInfo.events({
@@ -509,6 +547,7 @@ Template.displayRelations.helpers({
 Template.displayRelations.events({
     'mouseover .relative-entity-item': function (e,tpl) {
         var _self = this,
+            ghostSelector = _self.mrSource +"-ghost-endpoint",
             endpointClassname = 'endpoint-marker',
             relativeClassName = 'highlight-entity',
             sourceElem = document.createElement('div'),
@@ -516,7 +555,7 @@ Template.displayRelations.events({
             offset = getOffsetRect(e.currentTarget);
 
         $(sourceElem)
-            .attr('id', _self.mrSource)
+            .attr('id', ghostSelector)
             .offset({
                 top: offset.top, 
                 left: offset.left + e.target.getBoundingClientRect().width,
@@ -525,9 +564,8 @@ Template.displayRelations.events({
 
         if(targetElem) {
             $(targetElem).addClass(relativeClassName);
-
             plumber.connect({
-                scope: _self.mrOrigin,
+                scope: ghostSelector,
                 source: sourceElem,
                 target: targetElem
             });
@@ -535,10 +573,11 @@ Template.displayRelations.events({
     },
     'mouseout .relative-entity-item': function(e, tpl) {
         var _self = this,
+            ghostSelector = _self.mrSource +"-ghost-endpoint",
             relativeClassName = 'highlight-entity',
-            sourceElem = document.getElementById(_self.mrSource),
+            sourceElem = document.getElementById(ghostSelector),
             targetElem = document.getElementById(_self.mrTarget),
-            connection = plumber.getConnections(_self.mrOrigin)[0];
+            connection = plumber.getConnections(ghostSelector)[0];
 
         $(sourceElem).remove();
 
@@ -554,7 +593,7 @@ Template.displayRelations.events({
 
 });
 
-Template.displayEventInfo.events({
+Template.entityEventInfo.events({
     'click .edit-event': function(e, tpl) {
         e.preventDefault();
         var dialog = setUpDialog('formEvent', this, 'form-event-edit');
@@ -704,7 +743,6 @@ Template.tools.rendered = function () {
     btnEntityGroup.attr('disabled', true);
 
     $(board).on('selectableselecting selectableunselecting', function(e, ui) {
-        console.log("yo");
         if( $(".ui-selecting").length > 1 || $(".ui-selected").length > 1 ) {
             btnEntityGroup.attr('disabled', false);
         } else {
