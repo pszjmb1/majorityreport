@@ -35,6 +35,21 @@ getEntityRelative = function(entity) {
 	}
 };
 
+getEntityType = function(entity) {
+    if(entity) {
+        var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
+        return type.toLowerCase();
+    }
+}
+
+getMediaFormat = function(dctermsFormat) {
+    if(dctermsFormat) {
+        var format = dctermsFormat.split('/')[0];
+        return format.toLowerCase();
+    }
+}
+
+
 Meteor.methods({
 	crisisReport: function(provAttributes) {
 		var user = Meteor.user(),
@@ -499,22 +514,32 @@ Meteor.methods({
 
 
 		// Clone the latest version of the entity and update it
-		var entity = getLatestRevision(provAttributes.currentEntityOrigin),
-			currentEntityId = entity._id;
+		var currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
+			currentEntityId = currentEntity._id;
 		
 		// Prepare the new information
 		var newEntity = {
 			mrAttribute: {},
 			provGeneratedAtTime: now
 		};
-		if(provAttributes.multipleAttributes) {
-			newEntity.mrAttribute = entity.mrAttribute;
+
+
+		// Indicate whether or not the entity can accept multiple attributes
+        var singleAttributeEntities = ['relation'],
+            entityType = getEntityType(currentEntity),
+            multipleAttributes = (_.contains(singleAttributeEntities, entityType)) ? false : true;
+        
+		if(multipleAttributes) {
+			var attributes = currentEntity.mrAttribute;
+			if(!_.has(attributes, provAttributes.label)) { attributes[provAttributes.label] = []; }
+			attributes[provAttributes.label].push(provAttributes.mrAttribute);
+
+			newEntity.mrAttribute = attributes;
+		} else {
+			newEntity.mrAttribute[provAttributes.attributeKey] = [provAttributes.attributeValue];
 		}
-		newEntity.mrAttribute[provAttributes.attributeKey] = provAttributes.attributeValue;
 
-
-
-		var entityEntry = _.extend(_.omit(entity, '_id'), newEntity);
+		var entityEntry = _.extend(_.omit(currentEntity, '_id'), newEntity);
 		var revisionId = Provenance.insert(entityEntry);   
 				
 		// Add a corresponding revision provenance /////////////////////////////
@@ -535,7 +560,7 @@ Meteor.methods({
 		//Invalidate the previous version
 		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
-		// return revisionId;
+		return revisionId;
 	},
 	entityAttributeRemove: function (provAttributes) {
 		var user = Meteor.user();
@@ -857,7 +882,7 @@ Meteor.methods({
 		
 		// ensure the user is logged in
 		if (!user)
-			throw new Meteor.Error(401, "Please login to add a new media");
+			throw new Meteor.Error(401, "Please login to add a new timeline");
 		var now = new Date().getTime(),
 			userProv = Provenance.findOne({mrUserId:user._id});
 
@@ -958,6 +983,82 @@ Meteor.methods({
 
 		return revisionId;
 	},
+	validateAssertion: function(provAttributes) {
+		var user = Meteor.user();
+		
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to validate an attribute");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+
+		// Clone the latest version of the entity and update it
+		var currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
+			currentEntityId = currentEntity._id,
+			currentUserId = user._id;
+		
+
+		var attributes = currentEntity.mrAttribute;
+		if(_.has(attributes, provAttributes.label)) {
+			var values = _.pluck(attributes[provAttributes.label], 'mrValue');
+
+			if(_.contains(values, provAttributes.value)) {
+				var valueObj = _.findWhere(attributes[provAttributes.label], {mrValue: provAttributes.value});
+
+				if(valueObj && valueObj.mrCertainity) {
+					var existingValidators = valueObj.mrCertainity.mrAssertionVerifiedBy;
+					if(!_.contains(existingValidators, currentUserId)) {
+						existingValidators.push(currentUserId);
+					}
+				}
+			}
+		}
+
+		// Prepare the new information
+		var newEntity = {
+			mrAttribute: attributes,
+			provGeneratedAtTime: now
+		};
+		console.log('newEntity ' , newEntity);22
+
+		var entityEntry = _.extend(_.omit(currentEntity, '_id'), newEntity);
+		var revisionId = Provenance.insert(entityEntry);   
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var activity = {
+			provClasses:['Activity'],
+			provType:'MR: Attribute Value Verification',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: currentUserId,
+			provGenerated: revisionId
+		};
+
+		Provenance.insert(activity);
+				
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: 'Entity Attribute Update',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: currentEntityId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
+
+		return revisionId;
+
+
+	}
 
 });
 
@@ -1018,4 +1119,3 @@ function reportRevision(provAttributes) {
 
 	return revisionId;
 }
-

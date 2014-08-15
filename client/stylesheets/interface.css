@@ -80,12 +80,11 @@ body > .container, #main {
 }
 
 /*Medium meta/attributes */
-.attributes span.label {
-	font-size: 11px;
-	display: inline-block;
-	margin-bottom: 4px;
-	margin-right: 5px;
+.attributes-accordion {
+	height: 150px;
+	max-height: 300px;
 }
+
 
 
 /* Maps */

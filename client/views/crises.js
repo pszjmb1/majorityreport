@@ -94,20 +94,6 @@ Template.crisisHeading.helpers({
       return Provenance.findOne(activity.provWasStartedBy);
     }
   },
-  getName: function(agent) {
-      if(agent) {
-        if( agent.foafGivenName){
-          return agent.foafGivenName +" "+  agent.foafFamilyName;
-        }else{
-          return agent.mrUserName;
-        }
-      }
-  },
-  isOwner: function(agent) { 
-    if(agent) {
-      return agent.mrUserId == Meteor.userId();
-    }
-  }, 
   provLink: function() {
     return "/crisis/" + this.mrOrigin;
   },

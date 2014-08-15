@@ -70,9 +70,37 @@
 <template name="displayAttributes">
     <div class="attributes">
         <h4>Attributes</h4>
-        {{#each attributes}}
-            <span class="label label-info">{{label}}: {{value}}  <a href="#" class="remove-attribute">x</a> </span>
-        {{/each}}
+        <div class="attributes-accordion panel-group">
+            {{#each attributes}}
+                <div class="panel">
+                    <div class="attribute-label panel-heading">{{label}}</div>
+                    <div class="attribute-values panel-body">
+                        <a href="#" class="add-attribute-value btn btn-default btn-xs">Add new value</a>
+                        <ul class="attribute-value-meta list-group">
+                        {{#each values}}
+                            <li class="list-group-item">
+                                <br><a href="#" class="validate-attribute-value btn btn-success btn-xs">Agree</a>
+                                <br><span class="label label-primary">{{mrValue}}</span>
+                                <br><em>added by: </em> {{getAgentNameById mrCertainity.mrAssertionBy}} - {{mrCertainity.upAssertionConfidence}}
+                                {{#if mrCertainity.mrAssertionReason}}
+                                    <br>Reason: {{mrCertainity.mrAssertionReason}}
+                                {{/if}}
+                                
+                                {{#if verificationCount}}
+                                    <p>Verified by ({{verificationCount}})</p>
+                                {{/if}}
+                                {{#each this.mrCertainity.mrAssertionVerifiedBy}}
+                                    {{getAgentNameById this}}
+                                {{/each}}
+                                <br><div style="margin-bottom: 10px; height: 3px; background-color: orange; width: {{certainityPercent}}"></div>
+
+                            </li>
+                        {{/each}}
+                        </ul>
+                    </div>
+                </div>
+            {{/each}}
+        </div>
     </div>
 </template>
 
@@ -123,8 +151,15 @@
 <template name="formAttribute">
     <div>
         <form>
-            <input type="text" name="attribute-label" id="attribute-label" placeholder="{{label}}"/>
-            <input type="text" name="attribute-value" id="attribute-value" placeholder="{{value}}"/>
+            <input type="text" class="form-control" name="attribute-label" placeholder="Label" value="{{label}}"/>
+            <input type="text" class="form-control" name="attribute-value" placeholder="Value" value="{{value}}"/>
+            <br>
+            <div class="form-group">
+                <div class="input-slider"></div>
+                <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level" value="{{certainity}}"/>
+            </div>
+            <br>
+            <input type="text" class="form-control" name="attribute-source" placeholder="Source" value="{{source}}"/>
             <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Save Annotation</button>
         </form>
     </div>
@@ -172,7 +207,7 @@
                 <div class="input-group-btn">
                     <select class="form-control input-sm" name="mediaFormat">
                         <option value="image/jpeg">Image (.jpg)</option>
-                        <option value="video/flv">Video (flv)</option>
+                        <option value="video/flv">Video (flv)</option>``
                         <option value="video/fla">Video (fla)</option>
                     </select>
                     <button class="btn btn-sm" type="submit"><i class="fa fa-image"></i>  Add Media</button>

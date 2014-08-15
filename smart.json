@@ -2,7 +2,6 @@
   "packages": {
     "iron-router": {},
     "spin": {},
-    "jquery-ui": {},
     "jquery-ui-bootstrap": {},
     "fontawesome4": {},
     "leaflet": {},

@@ -7,7 +7,6 @@ standard-app-packages
 accounts-password
 iron-router
 spin
-jquery-ui
 jquery-ui-bootstrap
 d3
 fontawesome4
@@ -21,3 +20,4 @@ bootstrap3-datetimepicker
 momentjs
 jquery-panzoom
 kadira
+jquery-ui

@@ -3,21 +3,6 @@ var boardSelector = '#board',
     dateFormat = "ddd, Do MMM YYYY",
     dateWithTimeFormat = "ddd, Do MMM YYYY - HH:mm";
 
-
-String.prototype.capitalize = function() {
-    return this.charAt(0).toUpperCase() + this.slice(1);
-}
-
-UI.registerHelper('printObject', function(obj) {
-    return JSON.stringify(obj);
-});
-
-UI.registerHelper('prettyDate', function(date) {
-    if(moment(date).isValid()) {
-        return moment(date).format(dateWithTimeFormat);
-    }
-});
-
 Template.freeform.created = function () {
     Session.set('renderedEntities', []);
 
@@ -211,7 +196,7 @@ Template.media.helpers({
         return (type === checkType);
     }
 });
-
+ 
 /**
  * Maps & Markers
  */
@@ -431,21 +416,12 @@ Template.timeline.rendered = function () {
  */
 Template.entityInfo.rendered = function () {
     var _self = this,
-        relationElem = _self.$('.add-relation'),
-        editButton = _self.$('a.edit-entity'),
-        editEntityForm = _self.$('.edit-entity-form');
+        relationElem = _self.$('.add-relation');
     
     // make relation endpoint
     if(relationElem.length > 0) {
         relationElem.attr({ "data-id": _self.data.mrOrigin });
         plumber.makeSource(relationElem, {parent: relationElem});
-    }
-
-    // Collapsible edit forms
-    if(editButton && editEntityForm) {
-        editButton.on('click', function(e) {
-            editEntityForm.collapse('toggle');
-        });
     }
     
 };
@@ -490,26 +466,84 @@ Template.entityInfo.helpers({
 
 Template.entityInfo.events({
     'click .add-atrribute': function(e, tpl) {
+        e.preventDefault();
         setUpDialog('formAttribute', this, 'form-attr');
-        
+    },
+    'click .edit-entity': function(e, tpl) {
+        e.preventDefault();
+        tpl.$('.edit-entity-form').collapse('toggle');
     }
 });
 
 /**
  * Shared Templates
  */
+Template.displayAttributes.rendered = function () {
+    var _self = this,
+        attributesList = _self.$('.attributes-accordion')  ;
+
+    attributesList.accordion({
+        header: '.attribute-label',
+        heightStyle: "content",
+        collapsible: true,
+        icons: null
+    })
+
+};
 Template.displayAttributes.helpers({
     attributes: function() {
         if(!_.isEmpty(this.mrAttribute)) {
-            var output = _.map(this.mrAttribute, function(value, label) {
-                return {label: label, value: value};
+            var entityOrigin = this.mrOrigin;
+            var output = _.map(this.mrAttribute, function(values, label) {
+                // pass along the entity origin
+                var extendedValues = _.map(values, function(value) {
+                    return _.extend(value, {label: label, mrOrigin: entityOrigin});
+                });
+
+                return {
+                    label: label, 
+                    values: extendedValues, 
+                    mrOrigin: entityOrigin
+                };
             });
             return output;
+        }
+    },
+    certainityPercent: function() {
+        if(this.mrCertainity && this.mrCertainity.upAssertionConfidence) {
+            return (this.mrCertainity.upAssertionConfidence * 100 )+ "%";
+        }
+    },
+    verificationCount: function() {
+        if(this.mrCertainity && this.mrCertainity.mrAssertionVerifiedBy) {
+            return this.mrCertainity.mrAssertionVerifiedBy.length;
+        }
+    },
+    verifiedBy: function() {
+        if(this.mrCertainity && this.mrCertainity.mrAssertionVerifiedBy) {
+            return this.mrCertainity.mrAssertionVerifiedBy;
         }
     },
 });
 
 Template.displayAttributes.events({
+    'click .add-attribute-value': function(e,tpl) {
+        e.preventDefault();
+        setUpDialog('formAttribute', this, 'form-attr');
+    },
+    'click .validate-attribute-value': function(e,tpl) {
+        e.preventDefault();
+        var provAttributes = {
+            currentEntityOrigin: this.mrOrigin,
+            label: this.label,
+            value: this.mrValue
+        }
+
+        Meteor.call('validateAssertion', provAttributes, function(error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+    },
     'click .remove-attribute': function (e,tpl) {
         e.preventDefault();
         var attrKey = this.label;
@@ -614,38 +648,52 @@ Template.displayThumbnail.helpers({
  * Forms
  */
 
+Template.formAttribute.rendered = function () {
+    var _self = this,
+        fieldCertainity = $('input[name=attribute-certainity]'),
+        inputSlider = _self.$('.input-slider');
+
+    inputSlider.slider({
+        min: 0.0,
+        max: 1.0,
+        step: 0.1,
+        range: "min",
+        value: fieldCertainity.val() || 0.0,
+        slide: function(e, ui) {
+            fieldCertainity.val(ui.value);
+        }
+    });
+
+};
 Template.formAttribute.helpers({
-    label: function () {
-        if(this && !_.isEmpty(this.mrAttribute)) {
-            return _.keys(this.mrAttribute)[_.toArray(this.mrAttribute).length - 1];
-        } 
-        return "Label";
-    },
-    value: function () {
-        if(this && !_.isEmpty(this.mrAttribute)) {
-            return _.values(this.mrAttribute)[_.toArray(this.mrAttribute).length - 1];
-        } 
-        return "Value";
-    }
+
 });
 
 Template.formAttribute.events({
+    'change input[name=attribute-certainity]': function(e, tpl) {
+        tpl.$('.input-slider').slider('value', $(e.target).val())
+    },
     'submit form': function (e, tpl) {
         e.preventDefault();
         var label = tpl.$('input[name=attribute-label]').val(),
-            value = tpl.$('input[name=attribute-value]').val();
+            value = tpl.$('input[name=attribute-value]').val(),
+            certainity = tpl.$('input[name=attribute-certainity]').val(),
+            source = tpl.$('input[name=attribute-source]').val();
 
         var provAttributes = {
             currentEntityOrigin: this.mrOrigin,
-            attributeKey: label.toLowerCase(),
-            attributeValue: value
+            label: label,
+            mrAttribute: {
+                mrValue: value,
+                mrCertainity: {
+                    upAssertionConfidence: certainity,
+                    upAssertionType: 'upHumanAsserted',
+                    mrAssertionBy: Meteor.userId(),
+                    mrAssertionReason: source,
+                    mrAssertionVerifiedBy: []
+                },
+            },
         };
-
-        // Indicate whether or not the entity can accept multiple attributes
-        var singleAttributeEntities = ['relation'],
-            entityType = getEntityType(this);
-        
-        provAttributes.multipleAttributes = (_.contains(singleAttributeEntities, entityType)) ? false : true;
 
         Meteor.call('entityRevisionAttribute', provAttributes, function (error, result) {
             if(error)
@@ -858,20 +906,6 @@ function addUpdateTimelineEvent(provAttributes) {
 /**
  * HELPERS/ COMMON METHODS 
  */
-function getEntityType(entity) {
-    if(entity) {
-        var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
-        return type.toLowerCase();
-    }
-}
-
-function getMediaFormat(dctermsFormat) {
-    if(dctermsFormat) {
-        var format = dctermsFormat.split('/')[0];
-        return format.toLowerCase();
-    }
-}
-
 function setUpDialog(template, entity, selectorSuffix) {
     var dialog,
         appendToElem = $(boardSelector),
