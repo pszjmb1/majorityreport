@@ -480,14 +480,21 @@ Template.entityInfo.events({
  */
 Template.displayAttributes.rendered = function () {
     var _self = this,
-        attributesList = _self.$('.attributes-accordion')  ;
+        attributesList = _self.$('.attributes-accordion'),
+        valuesList = _self.$('.list-group-item'),
+        options = {
+            heightStyle: "content",
+            collapsible: true,
+            icons: null
+        };
 
-    attributesList.accordion({
-        header: '.attribute-label',
-        heightStyle: "content",
-        collapsible: true,
-        icons: null
-    })
+    attributesList.accordion(_.extend(options, {
+        header: 'h5'
+    }));
+    valuesList.accordion(_.extend(options, {
+        header: 'h6',
+        active: false
+    }));
 
 };
 Template.displayAttributes.helpers({
@@ -511,7 +518,7 @@ Template.displayAttributes.helpers({
     },
     certainityPercent: function() {
         if(this.mrCertainity && this.mrCertainity.upAssertionConfidence) {
-            return (this.mrCertainity.upAssertionConfidence * 100 )+ "%";
+            return (this.mrCertainity.upAssertionConfidence)+ "%";
         }
     },
     verificationCount: function() {
@@ -536,7 +543,7 @@ Template.displayAttributes.events({
         var provAttributes = {
             currentEntityOrigin: this.mrOrigin,
             label: this.label,
-            value: this.mrValue
+            mrValue: this.mrValue
         }
 
         Meteor.call('validateAssertion', provAttributes, function(error, result) {
@@ -598,11 +605,13 @@ Template.displayRelations.events({
 
         if(targetElem) {
             $(targetElem).addClass(relativeClassName);
-            plumber.connect({
+            var conn = plumber.connect({
                 scope: ghostSelector,
                 source: sourceElem,
                 target: targetElem
             });
+
+            $(conn.canvas).css("z-index", 1200);
         }
     },
     'mouseout .relative-entity-item': function(e, tpl) {
@@ -651,17 +660,15 @@ Template.displayThumbnail.helpers({
 Template.formAttribute.rendered = function () {
     var _self = this,
         fieldCertainity = $('input[name=attribute-certainity]'),
-        inputSlider = _self.$('.input-slider');
+        inputSlider = _self.$('.input-slider'),
+        // initialRangeValues = [10, 30];
+        initialRangeValues = fieldCertainity.val() || 10.00;
 
     inputSlider.slider({
-        min: 0.0,
-        max: 1.0,
-        step: 0.1,
-        range: "min",
-        value: fieldCertainity.val() || 0.0,
-        slide: function(e, ui) {
-            fieldCertainity.val(ui.value);
-        }
+        min: 0,
+        max: 100,
+        step: 0.01,
+        value: initialRangeValues
     });
 
 };
@@ -671,7 +678,18 @@ Template.formAttribute.helpers({
 
 Template.formAttribute.events({
     'change input[name=attribute-certainity]': function(e, tpl) {
+        // var values = $(e.target).val();
+        // if(values.indexOf('-') > -1) {
+            
+        // }
+
         tpl.$('.input-slider').slider('value', $(e.target).val())
+    },
+    'slidecreate .input-slider, slide .input-slider': function(e, tpl, ui) {
+        var values = ui.value || $('.input-slider').slider('value');
+
+        // values = values.join(' - ');
+        tpl.$('input[name=attribute-certainity]').val(values);
     },
     'submit form': function (e, tpl) {
         e.preventDefault();
@@ -930,6 +948,8 @@ function setUpDialog(template, entity, selectorSuffix) {
 
     $(dialog).dialog({
         autoOpen: true,
+        width: 350,
+        modal: true,
         close: function(e, ui) {
             $(this).remove();
         }

@@ -509,12 +509,11 @@ Meteor.methods({
 		// TODO: ensure that the key and value are valid
 
 		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId: user._id});
-		
-
+			userProv = Provenance.findOne({mrUserId: user._id});	
 
 		// Clone the latest version of the entity and update it
-		var currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
+		var currentLabel = provAttributes.label.toLowerCase(),
+			currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
 			currentEntityId = currentEntity._id;
 		
 		// Prepare the new information
@@ -523,7 +522,6 @@ Meteor.methods({
 			provGeneratedAtTime: now
 		};
 
-
 		// Indicate whether or not the entity can accept multiple attributes
         var singleAttributeEntities = ['relation'],
             entityType = getEntityType(currentEntity),
@@ -531,8 +529,17 @@ Meteor.methods({
         
 		if(multipleAttributes) {
 			var attributes = currentEntity.mrAttribute;
-			if(!_.has(attributes, provAttributes.label)) { attributes[provAttributes.label] = []; }
-			attributes[provAttributes.label].push(provAttributes.mrAttribute);
+			if(_.has(attributes, currentLabel)) { 
+				var values = _.pluck(attributes[currentLabel], 'mrValue');
+				if(_.contains(values, provAttributes.mrAttribute.mrValue)) {
+					var errMessage = "Value '"+ provAttributes.mrAttribute.mrValue +"' for label '"+ currentLabel + "' already exists";
+					throw new Meteor.Error(401, errMessage);
+				}
+			} else {
+				attributes[currentLabel] = []; 
+			}
+
+			attributes[currentLabel].push(provAttributes.mrAttribute);
 
 			newEntity.mrAttribute = attributes;
 		} else {
@@ -994,21 +1001,26 @@ Meteor.methods({
 			userProv = Provenance.findOne({mrUserId:user._id});
 
 		// Clone the latest version of the entity and update it
-		var currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
+		var currentLabel = provAttributes.label.toLowerCase(),
+			currentValue = provAttributes.mrValue,
+			currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
 			currentEntityId = currentEntity._id,
 			currentUserId = user._id;
 		
 
 		var attributes = currentEntity.mrAttribute;
-		if(_.has(attributes, provAttributes.label)) {
-			var values = _.pluck(attributes[provAttributes.label], 'mrValue');
+		if(_.has(attributes, currentLabel)) {
+			var values = _.pluck(attributes[currentLabel], 'mrValue');
 
-			if(_.contains(values, provAttributes.value)) {
-				var valueObj = _.findWhere(attributes[provAttributes.label], {mrValue: provAttributes.value});
+			if(_.contains(values, currentValue)) {
+				var valueObj = _.findWhere(attributes[currentLabel], {mrValue: currentValue});
 
 				if(valueObj && valueObj.mrCertainity) {
 					var existingValidators = valueObj.mrCertainity.mrAssertionVerifiedBy;
-					if(!_.contains(existingValidators, currentUserId)) {
+					if(_.contains(existingValidators, currentUserId)) {
+						var errMessage = "You have already verified this value.\n"+ currentLabel +": "+ currentValue;
+						throw new Meteor.Error(401, errMessage);
+					} else {
 						existingValidators.push(currentUserId);
 					}
 				}
@@ -1020,7 +1032,6 @@ Meteor.methods({
 			mrAttribute: attributes,
 			provGeneratedAtTime: now
 		};
-		console.log('newEntity ' , newEntity);22
 
 		var entityEntry = _.extend(_.omit(currentEntity, '_id'), newEntity);
 		var revisionId = Provenance.insert(entityEntry);   
@@ -1056,7 +1067,6 @@ Meteor.methods({
 		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
-
 
 	}
 

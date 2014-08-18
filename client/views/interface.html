@@ -70,34 +70,35 @@
 <template name="displayAttributes">
     <div class="attributes">
         <h4>Attributes</h4>
-        <div class="attributes-accordion panel-group">
+        <div class="attributes-accordion">
             {{#each attributes}}
-                <div class="panel">
-                    <div class="attribute-label panel-heading">{{label}}</div>
-                    <div class="attribute-values panel-body">
-                        <a href="#" class="add-attribute-value btn btn-default btn-xs">Add new value</a>
-                        <ul class="attribute-value-meta list-group">
-                        {{#each values}}
-                            <li class="list-group-item">
-                                <br><a href="#" class="validate-attribute-value btn btn-success btn-xs">Agree</a>
-                                <br><span class="label label-primary">{{mrValue}}</span>
-                                <br><em>added by: </em> {{getAgentNameById mrCertainity.mrAssertionBy}} - {{mrCertainity.upAssertionConfidence}}
-                                {{#if mrCertainity.mrAssertionReason}}
-                                    <br>Reason: {{mrCertainity.mrAssertionReason}}
-                                {{/if}}
-                                
-                                {{#if verificationCount}}
-                                    <p>Verified by ({{verificationCount}})</p>
-                                {{/if}}
-                                {{#each this.mrCertainity.mrAssertionVerifiedBy}}
-                                    {{getAgentNameById this}}
-                                {{/each}}
-                                <br><div style="margin-bottom: 10px; height: 3px; background-color: orange; width: {{certainityPercent}}"></div>
+                <h5><strong>{{label}}</strong></h5>
+                <div class="attribute-values">
+                    <ul class="attribute-value-meta list-group">
+                        <li class="list-group-item">
+                            {{#each values}}
+                                <h6>
+                                    <span class="label label-primary">{{mrValue}}</span>
+                                    <span style="display:block; margin-top: 10px; height: 3px; background-color: orange; width: {{certainityPercent}}"></span>
+                                </h6>
+                                <div class="attribute-value-details">
+                                    <a href="#" class="validate-attribute-value btn btn-default btn-xs"><i class="fa fa-thumbs-up"></i></a>
+                                    <br><em>added by: </em> {{getAgentNameById mrCertainity.mrAssertionBy}} - {{mrCertainity.upAssertionConfidence}}
+                                    {{#if mrCertainity.mrAssertionReason}}
+                                        <br>Reason: {{mrCertainity.mrAssertionReason}}
+                                    {{/if}}
+                                    
+                                    {{#if verificationCount}}
+                                        <p>Verified by ({{verificationCount}})</p>
+                                    {{/if}}
+                                    {{#each this.mrCertainity.mrAssertionVerifiedBy}}
+                                        {{getAgentNameById this}}
+                                    {{/each}}
 
-                            </li>
-                        {{/each}}
-                        </ul>
-                    </div>
+                                </div>
+                            {{/each}}
+                        </li>
+                    </ul>
                 </div>
             {{/each}}
         </div>
@@ -156,7 +157,10 @@
             <br>
             <div class="form-group">
                 <div class="input-slider"></div>
-                <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level" value="{{certainity}}"/>
+                <div class="input-group">
+                    <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level" value="{{certainity}}"/>
+                    <span class="input-group-addon">%</span>
+                </div>
             </div>
             <br>
             <input type="text" class="form-control" name="attribute-source" placeholder="Source" value="{{source}}"/>
