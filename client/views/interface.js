@@ -518,7 +518,7 @@ Template.displayAttributes.helpers({
     },
     certainityPercent: function() {
         if(this.mrCertainity && this.mrCertainity.upAssertionConfidence) {
-            return (this.mrCertainity.upAssertionConfidence)+ "%";
+            return (this.mrCertainity.upAssertionConfidence * 100 )+ "%";
         }
     },
     verificationCount: function() {
@@ -605,13 +605,11 @@ Template.displayRelations.events({
 
         if(targetElem) {
             $(targetElem).addClass(relativeClassName);
-            var conn = plumber.connect({
+            plumber.connect({
                 scope: ghostSelector,
                 source: sourceElem,
                 target: targetElem
             });
-
-            $(conn.canvas).css("z-index", 1200);
         }
     },
     'mouseout .relative-entity-item': function(e, tpl) {
@@ -661,56 +659,101 @@ Template.formAttribute.rendered = function () {
     var _self = this,
         fieldCertainity = $('input[name=attribute-certainity]'),
         inputSlider = _self.$('.input-slider'),
-        // initialRangeValues = [10, 30];
-        initialRangeValues = fieldCertainity.val() || 10.00;
+        initialRangeValues = [10, 30];
 
     inputSlider.slider({
+        range: true,
         min: 0,
         max: 100,
         step: 0.01,
-        value: initialRangeValues
+        values: initialRangeValues
     });
 
 };
 Template.formAttribute.helpers({
-
 });
 
 Template.formAttribute.events({
     'change input[name=attribute-certainity]': function(e, tpl) {
-        // var values = $(e.target).val();
-        // if(values.indexOf('-') > -1) {
-            
-        // }
+        var fieldCertainity = $(e.target),
+            fieldCertainityValue = fieldCertainity.val(),
+            splitter;
 
-        tpl.$('.input-slider').slider('value', $(e.target).val())
+        var values = fieldCertainityValue;
+        // Work out the splitter
+        if(values.indexOf('to') > -1) {
+            splitter = "to";
+        } else if(values.indexOf('-') > -1) {
+            splitter = '-';
+        }
+
+        // Split the value if splitter exists
+        if(splitter) { 
+            values = values.split(splitter); 
+        } else {
+            values = [values]
+        }
+
+        // convert the values into floats
+        values = _.map(values, function(v) { 
+            if(!isNaN(v)) { 
+                var output = parseFloat(v); 
+                if(output < 0 || output > 100) {
+                    return null;
+                } else {
+                    return output;
+                }
+            }
+        });
+
+        if(_.pick(values, null)) { 
+            var error = 'Error: certainity level should be within the range of 0 to 100%.';
+            fieldCertainity.val(fieldCertainityValue);
+        } else {
+            if(values.length === 1) { values = [values, values]; }
+            values = _.sortBy(values, function(v) { return v; });
+            tpl.$('.input-slider').slider('values', values); 
+        }
+
     },
     'slidecreate .input-slider, slide .input-slider': function(e, tpl, ui) {
-        var values = ui.value || $('.input-slider').slider('value');
+        var values = ui.values || $('.input-slider').slider('values');
 
-        // values = values.join(' - ');
+        // Reduce the array if there is no range 
+        // OR Sort the values 
+        if(values[0] == values[1]) { 
+            values.pop();
+        } else {
+            values = _.sortBy(values, function(v) { return v; });
+        }
+
+        values = values.join('% - ') + "%";
         tpl.$('input[name=attribute-certainity]').val(values);
     },
     'submit form': function (e, tpl) {
         e.preventDefault();
         var label = tpl.$('input[name=attribute-label]').val(),
             value = tpl.$('input[name=attribute-value]').val(),
-            certainity = tpl.$('input[name=attribute-certainity]').val(),
+            // certainity = tpl.$('input[name=attribute-certainity]').val(),
+            certainity = tpl.$('.input-slider').slider('values'),
             source = tpl.$('input[name=attribute-source]').val();
+
+        // sort value just to make sure
+        values = _.sortBy(values, function(v) { return v; });
 
         var provAttributes = {
             currentEntityOrigin: this.mrOrigin,
             label: label,
             mrAttribute: {
                 mrValue: value,
-                mrCertainity: {
-                    upAssertionConfidence: certainity,
-                    upAssertionType: 'upHumanAsserted',
-                    mrAssertionBy: Meteor.userId(),
-                    mrAssertionReason: source,
-                    mrAssertionVerifiedBy: []
-                },
+                mrAssertionAgreements: []
             },
+            mrCertainity: {
+                upAssertionConfidence: certainity,
+                upAssertionType: 'upHumanAsserted',
+                mrAssertionBy: Meteor.userId(),
+                mrAssertionReason: source,
+            }
         };
 
         Meteor.call('entityRevisionAttribute', provAttributes, function (error, result) {
