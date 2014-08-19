@@ -676,10 +676,9 @@ Template.formAttribute.helpers({
 Template.formAttribute.events({
     'change input[name=attribute-certainity]': function(e, tpl) {
         var fieldCertainity = $(e.target),
-            fieldCertainityValue = fieldCertainity.val(),
+            values = fieldCertainity.val(),
             splitter;
 
-        var values = fieldCertainityValue;
         // Work out the splitter
         if(values.indexOf('to') > -1) {
             splitter = "to";
@@ -697,37 +696,29 @@ Template.formAttribute.events({
         // convert the values into floats
         values = _.map(values, function(v) { 
             if(!isNaN(v)) { 
-                var output = parseFloat(v); 
+                var output = parseFloat(v);
                 if(output < 0 || output > 100) {
-                    return null;
+                    return;
                 } else {
                     return output;
                 }
             }
         });
 
-        if(_.pick(values, null)) { 
-            var error = 'Error: certainity level should be within the range of 0 to 100%.';
-            fieldCertainity.val(fieldCertainityValue);
+        if(_.contains(values, undefined)) { 
+            alert('Error: certainity level should be within the range of 0 to 100%.');
+            var sliderValues = getCertainityRangeDisplayValue();
+            fieldCertainity.val(sliderValues);
         } else {
             if(values.length === 1) { values = [values, values]; }
             values = _.sortBy(values, function(v) { return v; });
+
             tpl.$('.input-slider').slider('values', values); 
         }
 
     },
     'slidecreate .input-slider, slide .input-slider': function(e, tpl, ui) {
-        var values = ui.values || $('.input-slider').slider('values');
-
-        // Reduce the array if there is no range 
-        // OR Sort the values 
-        if(values[0] == values[1]) { 
-            values.pop();
-        } else {
-            values = _.sortBy(values, function(v) { return v; });
-        }
-
-        values = values.join('% - ') + "%";
+        var values = getCertainityRangeDisplayValue(ui);
         tpl.$('input[name=attribute-certainity]').val(values);
     },
     'submit form': function (e, tpl) {
@@ -967,6 +958,19 @@ function addUpdateTimelineEvent(provAttributes) {
 /**
  * HELPERS/ COMMON METHODS 
  */
+function getCertainityRangeDisplayValue() {
+    var values = $('.input-slider').slider('values');
+    // Reduce the array if there is no range 
+    // OR Sort the values 
+    if(values[0] == values[1]) { 
+        values.pop();
+    } else {
+        values = _.sortBy(values, function(v) { return v; });
+    }
+
+    return values.join('% - ') + "%";
+}
+
 function setUpDialog(template, entity, selectorSuffix) {
     var dialog,
         appendToElem = $(boardSelector),
