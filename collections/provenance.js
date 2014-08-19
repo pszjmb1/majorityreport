@@ -349,7 +349,7 @@ Meteor.methods({
 			provClasses: ['Entity'],
 			provType: 'MR: Relation',
 			provGeneratedAtTime: now,
-			mrSource: provAttributes.source,
+			mrSource: provAttribdutes.source,
 			mrTarget: provAttributes.target,
 			mrAttribute: {}
 		};
@@ -1068,6 +1068,20 @@ Meteor.methods({
 
 		return revisionId;
 
+	},
+	agentEntityRelation: function(provAttributes) {
+		var user = Meteor.user();
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to agree to a value");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id});
+
+		// get the relation list
+		// check to see if agent and entity already have a relationship
+		// update relationship if already exists a record
+		// insert a new relationship
 	}
 
 });
