@@ -54,7 +54,7 @@ Meteor.publish('relatedAttributes', function(origins) {
 
     return Provenance.find(
         { 
-            provClasses: 'Entity', 
+            provType: 'MR: Attribute',
             mrOrigin: {$in: _.unique(origins)}, 
             mrLabel: { $exists: true},
             mrValue: { $exists: true},

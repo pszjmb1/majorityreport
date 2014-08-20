@@ -70,38 +70,20 @@
 <template name="displayAttributes">
     <div class="attributes">
         <h4>Attributes</h4>
-        <div class="attributes-accordion">
-            {{#each attributes}}
-                <h5><strong>{{label}}</strong></h5>
-                <div class="attribute-values">
-                    <ul class="attribute-value-meta list-group">
-                        <li class="list-group-item">
-                            {{#each values}}
-                                <h6>
-                                    <span class="label label-primary">{{mrValue}}</span>
-                                    <span style="display:block; margin-top: 10px; height: 3px; background-color: orange; width: {{certainityPercent}}"></span>
-                                </h6>
-                                <div class="attribute-value-details">
-                                    <a href="#" class="validate-attribute-value btn btn-default btn-xs"><i class="fa fa-thumbs-up"></i></a>
-                                    <br><em>added by: </em> {{getAgentNameById mrCertainity.mrAssertionBy}} - {{mrCertainity.upAssertionConfidence}}
-                                    {{#if mrCertainity.mrAssertionReason}}
-                                        <br>Reason: {{mrCertainity.mrAssertionReason}}
-                                    {{/if}}
-                                    
-                                    {{#if verificationCount}}
-                                        <p>Verified by ({{verificationCount}})</p>
-                                    {{/if}}
-                                    {{#each this.mrCertainity.mrAssertionVerifiedBy}}
-                                        {{getAgentNameById this}}
-                                    {{/each}}
-
-                                </div>
-                            {{/each}}
-                        </li>
-                    </ul>
-                </div>
+            <ul class="list-group">
+            {{#each groupedAttributes}}
+                <li class="list-group-item">
+                    <h5><strong>{{mrLabel}}</strong></h5>
+                    <ol>
+                        {{#each values}}
+                            <li class="list-group-item">{{mrValue}} <pre>{{printObject mrCertainity}}</pre> </li>
+                        {{/each}}
+                    </ol>
+                </li>
+                    
+                
             {{/each}}
-        </div>
+            </ul>
     </div>
 </template>
 
@@ -109,7 +91,9 @@
     <div class="relations">
         <h4>Relations</h4>
         {{#each relations 'mrTarget'}}
-            <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
+            {{#if notEntityIsAttribute mrTarget}}
+                <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
+            {{/if}}
         {{/each}}
     </div>
 </template>
@@ -127,21 +111,21 @@
 </template>
 
 <template name="displayThumbnail">
-    {{#if isEntityType "image"}}
+    {{#if isEntityType "image"}}s
         <img src="{{provAtLocation}}" class="entity-thumbnail entity-thumbnail-media">
-    {{else}}{{#if isEntityType "text"}}
+    {{else}}{{#if isEntityType "text"}}s
         <span class="fa-stack fa-lg">
             <i class="fa fa-circle fa-stack-2x"></i>
             <i class="fa fa-paragraph fa-stack-1x fa-inverse"></i>
         </span>
-    {{else}} {{#if isEntityType "video"}}
+    {{else}} {{#if isEntityType "video"}}s
         <span class="fa-stack fa-lg">
             <i class="fa fa-circle fa-stack-2x"></i>
             <i class="fa fa-video-camera fa-stack-1x fa-inverse"></i>
         </span>
-    {{else}} {{#if isEntityType "map"}}
+    {{else}} {{#if isEntityType "map"}}s
         <i class="fa fa-globe fa-3x"></i>
-    {{else}} {{#if isEntityType "timeline"}}
+    {{else}} {{#if isEntityType "timeline"}}s
         <span class="fa-stack fa-lg">
             <i class="fa fa-circle fa-stack-2x"></i>
             <i class="fa fa-exchange fa-stack-1x fa-inverse"></i>

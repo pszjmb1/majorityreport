@@ -512,22 +512,28 @@ Template.displayAttributes.rendered = function () {
 
 };
 Template.displayAttributes.helpers({
-    attributes: function() {
-        if(!_.isEmpty(this.mrAttribute)) {
-            var entityOrigin = this.mrOrigin;
-            var output = _.map(this.mrAttribute, function(values, label) {
-                // pass along the entity origin
-                var extendedValues = _.map(values, function(value) {
-                    return _.extend(value, {label: label, mrOrigin: entityOrigin});
-                });
+    groupedAttributes: function() {
+        var _self = this;
+        var relatives = getEntityRelative(_self.mrOrigin);
+        if(relatives) {
+            var entityOrigins = _.keys(_.extend(relatives.mrSource, relatives.mrTarget));
 
-                return {
-                    label: label, 
-                    values: extendedValues, 
-                    mrOrigin: entityOrigin
-                };
+            var attributes = Provenance.find({
+                    mrOrigin: {$in: entityOrigins}, provType: 'MR: Attribute', wasInvalidatedBy: {$exists: false}
+                }).map(function(attrib) {
+                    var relation = Provenance.findOne({
+                            provType: 'MR: Relation', mrSource: _self.mrOrigin, mrTarget: attrib.mrOrigin, wasInvalidatedBy: {$exists: false}
+                        });
+                    return _.extend(attrib, {
+                            entityOrigin: _self.mrOrigin, mrCertainity: relation.mrAttribute.mrCertainity
+                        });
+                });
+            
+            var grouped = _.map(_.groupBy(attributes, 'mrLabel'), function(value, key) {
+                return {mrLabel: key, values: value};
             });
-            return output;
+
+            return grouped;
         }
     },
     certainityPercent: function() {
@@ -593,6 +599,10 @@ Template.displayRelations.helpers({
             }
 
         }   
+    },
+    notEntityIsAttribute: function(item) {
+        var entity = getLatestRevision(item);
+        return !(getEntityType(entity) === 'attribute');
     },
     getEntity: function(item) {
         return getLatestRevision(item);

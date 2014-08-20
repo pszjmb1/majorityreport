@@ -26,7 +26,8 @@ getRelationsList = function() {
 
 getEntityRelative = function(entity) {
 	var relative,
-	rList = getRelationsList();
+		rList = getRelationsList();
+
 	if(rList && rList.provHadMember) {
 		relative = _.findWhere(rList.provHadMember, {mrEntity: entity});
 	
@@ -426,7 +427,10 @@ Meteor.methods({
 		};
 
 		if(provAttributes.mrCertainity) {
-			relation.mrAttribute.mrCertainity.push(provAttributes.mrCertainity);
+			var certainity = _.extend(provAttributes.mrCertainity, {
+				mrAssertionBy: userProv._id
+			})
+			relation.mrAttribute.mrCertainity.push(certainity);
 		}
 		
 		var relationId = Provenance.insert(relation);
@@ -868,99 +872,6 @@ Meteor.methods({
 		Provenance.update(currentEventEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
-	},
-	validateAssertion: function(provAttributes) {
-		var user = Meteor.user();
-		
-		// ensure the user is logged in
-		if (!user)
-			throw new Meteor.Error(401, "Please login to validate an attribute");
-
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId:user._id});
-
-		// Clone the latest version of the entity and update it
-		var currentLabel = provAttributes.label.toLowerCase(),
-			currentValue = provAttributes.mrValue,
-			currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
-			currentEntityId = currentEntity._id,
-			currentUserId = user._id;
-		
-
-		var attributes = currentEntity.mrAttribute;
-		if(_.has(attributes, currentLabel)) {
-			var values = _.pluck(attributes[currentLabel], 'mrValue');
-
-			if(_.contains(values, currentValue)) {
-				var valueObj = _.findWhere(attributes[currentLabel], {mrValue: currentValue});
-
-				if(valueObj && valueObj.mrCertainity) {
-					var existingValidators = valueObj.mrCertainity.mrAssertionVerifiedBy;
-					if(_.contains(existingValidators, currentUserId)) {
-						var errMessage = "You have already verified this value.\n"+ currentLabel +": "+ currentValue;
-						throw new Meteor.Error(401, errMessage);
-					} else {
-						existingValidators.push(currentUserId);
-					}
-				}
-			}
-		}
-
-		// Prepare the new information
-		var newEntity = {
-			mrAttribute: attributes,
-			provGeneratedAtTime: now
-		};
-
-		var entityEntry = _.extend(_.omit(currentEntity, '_id'), newEntity);
-		var revisionId = Provenance.insert(entityEntry);   
-
-		// Add a corresponding creation provenance activity ////////////////////
-		var activity = {
-			provClasses:['Activity'],
-			provType:'MR: Attribute Value Verification',
-			provStartedAtTime: now,
-			provEndedAtTime: now,
-			provWasStartedBy: currentUserId,
-			provGenerated: revisionId
-		};
-
-		Provenance.insert(activity);
-				
-		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
-			provClasses:['Derivation'],
-			mrReason: 'Entity Attribute Update',
-			provAtTime : now,
-			provWasStartedBy: userProv._id,
-			provWasDerivedFrom: {
-				provGenerated: revisionId, 
-				provDerivedFrom: currentEntityId, 
-				provAttributes: [{provType: 'provRevision'}]
-			}
-		};
-
-		Provenance.insert(revisionActivity);
-
-		//Invalidate the previous version
-		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
-
-		return revisionId;
-
-	},
-	agentEntityRelation: function(provAttributes) {
-		var user = Meteor.user();
-		// ensure the user is logged in
-		if (!user)
-			throw new Meteor.Error(401, "Please login to agree to a value");
-
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId: user._id});
-
-		// get the relation list
-		// check to see if agent and entity already have a relationship
-		// update relationship if already exists a record
-		// insert a new relationship
 	}
 
 });
