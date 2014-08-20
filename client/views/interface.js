@@ -677,6 +677,7 @@ Template.formAttribute.events({
     'change input[name=attribute-certainity]': function(e, tpl) {
         var fieldCertainity = $(e.target),
             values = fieldCertainity.val(),
+            inputSlider = tpl.$('.input-slider'),
             splitter;
 
         // Work out the splitter
@@ -708,12 +709,13 @@ Template.formAttribute.events({
         if(_.contains(values, undefined)) { 
             alert('Error: certainity level should be within the range of 0 to 100%.');
             var sliderValues = getCertainityRangeDisplayValue();
+
             fieldCertainity.val(sliderValues);
         } else {
             if(values.length === 1) { values = [values, values]; }
             values = _.sortBy(values, function(v) { return v; });
 
-            tpl.$('.input-slider').slider('values', values); 
+            inputSlider.slider('values', values); 
         }
 
     },
@@ -734,20 +736,16 @@ Template.formAttribute.events({
 
         var provAttributes = {
             currentEntityOrigin: this.mrOrigin,
-            label: label,
-            mrAttribute: {
-                mrValue: value,
-                mrAssertionAgreements: []
-            },
+            mrLabel: mrLabel,
+            mrValue: mrValue,
             mrCertainity: {
                 upAssertionConfidence: certainity,
                 upAssertionType: 'upHumanAsserted',
-                mrAssertionBy: Meteor.userId(),
                 mrAssertionReason: source,
             }
         };
 
-        Meteor.call('entityRevisionAttribute', provAttributes, function (error, result) {
+        Meteor.call('entityAttributeRelation', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
         });
@@ -1004,7 +1002,6 @@ function setUpDialog(template, entity, selectorSuffix) {
 
     return dialog;
 }
-
 
 function addToRenderedList(entity) {
     var renderedList = Session.get('renderedEntities');

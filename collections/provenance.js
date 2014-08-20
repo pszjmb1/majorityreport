@@ -500,22 +500,95 @@ Meteor.methods({
 			}
 		}
 	},
-	entityRevisionAttribute: function(provAttributes) {
+	entityAttributeRelation: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
 			throw new Meteor.Error(401, "Please login to add a new attribute");
-
-		// TODO: ensure that the key and value are valid
-
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId: user._id});	
+		if(!provAttributes.mrLabel || provAttributes.mrLabel === '') 
+			throw new Meteor.Error(422, "Attribute label cannot be empty");
+		if(!provAttributes.mrValue || provAttributes.mrValue === '') 
+			throw new Meteor.Error(422, "Attribute value cannot be empty");
 
 		// Clone the latest version of the entity and update it
-		var currentLabel = provAttributes.label.toLowerCase(),
-			currentEntity = getLatestRevision(provAttributes.currentEntityOrigin),
-			currentEntityId = currentEntity._id;
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id});	
+		var attributeEntity, attributeEntityOrigin, relationEntity;
+
+		var attributeEntityFields = {
+			provType: 'MR: Attribute', 
+			mrLabel: provAttributes.mrLabel.toLowerCase(),
+			mrValue: provAttributes.mrValue
+		};
+
 		
+		// Get the attribute entry if it already exists
+		attributeEntity = Provenance.findOne(_.extend(attributeEntityFields, { wasInvalidatedBy: { $exists: false} } ));
+		if(attributeEntity) { 
+			attributeEntityOrigin = attributeEntity.mrOrigin;
+
+			// If attribute already exists, check to see if the relation already exists
+			relationEntity = Provenance.findOne({
+				provType: 'MR: Relation',
+				mrSource: currentEntityOrigin,
+				mrTarget: attributeEntityOrigin,
+				wasInvalidatedBy: { $exists: false}
+				// 'mrAttribute.mrCertainity': { $exists: true} 
+			});
+		} else {
+			// Insert the attribute
+			attributeEntityOrigin = Provenance.insert(_.extend(attributeEntityFields, {
+				provGeneratedAtTime: now
+			}));
+			Provenance.update(attributeEntityOrigin, {$set: {mrOrigin: attributeEntityOrigin} }); 
+			// Add a corresponding creation provenance activity ////////////////////
+			var activity = {
+				provClasses:['Activity'],
+				provType:'MR: Attribute Insertion',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provGenerated: attributeEntityOrigin
+			};
+		}
+
+		// Check if we have the relation entity, insert it if not the case
+		if(relationEntity) {
+			
+		} else {
+			// Insert relation entity
+			relationEntity = {
+				provClasses: ['Entity'],
+				provType: 'MR: Relation',
+				provGeneratedAtTime: now,
+				mrSource: currentEntityOrigin,
+				mrTarget: attributeEntityOrigin,
+				mrAttribute: {}
+			};
+
+			relationEntity.mrAttribute.mrCertainity = [_.extend(_.pick(provAttributes, 'mrCertainity'), {
+				mrAssertionBy: userProv._id
+			})];
+
+			var relationId = Provenance.insert(relationEntity);
+			Provenance.update(relationId, {$set: {mrOrigin: relationId} }); 
+
+			// Add a corresponding creation provenance activity ////////////////////
+			var activity = {
+				provClasses:['Activity'],
+				provType:'MR: Relation Insertion',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provGenerated: relationId
+			};
+		}
+		
+
+
+		// If a relation ship already exists 
+
+		/*
 		// Prepare the new information
 		var newEntity = {
 			mrAttribute: {},
@@ -567,7 +640,7 @@ Meteor.methods({
 		//Invalidate the previous version
 		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
-		return revisionId;
+		return revisionId;*/
 	},
 	entityAttributeRemove: function (provAttributes) {
 		var user = Meteor.user();
