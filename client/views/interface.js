@@ -36,7 +36,11 @@ Template.freeform.rendered = function () {
     });
 
     // draw connections/relations
-    var relationsQuery = Provenance.find({ provType: 'MR: Relation', wasInvalidatedBy: { $exists: false} });
+    var relationsQuery = Provenance.find({ 
+        provType: 'MR: Relation', 
+        wasInvalidatedBy: { $exists: false} 
+    });
+
     relationsQuery.observe({ 
         added: processRelation,
         changed: processRelation,
@@ -45,19 +49,30 @@ Template.freeform.rendered = function () {
     function processRelation(doc) {
         if(doc.mrOrigin === undefined) { return; }
 
-        var connection = plumber.getConnections(doc.mrOrigin);
-        if(connection.length > 0) {
-            connection = connection[0];
-        } else {
-            connection = drawRelation(doc);
-        }
-
-        if(connection) {
-            if(!_.isEmpty(doc.mrAttribute)) {
-                var label = _.pairs(doc.mrAttribute)[0].join(": ");
-                connection.setLabel(label);
+        Deps.autorun(function() {
+            var renderedEntities = Session.get('renderedEntities');
+            if(!_.contains(renderedEntities, doc.mrSource) 
+                || 
+                !_.contains(renderedEntities, doc.mrTarget)
+            ){
+                // return if the entities haven't been rendered
+                return;
             }
-        }
+            var connection = plumber.getConnections(doc.mrOrigin);
+            if(connection.length > 0) {
+                connection = connection[0];
+            } else {
+                connection = drawRelation(doc);
+            }
+
+            if(connection) {
+                if(!_.isEmpty(doc.mrAttribute)) {
+                    var label = _.pairs(doc.mrAttribute)[0].join(": ");
+                    connection.setLabel(label);
+                }
+            }
+        });
+
     }
 
     function drawRelation(relation) {
@@ -233,7 +248,6 @@ Template.map.rendered = function () {
     map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
     $(boardSelector).bind('entityAttributeChange', function(event, entityOrigin) {
         if(entityOrigin === _self.data.mrOrigin) {
-            console.log("Change");
             L.Util.requestAnimFrame(map.invalidateSize, map, !1, map._container);
         }
     });
@@ -732,12 +746,12 @@ Template.formAttribute.events({
             source = tpl.$('input[name=attribute-source]').val();
 
         // sort value just to make sure
-        values = _.sortBy(values, function(v) { return v; });
+        certainity = _.sortBy(certainity, function(v) { return v; });
 
         var provAttributes = {
             currentEntityOrigin: this.mrOrigin,
-            mrLabel: mrLabel,
-            mrValue: mrValue,
+            mrLabel: label,
+            mrValue: value,
             mrCertainity: {
                 upAssertionConfidence: certainity,
                 upAssertionType: 'upHumanAsserted',
@@ -745,9 +759,10 @@ Template.formAttribute.events({
             }
         };
 
-        Meteor.call('entityAttributeRelation', provAttributes, function (error, result) {
+        Meteor.call('entityAttributeRelationAdd', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
+            console.log('done', result);
         });
     }
 });
@@ -931,8 +946,8 @@ Template.tools.events({
 function addRelation(info) {
     var provAttributes = {
         // Gather source id, in case of markers look to the "data-id" attribute
-        source: $(info.source).attr('data-id') || info.sourceId,
-        target: info.targetId
+        mrSource: $(info.source).attr('data-id') || info.sourceId,
+        mrTarget: info.targetId
     };
     Meteor.call('entityRelation', provAttributes, function (error, result) {
         if(error)
