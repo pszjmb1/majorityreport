@@ -536,14 +536,18 @@ Template.displayAttributes.helpers({
             return grouped;
         }
     },
-    certainityPercent: function() {
-        if(this.mrCertainity && this.mrCertainity.upAssertionConfidence) {
-            return (this.mrCertainity.upAssertionConfidence * 100 )+ "%";
+    confidenceMin: function() {
+        if(this.upAssertionConfidence.length == 2) {
+            return this.upAssertionConfidence[0]
+        } else { 
+            return 0;
         }
     },
-    verificationCount: function() {
-        if(this.mrCertainity && this.mrCertainity.mrAssertionVerifiedBy) {
-            return this.mrCertainity.mrAssertionVerifiedBy.length;
+    confidenceRange: function() {
+        if(this.upAssertionConfidence.length == 2) {
+            return this.upAssertionConfidence[1]
+        } else { 
+            return this.upAssertionConfidence[0];
         }
     },
     verifiedBy: function() {
@@ -743,7 +747,7 @@ Template.formAttribute.events({
         }
 
     },
-    'slidecreate .input-slider, slide .input-slider': function(e, tpl, ui) {
+    'slidecreate .input-slider, slide .input-slider, slidechange .input-slider': function(e, tpl, ui) {
         var values = getCertainityRangeDisplayValue(ui);
         tpl.$('input[name=attribute-certainity]').val(values);
     },

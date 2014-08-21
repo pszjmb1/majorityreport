@@ -23,8 +23,10 @@ UI.registerHelper('isOwner', function(agent) {
 UI.registerHelper('getAgentName', getAgentName);
 
 UI.registerHelper('getAgentNameById', function(agentId) {
-	var agent = Provenance.findOne({mrUserId: agentId}),
+	var agent = Provenance.findOne({mrUserId: agentId}) || Provenance.findOne(agentId),
 		name = getAgentName(agent);
+    
+    console.log('name ' , name);
 
 	if(name) { return name; }
 });

@@ -76,12 +76,18 @@
                     <h5><strong>{{mrLabel}}</strong></h5>
                     <ol>
                         {{#each values}}
-                            <li class="list-group-item">{{mrValue}} <pre>{{printObject mrCertainity}}</pre> </li>
+                            <li class="list-group-item">
+                            	<strong>{{mrValue}}</strong>
+								{{#each mrCertainity}}
+									{{getAgentNameById this.mrAssertionBy}}
+									<div class="bar-certainity">
+										<div class="bar-confidence" style="margin-left:{{confidenceMin}}px; width: {{confidenceRange}}px"></div>
+									</div>
+								{{/each}}
+                            </li>
                         {{/each}}
                     </ol>
-                </li>
-                    
-                
+                </li>      
             {{/each}}
             </ul>
     </div>
@@ -139,13 +145,11 @@
             <input type="text" class="form-control" name="attribute-label" placeholder="Label" value="{{label}}"/>
             <input type="text" class="form-control" name="attribute-value" placeholder="Value" value="{{value}}"/>
             <br>
-            <div class="form-group">
+                <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level % (eg. 25%, 55-75% )"/>
+                <div class="input-slider"></div>
                 <div class="input-group">
-                    <input type="text" pattern="[0-9.\s-to%]*" class="form-control" name="attribute-certainity" placeholder="Certainity Level % (eg. 25%, 55-75% )"/>
                     <span class="input-group-addon">Certainity Level % (eg. 25%, 55-75% )</span>
                 </div>
-                <div class="input-slider"></div>
-            </div>
             <br>
             <input type="text" class="form-control" name="attribute-reason" placeholder="Reason" value="{{reason}}"/>
             <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Save Annotation</button>
