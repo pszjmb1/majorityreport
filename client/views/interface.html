@@ -77,15 +77,15 @@
                     <ol>
                         {{#each values}}
                             <li>
-                            	<strong>{{mrValue}}</strong><span class="agree-attribute-value"><i class="fa fa-thumbs-up"></i></span>
-                                <div class="agree-attribute-form collapse">
+                            	<strong>{{mrValue}}</strong> <span class="agree-attribute-value"><i class="fa fa-thumbs-up"></i></span>
+                                <div class="agree-attribute-form well collapse">
                                     {{> formAgreeAttribute data=this standalone=true}}
                                 </div>
                                 {{#each mrCertainity}}
                                     <div class="bar-certainity">
                                         <div class="bar-confidence" style="margin-left:{{confidenceMin}}%; width: {{confidenceRange}}%"></div>
-                                        {{getAgentNameById this.mrAssertionBy}}
                                     </div>
+                                    <span class="label label-default label-tooltip" title="{{mrAssertionReason}}">{{getAgentNameById this.mrAssertionBy}}</span>
                                 {{/each}}
                             </li>
                         {{/each}}
@@ -154,6 +154,7 @@
 </template>
 
 <template name="formAgreeAttribute">
+    <form name="agree-attribute">
         <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level % (eg. 25%, 55-75% )"/>
         <div class="input-slider"></div>
         <div class="input-group">
@@ -163,6 +164,7 @@
         {{#if standalone}}
             <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Agree to value</button>
         {{/if}}
+    </form>
 </template>
 
 <template name="formEvent">

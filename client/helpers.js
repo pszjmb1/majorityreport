@@ -41,7 +41,9 @@ UI.registerHelper('getAgentNameById', function(agentId) {
  */
 function getAgentName(agent) {
 	if(agent) {
-		if( agent.foafGivenName){
+		if(agent.mrUserId === Meteor.userId()) {
+		  return "You";
+		}else if( agent.foafGivenName){
 		  return agent.foafGivenName +" "+  agent.foafFamilyName;
 		}else{
 		  return agent.mrUserName;

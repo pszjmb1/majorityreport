@@ -493,22 +493,14 @@ Template.entityInfo.events({
  * Shared Templates
  */
 Template.displayAttributes.rendered = function () {
-    var _self = this,
-        attributesList = _self.$('.attributes-accordion'),
-        valuesList = _self.$('.list-group-item'),
-        options = {
-            heightStyle: "content",
-            collapsible: true,
-            icons: null
-        };
-
-    attributesList.accordion(_.extend(options, {
-        header: 'h5'
-    }));
-    valuesList.accordion(_.extend(options, {
-        header: 'h6',
-        active: false
-    }));
+    var _self = this;
+    _self.$('.label-tooltip').tooltip({
+        track: true,
+        position: {
+            my: "left top",
+            at: "left top"
+        },
+    });
 
 };
 Template.displayAttributes.helpers({
@@ -521,9 +513,10 @@ Template.displayAttributes.helpers({
             var attributes = Provenance.find({
                     mrOrigin: {$in: entityOrigins}, provType: 'MR: Attribute', wasInvalidatedBy: {$exists: false}
                 }).map(function(attrib) {
-                    var relation = Provenance.findOne({
-                            provType: 'MR: Relation', mrSource: _self.mrOrigin, mrTarget: attrib.mrOrigin, wasInvalidatedBy: {$exists: false}
-                        });
+                    var relation = Provenance.findOne(
+                            {provType: 'MR: Relation', mrSource: _self.mrOrigin, mrTarget: attrib.mrOrigin, wasInvalidatedBy: {$exists: false}},
+                            {sort: {provGeneratedAtTime: -1}}
+                        );
                     return _.extend(attrib, {
                             entityOrigin: _self.mrOrigin, mrCertainity: relation.mrAttribute.mrCertainity
                         });
@@ -551,8 +544,8 @@ Template.displayAttributes.helpers({
         }
     },
     verifiedBy: function() {
-        if(this.mrCertainity && this.mrCertainity.mrAssertionVerifiedBy) {
-            return this.mrCertainity.mrAssertionVerifiedBy;
+        if(this.mrCertainity && this.mrCertainity.mrAssertionBy) {
+            return this.mrCertainity.mrAssertionBy;
         }
     },
 });
@@ -577,20 +570,9 @@ Template.displayAttributes.events({
     },
     'click .agree-attribute-value': function(e,tpl) {
         e.preventDefault();
-        console.log(this);
 
         console.log('$(e.target).closest(\'.agree-attribute-form\') ' , $(e.target).closest('.agree-attribute-form'));
         $(e.currentTarget).siblings('.agree-attribute-form').toggle('collapse');
-        // var provAttributes = {
-        //     currentEntityOrigin: this.mrOrigin,
-        //     label: this.label,
-        //     mrValue: this.mrValue
-        // }
-
-        // // Meteor.call('validateAssertion', provAttributes, function(error, result) {
-        // //     if(error)
-        // //         return alert(error.reason);
-        // // });
     },
     'click .remove-attribute': function (e,tpl) {
         e.preventDefault();
@@ -708,9 +690,8 @@ Template.formAttribute.events({
         e.preventDefault();
         var label = tpl.$('input[name=attribute-label]').val(),
             value = tpl.$('input[name=attribute-value]').val(),
-            // certainity = tpl.$('input[name=attribute-certainity]').val(),
             certainity = tpl.$('.input-slider').slider('values'),
-            source = tpl.$('input[name=attribute-source]').val();
+            reason = tpl.$('input[name=attribute-reason]').val();
 
         // sort value just to make sure
         certainity = _.sortBy(certainity, function(v) { return v; });
@@ -722,14 +703,13 @@ Template.formAttribute.events({
             mrCertainity: {
                 upAssertionConfidence: certainity,
                 upAssertionType: 'upHumanAsserted',
-                mrAssertionReason: source,
+                mrAssertionReason: reason,
             }
         };
 
         Meteor.call('entityAttributeRelationAdd', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
-            console.log('done', result);
         });
     }
 });
@@ -778,6 +758,33 @@ Template.formAgreeAttribute.events({
 
         tpl.$('input[name=attribute-certainity]').val(values);
     },
+    'submit form[name=agree-attribute]': function(e,tpl) {
+        e.preventDefault();
+        var _self = this;
+
+        console.log("this", this);
+        var certainity = tpl.$('.input-slider').slider('values'),
+            reason = tpl.$('input[name=attribute-reason]').val();
+
+        // sort value just to make sure
+        certainity = _.sortBy(certainity, function(v) { return v; });
+
+        var provAttributes = {
+            currentAttributeOrigin: _self.data.mrOrigin,
+            currentEntityOrigin: _self.data.entityOrigin,
+            mrCertainity: {
+                upAssertionConfidence: certainity,
+                upAssertionType: 'upHumanAsserted',
+                mrAssertionReason: reason,
+            }
+        };
+        Meteor.call('entityAttributeRelationAgree', provAttributes, function(error, result) {
+            if(error)
+                return alert(error.reason);
+
+            console.log(result)
+        });
+    }
 });
 
 Template.formEvent.rendered = function () {

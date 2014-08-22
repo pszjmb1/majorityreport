@@ -124,14 +124,14 @@ Meteor.methods({
 			throw new Meteor.Error(422, 'Please include the currentCrisisId');
 
 		var now = new Date().getTime(); 
-		var currentUser = Provenance.findOne({mrUserId: user});
+		var userProv = Provenance.findOne({mrUserId: user});
 
 		var removalActivity = Provenance.insert({
 			provClasses:['Activity'],
 			provType:'MR: Crisis Report Removal',
 			provStartedAtTime: now,
 			provEndedAtTime: now,
-			provWasStartedBy: currentUser,
+			provWasStartedBy: userProv._id,
 			provInvalidated: currentCrisisId
 		});
 
@@ -427,7 +427,7 @@ Meteor.methods({
 		};
 
 		if(provAttributes.mrCertainity) {
-			// if the confidence range contains the same rating, simply store a single value
+			// if the confidence range contains the same values, simply store a single value
 			if(provAttributes.mrCertainity.upAssertionConfidence
 				&& provAttributes.mrCertainity.upAssertionConfidence.length > 1) {
 				if(provAttributes.mrCertainity.upAssertionConfidence[0] === provAttributes.mrCertainity.upAssertionConfidence[1]) {
@@ -459,6 +459,74 @@ Meteor.methods({
 
 		return attributeId;
 
+	},
+	entityAttributeRelationAgree: function(provAttributes) {
+		var user = Meteor.user();
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to agree to an attribute value");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id});
+
+		// entityOrigin, attributeOrigin
+		// get the relation between the entity and attribute
+		var currentEntityOrigin = provAttributes.currentEntityOrigin,
+			currentAttributeOrigin = provAttributes.currentAttributeOrigin,
+			currentRelation = Provenance.findOne({
+				provType: 'MR: Relation', 
+				mrSource: currentEntityOrigin, 
+				mrTarget: currentAttributeOrigin, 
+				wasInvalidatedBy: {$exists: false}
+			}),
+			currentRelationId = currentRelation.mrOrigin,
+			existingCertainity = currentRelation.mrAttribute.mrCertainity,
+			indexToInsert = 0;
+		
+			// check if current user has already agreed to the value
+			// - if so, update the certainity
+		if(existingCertainity && existingCertainity.length > 0) {
+			var existingCertainityByUser = _.findWhere(existingCertainity, {mrAssertionBy: userProv._id});
+			if(!_.isEmpty(existingCertainityByUser)) {
+				indexToInsert = _.indexOf(existingCertainity, existingCertainityByUser);
+			} else {
+				indexToInsert = existingCertainity.length;
+			}
+		}
+
+		var relationUpdate = {
+			mrAttribute: currentRelation.mrAttribute,
+			provGeneratedAtTime: now
+		};
+		relationUpdate.mrAttribute.mrCertainity[indexToInsert] = _.extend(provAttributes.mrCertainity, {
+			mrAssertionBy: userProv._id
+		});
+
+		// create new revision
+		var relationEntry = _.extend(_.omit(currentRelation, '_id'), relationUpdate);
+		var revisionId = Provenance.insert(relationEntry);
+				
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: 'Update Related Attribute Certainity',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: currentRelationId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+
+		Provenance.insert(revisionActivity);
+
+		//Invalidate the previous version
+		Provenance.update(currentRelationId, {$set: {wasInvalidatedBy: revisionActivity}});
+
+		return revisionId;
+
+		
 	},
 	entityAttributeRemove: function (provAttributes) {
 		var user = Meteor.user();
@@ -531,7 +599,7 @@ Meteor.methods({
 			throw new Meteor.Error(401, "Please login to update the report");
 		
 		var now = new Date().getTime(),
-			currentUser = Provenance.findOne({mrUserId: user._id});
+			userProv = Provenance.findOne({mrUserId: user._id});
 
 		
 		// Prepare the new information
@@ -554,7 +622,7 @@ Meteor.methods({
 			provClasses:['Derivation'],
 			mrReason: 'Entity Report Attribute Update',
 			provAtTime : now,
-			provWasStartedBy: currentUser._id,
+			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
 				provGenerated: revisionId, 
 				provDerivedFrom: currentAttributeId, 
@@ -880,7 +948,8 @@ Meteor.methods({
 		Provenance.update(currentEventEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
-	}
+	},
+	
 
 });
 
@@ -906,7 +975,7 @@ function reportRevision(provAttributes) {
 		throw new Meteor.Error(422, 'Please fill in the description');
 
 	var now = new Date().getTime(); 
-	var currentUser = Provenance.findOne({mrUserId: user._id});
+	var userProv = Provenance.findOne({mrUserId: user._id});
 
 	var crisisProperties = {
 		dctermsTitle: provAttributes.dctermsTitle,
@@ -926,7 +995,7 @@ function reportRevision(provAttributes) {
 		provClasses:['Derivation'],
 		mrReason: provAttributes.reason,
 		provAtTime : now,
-		provWasStartedBy: currentUser._id,
+		provWasStartedBy: userProv._id,
 		provWasDerivedFrom: {
 			provGenerated: revisionId, 
 			provDerivedFrom: currentCrisisId, 
