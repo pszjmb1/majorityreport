@@ -494,12 +494,16 @@ Template.entityInfo.events({
  */
 Template.displayAttributes.rendered = function () {
     var _self = this;
-    _self.$('.label-tooltip').tooltip({
-        track: true,
-        position: {
-            my: "left top",
-            at: "left top"
-        },
+    Deps.autorun(function() {
+        var change = _self.data;
+        console.log(change);
+        _self.$('.label-tooltip').tooltip({
+            track: true,
+            position: {
+                my: "left top",
+                at: "left top"
+            },
+        });
     });
 
 };

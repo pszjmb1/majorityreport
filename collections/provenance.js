@@ -479,7 +479,7 @@ Meteor.methods({
 				mrTarget: currentAttributeOrigin, 
 				wasInvalidatedBy: {$exists: false}
 			}),
-			currentRelationId = currentRelation.mrOrigin,
+			currentRelationId = currentRelation._id,
 			existingCertainity = currentRelation.mrAttribute.mrCertainity,
 			indexToInsert = 0;
 		
@@ -498,6 +498,13 @@ Meteor.methods({
 			mrAttribute: currentRelation.mrAttribute,
 			provGeneratedAtTime: now
 		};
+		// if the confidence range contains the same values, simply store a single value
+		if(provAttributes.mrCertainity.upAssertionConfidence
+			&& provAttributes.mrCertainity.upAssertionConfidence.length > 1) {
+			if(provAttributes.mrCertainity.upAssertionConfidence[0] === provAttributes.mrCertainity.upAssertionConfidence[1]) {
+				provAttributes.mrCertainity.upAssertionConfidence = [provAttributes.mrCertainity.upAssertionConfidence[0]];
+			}
+		}
 		relationUpdate.mrAttribute.mrCertainity[indexToInsert] = _.extend(provAttributes.mrCertainity, {
 			mrAssertionBy: userProv._id
 		});
