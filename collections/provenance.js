@@ -460,6 +460,45 @@ Meteor.methods({
 		return attributeId;
 
 	},
+	relatedAttributeUpdate: function(provAttributes) {
+		var user = Meteor.user();
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new attribute");
+		if(!provAttributes.mrLabel || provAttributes.mrLabel === '') 
+			throw new Meteor.Error(422, "Attribute label cannot be empty");
+		if(!provAttributes.mrValue || provAttributes.mrValue === '') 
+			throw new Meteor.Error(422, "Attribute value cannot be empty");
+
+		// Clone the latest version of the entity and update it
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id}),
+			currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin),
+			currentAttributeId = currentAttribute._id;	
+
+		// insert the attribute entry
+		var newAttribute = {
+			mrValue: provAttributes.mrValue,
+			provGeneratedAtTime: now
+		};
+
+		var attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
+		var revisionId = Provenance.insert(newAttribute); 
+		// Add a corresponding revision provenance /////////////////////////////
+		var revisionActivity = {
+			provClasses:['Derivation'],
+			mrReason: 'Entity Update',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: currentAttributeId, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		};
+		return revisionId;
+
+	},
 	entityAttributeRelationAgree: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
@@ -532,8 +571,6 @@ Meteor.methods({
 		Provenance.update(currentRelationId, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
-
-		
 	},
 	entityAttributeRemove: function (provAttributes) {
 		var user = Meteor.user();

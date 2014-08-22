@@ -494,16 +494,12 @@ Template.entityInfo.events({
  */
 Template.displayAttributes.rendered = function () {
     var _self = this;
-    Deps.autorun(function() {
-        var change = _self.data;
-        console.log(change);
-        _self.$('.label-tooltip').tooltip({
-            track: true,
-            position: {
-                my: "left top",
-                at: "left top"
-            },
-        });
+    _self.$('.label-tooltip').tooltip({
+        track: true,
+        position: {
+            my: "left top",
+            at: "left top"
+        },
     });
 
 };
@@ -574,8 +570,6 @@ Template.displayAttributes.events({
     },
     'click .agree-attribute-value': function(e,tpl) {
         e.preventDefault();
-
-        console.log('$(e.target).closest(\'.agree-attribute-form\') ' , $(e.target).closest('.agree-attribute-form'));
         $(e.currentTarget).siblings('.agree-attribute-form').toggle('collapse');
     },
     'click .remove-attribute': function (e,tpl) {
@@ -699,22 +693,74 @@ Template.formAttribute.events({
 
         // sort value just to make sure
         certainity = _.sortBy(certainity, function(v) { return v; });
+        
+        // check to see if a similar label:value already exists for the entity
+        var attributes = Provenance.find({
+            provType: 'MR: Attribute',
+            mrLabel: label.toLowerCase(),
+            wasInvalidatedBy: {$exists: false}
+        }).fetch();
 
-        var provAttributes = {
-            currentEntityOrigin: this.mrOrigin,
-            mrLabel: label,
-            mrValue: value,
-            mrCertainity: {
-                upAssertionConfidence: certainity,
-                upAssertionType: 'upHumanAsserted',
-                mrAssertionReason: reason,
-            }
-        };
-
-        Meteor.call('entityAttributeRelationAdd', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
+        // ** perform a non-case-sensitive search
+        var similarAttribute = _.find(attributes, function(attrib) {
+            var matcher = new RegExp(value, 'i');
+            return matcher.test(attrib.mrValue);
         });
+
+        // -- confirm with user to update the attribute or cancel.
+        if(similarAttribute) {
+            // work with existing attribute, either update or cancel
+            var msg = 'Similar value already exists for this entity.'
+                +'\nExisting value: '+ similarAttribute.mrLabel +': '+ similarAttribute.mrValue
+                +'\nYour input value: ' + label +': '+ value
+                +'\n\n Press OK to update the existing value'
+
+            var updateExistingAttribute = confirm(msg);
+
+            if(!updateExistingAttribute) { return; }
+            // update existing attribute value
+            var provAttributes = {
+                    currentAttributeOrigin: similarAttribute.mrOrigin,
+                    mrLabel: label,
+                    mrValue: value
+                };
+            Meteor.call('relatedAttributeUpdate', provAttributes, function (error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+
+            // update certainity record
+            var provAttributes = {
+                currentAttributeOrigin: similarAttribute.mrOrigin,
+                currentEntityOrigin: this.mrOrigin,
+                mrCertainity: {
+                    upAssertionConfidence: certainity,
+                    upAssertionType: 'upHumanAsserted',
+                    mrAssertionReason: reason,
+                }
+            };
+            Meteor.call('entityAttributeRelationAgree', provAttributes, function(error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+        } else {
+            // new attribute
+            var provAttributes = {
+                currentEntityOrigin: this.mrOrigin,
+                mrLabel: label,
+                mrValue: value,
+                mrCertainity: {
+                    upAssertionConfidence: certainity,
+                    upAssertionType: 'upHumanAsserted',
+                    mrAssertionReason: reason,
+                }
+            };
+            Meteor.call('entityAttributeRelationAdd', provAttributes, function (error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+            
+        }
     }
 });
 
@@ -732,7 +778,31 @@ Template.formAgreeAttribute.rendered = function () {
         values: initialRangeValues
     });
 
+    Meteor.defer(function(){
+        if(_self.data.data) {
+            var _data = _self.data.data
+            if(_data.mrCertainity && _data.mrCertainity.length > 0) {
+                var userCertainity = getAttributeUserCertainity(_data);
+                if(userCertainity && userCertainity.upAssertionConfidence) {
+                    var confidence = userCertainity.upAssertionConfidence;
+                    if(confidence.length === 1) {
+                        confidence[1] = confidence[0];
+                    }
+                    inputSlider.slider('values', userCertainity.upAssertionConfidence);
+                }
+            }
+        }
+    });
 };
+
+Template.formAgreeAttribute.helpers({
+    userCertainity: function () {
+        var confidence = getAttributeUserCertainity(this.data);
+        if(confidence) {
+            return getAttributeUserCertainity(this.data);
+        }
+    }
+});
 
 Template.formAgreeAttribute.events({
     'change input[name=attribute-certainity]': function(e, tpl) {
@@ -766,7 +836,6 @@ Template.formAgreeAttribute.events({
         e.preventDefault();
         var _self = this;
 
-        console.log("this", this);
         var certainity = tpl.$('.input-slider').slider('values'),
             reason = tpl.$('input[name=attribute-reason]').val();
 
@@ -999,6 +1068,7 @@ function getCertainityRangeDisplayValue(inputSlider) {
     var values = inputSlider.slider('values');
     // Reduce the array if there is no range 
     // OR Sort the values 
+    
     if(values[0] == values[1]) { 
         values.pop();
     } else {
@@ -1006,6 +1076,15 @@ function getCertainityRangeDisplayValue(inputSlider) {
     }
 
     return values.join('% - ') + "%";
+}
+
+function getAttributeUserCertainity(data) {
+    if(!data) { return; }
+    var userProv = Provenance.findOne({mrUserId: Meteor.userId()});
+    if(userProv._id){
+        var userCertainity = _.findWhere(data.mrCertainity, {mrAssertionBy: userProv._id});
+        if(userCertainity){ return userCertainity; }
+    }
 }
 
 function setUpDialog(template, entity, selectorSuffix) {

@@ -157,10 +157,8 @@
     <form name="agree-attribute">
         <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level % (eg. 25%, 55-75% )"/>
         <div class="input-slider"></div>
-        <div class="input-group">
-            <span class="input-group-addon">Certainity Level % (eg. 25%, 55-75% )</span>
-        </div>
-        <input type="text" class="form-control" name="attribute-reason" placeholder="Reason" value="{{reason}}"/>
+        <small><span class="help-block">Certainity Level % (eg. 25%, 55-75% )</span></small>
+        <input type="text" class="form-control" name="attribute-reason" placeholder="Reason" value="{{userCertainity.mrAssertionReason}}"/>
         {{#if standalone}}
             <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Agree to value</button>
         {{/if}}
