@@ -427,6 +427,14 @@ Meteor.methods({
 		};
 
 		if(provAttributes.mrCertainity) {
+			// if the confidence range contains the same rating, simply store a single value
+			if(provAttributes.mrCertainity.upAssertionConfidence
+				&& provAttributes.mrCertainity.upAssertionConfidence.length > 1) {
+				if(provAttributes.mrCertainity.upAssertionConfidence[0] === provAttributes.mrCertainity.upAssertionConfidence[1]) {
+					provAttributes.mrCertainity.upAssertionConfidence = [provAttributes.mrCertainity.upAssertionConfidence[0]];
+				}
+			}
+
 			var certainity = _.extend(provAttributes.mrCertainity, {
 				mrAssertionBy: userProv._id
 			})

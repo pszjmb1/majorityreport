@@ -13,6 +13,13 @@ UI.registerHelper('prettyDate', function(date) {
 });
 
 // Agents and Users
+UI.registerHelper('count', function(item) {
+	if(item && _.isArray(item)) {
+      return item.length;
+    }
+});
+
+// Agents and Users
 UI.registerHelper('isOwner', function(agent) {
 	if(agent) {
       return agent.mrUserId == Meteor.userId();
@@ -25,8 +32,6 @@ UI.registerHelper('getAgentName', getAgentName);
 UI.registerHelper('getAgentNameById', function(agentId) {
 	var agent = Provenance.findOne({mrUserId: agentId}) || Provenance.findOne(agentId),
 		name = getAgentName(agent);
-    
-    console.log('name ' , name);
 
 	if(name) { return name; }
 });

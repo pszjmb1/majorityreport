@@ -545,7 +545,7 @@ Template.displayAttributes.helpers({
     },
     confidenceRange: function() {
         if(this.upAssertionConfidence.length == 2) {
-            return this.upAssertionConfidence[1]
+            return this.upAssertionConfidence[1] - this.upAssertionConfidence[0];
         } else { 
             return this.upAssertionConfidence[0];
         }
@@ -574,6 +574,23 @@ Template.displayAttributes.events({
             if(error)
                 return alert(error.reason);
         });
+    },
+    'click .agree-attribute-value': function(e,tpl) {
+        e.preventDefault();
+        console.log(this);
+
+        console.log('$(e.target).closest(\'.agree-attribute-form\') ' , $(e.target).closest('.agree-attribute-form'));
+        $(e.currentTarget).siblings('.agree-attribute-form').toggle('collapse');
+        // var provAttributes = {
+        //     currentEntityOrigin: this.mrOrigin,
+        //     label: this.label,
+        //     mrValue: this.mrValue
+        // }
+
+        // // Meteor.call('validateAssertion', provAttributes, function(error, result) {
+        // //     if(error)
+        // //         return alert(error.reason);
+        // // });
     },
     'click .remove-attribute': function (e,tpl) {
         e.preventDefault();
@@ -683,74 +700,10 @@ Template.displayThumbnail.helpers({
  * Forms
  */
 
-Template.formAttribute.rendered = function () {
-    var _self = this,
-        fieldCertainity = $('input[name=attribute-certainity]'),
-        inputSlider = _self.$('.input-slider'),
-        initialRangeValues = [10, 30];
-
-    inputSlider.slider({
-        range: true,
-        min: 0,
-        max: 100,
-        step: 0.01,
-        values: initialRangeValues
-    });
-
-};
 Template.formAttribute.helpers({
 });
 
 Template.formAttribute.events({
-    'change input[name=attribute-certainity]': function(e, tpl) {
-        var fieldCertainity = $(e.target),
-            values = fieldCertainity.val(),
-            inputSlider = tpl.$('.input-slider'),
-            splitter;
-
-        // Work out the splitter
-        if(values.indexOf('to') > -1) {
-            splitter = "to";
-        } else if(values.indexOf('-') > -1) {
-            splitter = '-';
-        }
-
-        // Split the value if splitter exists
-        if(splitter) { 
-            values = values.split(splitter); 
-        } else {
-            values = [values]
-        }
-
-        // convert the values into floats
-        values = _.map(values, function(v) { 
-            if(!isNaN(v)) { 
-                var output = parseFloat(v);
-                if(output < 0 || output > 100) {
-                    return;
-                } else {
-                    return output;
-                }
-            }
-        });
-
-        if(_.contains(values, undefined)) { 
-            alert('Error: certainity level should be within the range of 0 to 100%.');
-            var sliderValues = getCertainityRangeDisplayValue();
-
-            fieldCertainity.val(sliderValues);
-        } else {
-            if(values.length === 1) { values = [values, values]; }
-            values = _.sortBy(values, function(v) { return v; });
-
-            inputSlider.slider('values', values); 
-        }
-
-    },
-    'slidecreate .input-slider, slide .input-slider, slidechange .input-slider': function(e, tpl, ui) {
-        var values = getCertainityRangeDisplayValue(ui);
-        tpl.$('input[name=attribute-certainity]').val(values);
-    },
     'submit form': function (e, tpl) {
         e.preventDefault();
         var label = tpl.$('input[name=attribute-label]').val(),
@@ -779,6 +732,52 @@ Template.formAttribute.events({
             console.log('done', result);
         });
     }
+});
+
+Template.formAgreeAttribute.rendered = function () {
+    var _self = this,
+        fieldCertainity = $('input[name=attribute-certainity]'),
+        inputSlider = _self.$('.input-slider'),
+        initialRangeValues = [10, 30];
+
+    inputSlider.slider({
+        range: true,
+        min: 0,
+        max: 100,
+        step: 0.01,
+        values: initialRangeValues
+    });
+
+};
+
+Template.formAgreeAttribute.events({
+    'change input[name=attribute-certainity]': function(e, tpl) {
+        var fieldCertainity = $(e.target),
+            inputSlider = tpl.$('.input-slider'),
+            values = fieldCertainity.val(),
+            matcher = /([^|to|%|-|\s])+(\d+(\.\d+)?){1,2}?/g;
+
+        values = values.match(matcher).map(function(v) {
+            return parseFloat(v).toFixed(2);
+        });
+        
+
+        if(_.some(values, function(v){ return v > 100.00})) {
+            alert('Error: certainity level should be within the range of 0 to 100%.');
+            var sliderValues = getCertainityRangeDisplayValue(inputSlider);
+            fieldCertainity.val(sliderValues);
+        } else {
+            values = _.sortBy(values, function(v) { return v; });
+            if(values.length === 1) { values = [values, values]; }
+            inputSlider.slider('values', values); 
+        }
+    },
+    'slidecreate .input-slider, slide .input-slider, slidechange .input-slider': function(e, tpl, ui) {
+        var inputSlider = tpl.$('.input-slider'),
+            values = getCertainityRangeDisplayValue(inputSlider);
+
+        tpl.$('input[name=attribute-certainity]').val(values);
+    },
 });
 
 Template.formEvent.rendered = function () {
@@ -985,8 +984,8 @@ function addUpdateTimelineEvent(provAttributes) {
 /**
  * HELPERS/ COMMON METHODS 
  */
-function getCertainityRangeDisplayValue() {
-    var values = $('.input-slider').slider('values');
+function getCertainityRangeDisplayValue(inputSlider) {
+    var values = inputSlider.slider('values');
     // Reduce the array if there is no range 
     // OR Sort the values 
     if(values[0] == values[1]) { 
@@ -1022,8 +1021,7 @@ function setUpDialog(template, entity, selectorSuffix) {
 
     $(dialog).dialog({
         autoOpen: true,
-        width: 350,
-        modal: true,
+        width: 450,
         close: function(e, ui) {
             $(this).remove();
         }

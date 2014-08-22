@@ -73,17 +73,20 @@
             <ul class="list-group">
             {{#each groupedAttributes}}
                 <li class="list-group-item">
-                    <h5><strong>{{mrLabel}}</strong></h5>
+                    <h5>Label: <strong>{{mrLabel}}</strong></h5>
                     <ol>
                         {{#each values}}
-                            <li class="list-group-item">
-                            	<strong>{{mrValue}}</strong>
-								{{#each mrCertainity}}
-									{{getAgentNameById this.mrAssertionBy}}
-									<div class="bar-certainity">
-										<div class="bar-confidence" style="margin-left:{{confidenceMin}}px; width: {{confidenceRange}}px"></div>
-									</div>
-								{{/each}}
+                            <li>
+                            	<strong>{{mrValue}}</strong><span class="agree-attribute-value"><i class="fa fa-thumbs-up"></i></span>
+                                <div class="agree-attribute-form collapse">
+                                    {{> formAgreeAttribute data=this standalone=true}}
+                                </div>
+                                {{#each mrCertainity}}
+                                    <div class="bar-certainity">
+                                        <div class="bar-confidence" style="margin-left:{{confidenceMin}}%; width: {{confidenceRange}}%"></div>
+                                        {{getAgentNameById this.mrAssertionBy}}
+                                    </div>
+                                {{/each}}
                             </li>
                         {{/each}}
                     </ol>
@@ -144,17 +147,22 @@
         <form>
             <input type="text" class="form-control" name="attribute-label" placeholder="Label" value="{{label}}"/>
             <input type="text" class="form-control" name="attribute-value" placeholder="Value" value="{{value}}"/>
-            <br>
-                <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level % (eg. 25%, 55-75% )"/>
-                <div class="input-slider"></div>
-                <div class="input-group">
-                    <span class="input-group-addon">Certainity Level % (eg. 25%, 55-75% )</span>
-                </div>
-            <br>
-            <input type="text" class="form-control" name="attribute-reason" placeholder="Reason" value="{{reason}}"/>
+            {{> formAgreeAttribute}}
             <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Save Annotation</button>
         </form>
     </div>
+</template>
+
+<template name="formAgreeAttribute">
+        <input type="text" class="form-control" name="attribute-certainity" placeholder="Certainity Level % (eg. 25%, 55-75% )"/>
+        <div class="input-slider"></div>
+        <div class="input-group">
+            <span class="input-group-addon">Certainity Level % (eg. 25%, 55-75% )</span>
+        </div>
+        <input type="text" class="form-control" name="attribute-reason" placeholder="Reason" value="{{reason}}"/>
+        {{#if standalone}}
+            <button class="btn btn-success btn-block btn-sm" type="submit"><i class="fa fa-check"></i> Agree to value</button>
+        {{/if}}
 </template>
 
 <template name="formEvent">
