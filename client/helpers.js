@@ -6,11 +6,18 @@ UI.registerHelper('printObject', function(obj) {
     return JSON.stringify(obj);
 });
 
+UI.registerHelper('printArray', function(arr, separator) {
+    if(_.isArray(arr) && arr.length>0) {
+        return arr.join(separator);
+    }
+});
+
 UI.registerHelper('prettyDate', function(date) {
     if(moment(date).isValid()) {
         return moment(date).format(dateWithTimeFormat);
     }
 });
+
 
 // Agents and Users
 UI.registerHelper('count', function(item) {
@@ -25,6 +32,7 @@ UI.registerHelper('isOwner', function(agent) {
       return agent.mrUserId == Meteor.userId();
     }
 });
+
 
 
 UI.registerHelper('getAgentName', getAgentName);

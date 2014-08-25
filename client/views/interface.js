@@ -507,27 +507,51 @@ Template.displayAttributes.helpers({
     groupedAttributes: function() {
         var _self = this;
         var relatives = getEntityRelative(_self.mrOrigin);
+        // Get entity relatives to get the "related attributes"
         if(relatives) {
             var entityOrigins = _.keys(_.extend(relatives.mrSource, relatives.mrTarget));
 
+            // Find the attributes among the relatives
             var attributes = Provenance.find({
                     mrOrigin: {$in: entityOrigins}, provType: 'MR: Attribute', wasInvalidatedBy: {$exists: false}
                 }).map(function(attrib) {
+                    // Find the latest version of the relation, which contains the certainity info
                     var relation = Provenance.findOne(
                             {provType: 'MR: Relation', mrSource: _self.mrOrigin, mrTarget: attrib.mrOrigin, wasInvalidatedBy: {$exists: false}},
                             {sort: {provGeneratedAtTime: -1}}
                         );
+
+                    // return attribute combined with the relation info
                     return _.extend(attrib, {
                             entityOrigin: _self.mrOrigin, mrCertainity: relation.mrAttribute.mrCertainity
                         });
                 });
-            
+            // Group everything by attribute label
             var grouped = _.map(_.groupBy(attributes, 'mrLabel'), function(value, key) {
                 return {mrLabel: key, values: value};
             });
 
             return grouped;
         }
+    },
+    groupedCertainity: function() {
+        if(this.mrCertainity) {
+            var grouped = _.groupBy(this.mrCertainity, function(cer) {
+                return cer.upAssertionConfidence;
+            }); 
+
+            var sorted = _.sortBy(grouped, function(value, key) {
+                return key;
+            });
+
+            return sorted.reverse();
+        }
+    },
+    confidence: function() {
+        var obj = this;
+        if(_.isArray(this)) { obj = this[0]; } 
+
+        return _.pick(obj, 'upAssertionConfidence');
     },
     confidenceMin: function() {
         if(this.upAssertionConfidence.length == 2) {

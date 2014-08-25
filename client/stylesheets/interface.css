@@ -65,7 +65,8 @@ body > .container, #main {
 }
 
 .ui-draggable:hover,
-.ui-draggable:active {
+.ui-draggable:active,
+:not(.ui-draggable > * > *) {
 	cursor: move;
 }
 
@@ -82,11 +83,13 @@ body > .container, #main {
 /* Certainity */
 .bar-certainity {
 	width: 100%;
+	height: 12px;
 	display: block;
-	height: 10px;
-	background-color: #ccc;
-	border-radius: 2px;
+	padding: 3px;
+	background-color: #f8f8f8;
+	border-radius: 5px;
 	overflow: hidden;
+	border: 1px solid #ccc;
 }
 
 .bar-certainity .bar-confidence {
@@ -94,6 +97,7 @@ body > .container, #main {
 	display: block;
 	height: 100%;
 	background-color: #e63;
+	border-radius: 10px;
 }
 
 
