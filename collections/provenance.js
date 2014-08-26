@@ -112,8 +112,8 @@ Meteor.methods({
 	},
 	crisisReportInvalidation: function(provAttributes) {
 		// Invalidate the record, rather than deleting it  
-		var user = Meteor.user();
-		var currentCrisisId = provAttributes.currentCrisisId;
+		var user = Meteor.user(),
+			currentCrisisId = provAttributes.currentCrisisId;
 
 		// ensure the user is logged in
 		if (!user)
@@ -123,8 +123,8 @@ Meteor.methods({
 		if (!currentCrisisId)
 			throw new Meteor.Error(422, 'Please include the currentCrisisId');
 
-		var now = new Date().getTime(); 
-		var userProv = Provenance.findOne({mrUserId: user});
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id});
 
 		var removalActivity = Provenance.insert({
 			provClasses:['Activity'],

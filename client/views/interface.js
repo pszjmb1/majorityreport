@@ -52,9 +52,7 @@ Template.freeform.rendered = function () {
         Deps.autorun(function() {
             var renderedEntities = Session.get('renderedEntities');
             if(!_.contains(renderedEntities, doc.mrSource) 
-                || 
-                !_.contains(renderedEntities, doc.mrTarget)
-            ){
+                || !_.contains(renderedEntities, doc.mrTarget)) {
                 // return if the entities haven't been rendered
                 return;
             }
