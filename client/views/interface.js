@@ -534,6 +534,9 @@ Template.displayAttributes.helpers({
             return grouped;
         }
     },
+    certainityCount: function() {
+        if(this.mrCertainity) { return this.mrCertainity.length; }
+    },
     groupedCertainity: function() {
         if(this.mrCertainity) {
             var grouped = _.groupBy(this.mrCertainity, function(cer) {
