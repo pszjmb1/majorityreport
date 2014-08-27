@@ -44,11 +44,12 @@ Template.freeform.rendered = function () {
     relationsQuery.observe({
         added: processRelation,
         changed: processRelation,
-        // remove operations are handled based on 'renderedEntities' session variable
+        removed: processRelation,
     });
 
     function processRelation(doc) {
         if(doc.mrOrigin === undefined) { return; }
+
         Deps.autorun(function() {
 
             // run everytime rendered list has changed
@@ -1189,7 +1190,6 @@ function removeFromRenderedList(entity) {
     var renderedList = Session.get('renderedEntities');
     if(_.contains(renderedList, entity)) {
         Session.set('renderedEntities', _.without(renderedList, entity));
-        console.log("removed", entity);
     }
 }
 
