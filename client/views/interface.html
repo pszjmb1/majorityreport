@@ -1,11 +1,14 @@
 <template name='freeform'>
     {{> tools}}
     <div id="board">
-        {{#each provHadMember}}
-            {{#with entityWithAttributes}}
-                {{> entity}}
-            {{/with}}
-        {{/each}}
+        <ol>
+            {{#each provHadMember}}
+                {{#with entityWithAttributes}}
+                    {{> entity}}
+                {{/with}}
+            {{/each}}
+            
+        </ol>
     </div>
 </template>
 

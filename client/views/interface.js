@@ -122,6 +122,7 @@ Template.freeform.helpers({
         };
         if(info.attributes && info.entity) {return info; }
     }
+
 });
 
 /**  Render entities - media, maps */
@@ -133,7 +134,7 @@ Template.entity.rendered = function () {
 
     Meteor.defer(function() {
         addToRenderedList(_self.data.entity.mrOrigin);
-    });  
+    });
 
     // Attach plugins - draggable, resizable, jsPlumbs
     var target = plumber.makeTarget(outerWrapper);
@@ -142,33 +143,15 @@ Template.entity.rendered = function () {
     innerWrapper.resizable({ 
         ghost: true,
         handles: "all",
-        stop: updateEntityAttributes 
     });
     
     plumber.draggable(outerWrapper, { 
         cancel: '.entity-item-timeline',
-        stop: updateEntityAttributes 
     });
 
+    // Bind the event when a new connection is drawn
     target.bind('beforeDrop', addRelation);
 
-    function updateEntityAttributes(e, ui) {
-        var provAttributes = {
-            mrEntity: _self.data.entity.mrOrigin,
-            currentAttributeOrigin: _self.data.attributes.mrOrigin,
-            mrAttribute: {
-                width: innerWrapper.css('width'),
-                height: innerWrapper.css('height'),
-                top: outerWrapper.css('top'),
-                left: outerWrapper.css('left')
-            }
-        };
-
-        Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
-            if(error) 
-                return alert(error.reason);
-        });
-    }
 };
 
 Template.entity.helpers({
@@ -206,6 +189,25 @@ Template.entity.helpers({
 });
 
 Template.entity.events({
+    'dragstop .entity-outer, resizestop .entity-inner': function(e, tpl) {
+        var outerWrapper = tpl.$('.entity-outer'),
+            innerWrapper = tpl.$('.entity-inner');
+
+        var provAttributes = {
+            mrEntity: this.entity.mrOrigin,
+            currentAttributeOrigin: this.attributes.mrOrigin,
+            mrAttribute: {
+                width: innerWrapper.css('width'),
+                height: innerWrapper.css('height'),
+                top: outerWrapper.css('top'),
+                left: outerWrapper.css('left')
+            }
+        };
+        Meteor.call('entityReportAttributeRevision', provAttributes, function(error, result) {
+            if(error) 
+                return alert(error.reason);
+        });
+    },
     'click .entity-info': function (e,tpl) {
         e.preventDefault();
         setUpDialog('entityInfo', this.entity);
@@ -353,7 +355,6 @@ Template.map.rendered = function () {
                 return alert(error.reason);
         });
     }
-
 };
 
 /**
@@ -456,7 +457,6 @@ Template.timeline.rendered = function () {
 
         addUpdateTimelineEvent(provAttributes);
     }
-
 };
 
 /**
@@ -471,7 +471,6 @@ Template.entityInfo.rendered = function () {
         relationElem.attr({ "data-id": _self.data.mrOrigin });
         plumber.makeSource(relationElem, {parent: relationElem});
     }
-    
 };
 
 Template.entityInfo.helpers({
@@ -913,7 +912,6 @@ Template.formAgreeAttribute.events({
             if(error)
                 return alert(error.reason);
 
-            console.log(result)
         });
     }
 });
@@ -947,7 +945,6 @@ Template.formEvent.rendered = function () {
     endElem.on("dp.change",function (e) {
        startElem.data("DateTimePicker").setMaxDate(e.date);
     });
-
 };
 
 Template.formEvent.helpers({

@@ -692,10 +692,8 @@ Meteor.methods({
 
 		// Clone the latest media attribute and update them
 		// Insert a new revision
-		var attribute = getLatestRevision(provAttributes.currentAttributeOrigin),
-			currentAttributeId = attribute._id;
-		
-		var attributeEntry = _.extend(_.omit(attribute, '_id'), newAttribute);
+		var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin),
+			attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
 
 		var revisionId = Provenance.insert(attributeEntry);
 				
@@ -707,7 +705,7 @@ Meteor.methods({
 			provWasStartedBy: userProv._id,
 			provWasDerivedFrom: {
 				provGenerated: revisionId, 
-				provDerivedFrom: currentAttributeId, 
+				provDerivedFrom: currentAttribute._id, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
 		};
@@ -715,7 +713,7 @@ Meteor.methods({
 		Provenance.insert(revisionActivity);
 
 		//Invalidate the previous version
-		Provenance.update(currentAttributeId, {$set: {wasInvalidatedBy: revisionActivity}});
+		Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: revisionActivity}});
 
 		return revisionId;
 	},
