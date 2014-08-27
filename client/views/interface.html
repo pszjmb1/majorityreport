@@ -108,7 +108,7 @@
     <div class="relations">
         <h4>Relations</h4>
         {{#each relations 'mrTarget'}}
-            {{#if notEntityIsAttribute mrTarget}}
+            {{#if isRendered 'mrTarget'}}
                 <span class="relative-entity-item">{{> displayThumbnail getEntity mrTarget}}</span>
             {{/if}}
         {{/each}}

@@ -8,6 +8,7 @@ UI.registerHelper('printObject', function(obj) {
 
 UI.registerHelper('printArray', function(arr, separator) {
     if(_.isArray(arr) && arr.length>0) {
+    	separator = separator || ', ';
         return arr.join(separator);
     }
 });

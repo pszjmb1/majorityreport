@@ -41,21 +41,35 @@ Template.freeform.rendered = function () {
         wasInvalidatedBy: { $exists: false} 
     });
 
-    relationsQuery.observe({ 
+    relationsQuery.observe({
         added: processRelation,
         changed: processRelation,
+        // remove operations are handled based on 'renderedEntities' session variable
     });
 
     function processRelation(doc) {
         if(doc.mrOrigin === undefined) { return; }
-
         Deps.autorun(function() {
+
+            // run everytime rendered list has changed
+            // - therefore, also process when an *entity* is removed from the report 
+            // -- e.g. remove drawn relations attached to the removed entity
             var renderedEntities = Session.get('renderedEntities');
+
+            // Return if source and target are not rendered
+            // handle entity removal from report
             if(!_.contains(renderedEntities, doc.mrSource) 
                 || !_.contains(renderedEntities, doc.mrTarget)) {
-                // return if the entities haven't been rendered
+
+                var connection = plumber.getConnections(doc.mrOrigin)[0];
+                if(connection) { plumber.detach(connection); }
+
+                // return without doing anything else
                 return;
             }
+
+            // either get the exisiting connection instance 
+            // - OR draw the newly added relation or 
             var connection = plumber.getConnections(doc.mrOrigin);
             if(connection.length > 0) {
                 connection = connection[0];
@@ -63,6 +77,7 @@ Template.freeform.rendered = function () {
                 connection = drawRelation(doc);
             }
 
+            // add or update relation label
             if(connection) {
                 if(!_.isEmpty(doc.mrAttribute)) {
                     var label = _.pairs(doc.mrAttribute)[0].join(": ");
@@ -206,17 +221,13 @@ Template.entity.events({
             dctermsTitle: _self.dctermsTitle,
             dctermsDescription: _self.dctermsDescription
         };
-            var filteredList = Session.get('renderedEntities');
-            console.log('filteredList ' , filteredList, _.omit(filteredList, _self.entity.mrOrigin));
-/*
+
         Meteor.call('crisisEntityInvalidate', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
 
-            // remove entity from the rendered lists
-            $(boardSelector).trigger('entityRemo');
+            removeFromRenderedList(_self.entity.mrOrigin);
         });
-*/
 
     }
 });
@@ -647,12 +658,10 @@ Template.displayRelations.helpers({
                     {mrOrigin: {$in: relationOrigins}, provType: 'MR: Relation', wasInvalidatedBy: {$exists: false}}
                 );
             }
-
         }   
     },
-    notEntityIsAttribute: function(item) {
-        var entity = getLatestRevision(item);
-        return !(getEntityType(entity) === 'attribute');
+    isRendered: function(key) {
+        return _.contains(Session.get('renderedEntities'), this[key]);
     },
     getEntity: function(item) {
         return getLatestRevision(item);
@@ -705,7 +714,6 @@ Template.displayRelations.events({
         }
 
     }
-
 });
 
 Template.entityEventInfo.events({
@@ -1174,6 +1182,14 @@ function addToRenderedList(entity) {
     if(!_.contains(renderedList, entity)) {
         renderedList.push(entity);
         Session.set('renderedEntities', renderedList);
+    }
+}
+
+function removeFromRenderedList(entity) {
+    var renderedList = Session.get('renderedEntities');
+    if(_.contains(renderedList, entity)) {
+        Session.set('renderedEntities', _.without(renderedList, entity));
+        console.log("removed", entity);
     }
 }
 
