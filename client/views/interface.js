@@ -62,6 +62,7 @@ Template.freeform.rendered = function () {
             if(!_.contains(renderedEntities, doc.mrSource) 
                 || !_.contains(renderedEntities, doc.mrTarget)) {
 
+
                 var connection = plumber.getConnections(doc.mrOrigin)[0];
                 if(connection) { plumber.detach(connection); }
 
@@ -154,6 +155,10 @@ Template.entity.rendered = function () {
 
 };
 
+Template.entity.destroyed = function () {
+    removeFromRenderedList(this.data.entity.mrOrigin);
+};
+
 Template.entity.helpers({
     entityType: function () {
         return getEntityType(this.entity);
@@ -228,8 +233,6 @@ Template.entity.events({
         Meteor.call('crisisEntityInvalidate', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
-
-            removeFromRenderedList(_self.entity.mrOrigin);
         });
 
     }
