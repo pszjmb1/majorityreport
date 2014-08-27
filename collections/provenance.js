@@ -140,7 +140,7 @@ Meteor.methods({
 	crisisReportRevision: function (provAttributes) {
 		reportRevision(provAttributes);
 	}, 
-	crisisEntityInvalidate: function(provAttributes) {
+	crisisEntityRemove: function(provAttributes) {
 		var user = Meteor.user(),
 			mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.provAtLocation});
 		
@@ -165,18 +165,22 @@ Meteor.methods({
 		// Update the revision with the filtered list.
 		Provenance.update(revisionId, { $set: {provHadMember: filteredMemberList} } );
 
-		var enterActivity = {
+
+
+		var removalActivity = {
 			provClasses:['Activity'],
-			provType:'MR: Media Removal from Report',
+			provType:'MR: Report Entity Removal',
 			provStartedAtTime: now,
 			provEndedAtTime: now,
 			provWasStartedBy: userProv._id,
 			provGenerated: provAttributes.currentEntityOrigin
 		};
 
-		Provenance.insert(enterActivity);
+		Provenance.insert(removalActivity);
 
-
+		// In addition, remove the attributes of the entity related to the report (e.g. top, left width)
+		var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin);
+		Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: removalActivity}});
 	},
 	crisisReportMedia: function(provAttributes) {
 		var user = Meteor.user(),
@@ -496,7 +500,6 @@ Meteor.methods({
 		addEntityRelative(sourceTarget, relationId);
 
 		return attributeId;
-
 	},
 	relatedAttributeUpdate: function(provAttributes) {
 		var user = Meteor.user();
@@ -535,7 +538,6 @@ Meteor.methods({
 			}
 		};
 		return revisionId;
-
 	},
 	entityAttributeRelationAgree: function(provAttributes) {
 		var user = Meteor.user();

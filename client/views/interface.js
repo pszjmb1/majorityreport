@@ -123,7 +123,6 @@ Template.freeform.helpers({
         };
         if(info.attributes && info.entity) {return info; }
     }
-
 });
 
 /**  Render entities - media, maps */
@@ -152,7 +151,6 @@ Template.entity.rendered = function () {
 
     // Bind the event when a new connection is drawn
     target.bind('beforeDrop', addRelation);
-
 };
 
 Template.entity.destroyed = function () {
@@ -219,21 +217,24 @@ Template.entity.events({
     },
     'click .entity-remove': function(e, tpl) {
         e.preventDefault();
+
         var _self = this;
         var message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + ' from the report?'
-        if(!confirm(message)) { return; }
+        
+        if(confirm(message)) {
+            var provAttributes = {
+                currentCrisisOrigin: Session.get('currentCrisisOrigin'),
+                currentEntityOrigin: _self.entity.mrOrigin,
+                currentAttributesOrigin: _self.attributes.mrOrigin,
+                dctermsTitle: _self.dctermsTitle,
+                dctermsDescription: _self.dctermsDescription
+            };
 
-        var provAttributes = {
-            currentCrisisOrigin: Session.get('currentCrisisOrigin'),
-            currentEntityOrigin: _self.entity.mrOrigin,
-            dctermsTitle: _self.dctermsTitle,
-            dctermsDescription: _self.dctermsDescription
-        };
-
-        Meteor.call('crisisEntityInvalidate', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
+            Meteor.call('crisisEntityRemove', provAttributes, function (error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+        }
 
     }
 });
