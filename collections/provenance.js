@@ -36,10 +36,12 @@ getEntityRelative = function(entity) {
 	}
 };
 
-getEntityType = function(entity) {
+getEntityType = function(entity, lowercase) {
     if(entity) {
+    	lowercase = lowercase || true;
         var type = entity.mrCollectionType || entity.provType.replace('MR: ', '');
-        return type.toLowerCase();
+        type = (lowercase) ? type.toLowerCase() : type;
+		return type;
     }
 }
 
@@ -149,38 +151,87 @@ Meteor.methods({
 		if (!user)
 			throw new Meteor.Error(401, "Please login to be able to modify the crisis report");
 
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId:user._id}),
-			currentCrisis = getLatestRevision(provAttributes.currentCrisisOrigin);
+		var revisionId,
+			now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
 
-		var revisionId = reportRevision(_.extend(provAttributes, {
-			currentCrisisId: currentCrisis._id,
-			dctermsTitle: currentCrisis.dctermsTitle,
-			dctermsDescription: currentCrisis.dctermsDescription
-		}));
+		if(provAttributes.currentCrisisOrigin) {
+			var currentCrisis = getLatestRevision(provAttributes.currentCrisisOrigin);
 
-		var filteredMemberList = _.filter(currentCrisis.provHadMember, function(member) {
-			return member.mrEntity !== provAttributes.currentEntityOrigin;
-		});
-		// Update the revision with the filtered list.
-		Provenance.update(revisionId, { $set: {provHadMember: filteredMemberList} } );
+			revisionId = reportRevision(_.extend(provAttributes, {
+				currentCrisisId: currentCrisis._id,
+				dctermsTitle: currentCrisis.dctermsTitle,
+				dctermsDescription: currentCrisis.dctermsDescription
+			}));
 
+			var memberItem = _.findWhere(currentCrisis.provHadMember, {mrEntity: provAttributes.currentEntityOrigin});
+			var filteredMemberList = _.without(currentCrisis.provHadMember, memberItem);
+			// Update the revision with the filtered list.
+			Provenance.update(revisionId, { $set: {provHadMember: filteredMemberList} } );
 
+			var removalActivity = {
+				provClasses:['Activity'],
+				provType:'MR: Report Entity Removal',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provGenerated: revisionId
+			};
 
-		var removalActivity = {
-			provClasses:['Activity'],
-			provType:'MR: Report Entity Removal',
-			provStartedAtTime: now,
-			provEndedAtTime: now,
-			provWasStartedBy: userProv._id,
-			provGenerated: provAttributes.currentEntityOrigin
-		};
+			Provenance.insert(removalActivity);
 
-		Provenance.insert(removalActivity);
+			if(memberItem.mrAttribute) {
 
-		// In addition, remove the attributes of the entity related to the report (e.g. top, left width)
-		var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin);
-		Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: removalActivity}});
+				console.log('memberItem.mrAttribute ' , memberItem.mrAttribute);
+				// In addition, remove the attributes of the entity related to the report (e.g. top, left width)
+				var currentAttribute = getLatestRevision(memberItem.mrAttribute);
+				Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: removalActivity}});
+			}
+
+		} else if(provAttributes.currentMapOrigin || provAttributes.currentTimelineOrigin) { 
+			// perform the following for parent entities e.g. media, timelines etc..
+			var parentOrigin = provAttributes.currentMapOrigin || provAttributes.currentTimelineOrigin,
+				parentEntity = getLatestRevision(parentOrigin);
+
+			var revisedParentEntity = {
+				provHadMember: _.without(parentEntity.provHadMember, provAttributes.currentEntityOrigin),
+				provGeneratedAtTime: now
+			};
+			
+			console.log('revisedParentEntity ' , revisedParentEntity);
+
+			var revisionEntry = _.extend(_.omit(parentEntity, '_id'), revisedParentEntity);
+			revisionId = Provenance.insert(revisionEntry);
+
+			// Add a corresponding revision provenance /////////////////////////////
+			var revisionActivity = {
+				provClasses:['Derivation'],
+				provType: 'MR: '+ getEntityType(parentEntity, false) +' Entity Revision',
+				provAtTime : now,
+				provWasStartedBy: userProv._id,
+				provWasDerivedFrom: {
+					provGenerated: revisionId, 
+					provDerivedFrom: parentEntity._id, 
+					provAttributes: [{provType: 'provRevision'}]
+				}
+			};
+			Provenance.insert(revisionActivity);
+
+			var removalActivity = {
+				provClasses:['Activity'],
+				provType:'MR: Entity Removal',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provGenerated: revisionId
+			};
+
+			Provenance.insert(removalActivity);
+
+			//Invalidate the previous version
+			Provenance.update(parentEntity._id, {$set: {wasInvalidatedBy: removalActivity}});
+		}
+
 	},
 	crisisReportMedia: function(provAttributes) {
 		var user = Meteor.user(),

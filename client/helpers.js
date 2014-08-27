@@ -15,6 +15,7 @@ UI.registerHelper('printArray', function(arr, separator) {
 
 UI.registerHelper('prettyDate', function(date) {
     if(moment(date).isValid()) {
+    	var dateWithTimeFormat = "ddd, Do MMM YYYY - HH:mm";
         return moment(date).format(dateWithTimeFormat);
     }
 });

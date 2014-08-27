@@ -29,7 +29,7 @@ Template.freeform.rendered = function () {
     var _self = this,
         board = this.$(boardSelector);
 
-    board.selectable({ filter: '.entity-outer' });
+    // board.selectable({ filter: '.entity-outer' });
 
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
@@ -215,7 +215,7 @@ Template.entity.events({
         e.preventDefault();
         setUpDialog('entityInfo', this.entity);
     },
-    'click .entity-remove': function(e, tpl) {
+    'click .remove-entity': function(e, tpl) {
         e.preventDefault();
 
         var _self = this;
@@ -225,7 +225,6 @@ Template.entity.events({
             var provAttributes = {
                 currentCrisisOrigin: Session.get('currentCrisisOrigin'),
                 currentEntityOrigin: _self.entity.mrOrigin,
-                currentAttributesOrigin: _self.attributes.mrOrigin,
                 dctermsTitle: _self.dctermsTitle,
                 dctermsDescription: _self.dctermsDescription
             };
@@ -338,8 +337,9 @@ Template.map.rendered = function () {
         }
 
         // Prepare marker popup
+        var templateData = _.extend(doc, {mapOrigin: _self.mrOrigin});
         var popupContent = document.createElement('div');
-        UI.insert(UI.renderWithData(Template.entityInfo, doc), popupContent);
+        UI.insert(UI.renderWithData(Template.entityInfo, templateData), popupContent);
         popup.setContent(popupContent);
 
     }
@@ -405,18 +405,22 @@ Template.timeline.rendered = function () {
      */
     var timelineEventOrigins = [];
     Deps.autorun(function () {
-        // Keep track of markers within the timeline (additions/removals) 
+        // Keep track of events within the timeline (additions/removals) 
         var latest = getLatestRevision(_self.data.mrOrigin);
         if(latest) { timelineEventOrigins = latest.provHadMember; }
+
     });
 
     var eventsQuery = Provenance.find({provType: 'MR: Event', wasInvalidatedBy: { $exists: false} });
     eventsQuery.observe({
         added: processEvents,
         changed: processEvents,
+        removed: processEvents,
     });
 
     function processEvents(doc) {
+        // TODO: Handle removals; clear removed events from the timeline scene
+
         // if origin id is not present, return
         // if the event is not a member of the current timleine, return 
         if(doc.mrOrigin === undefined || !_.contains(timelineEventOrigins, doc.mrOrigin)) { 
@@ -446,7 +450,8 @@ Template.timeline.rendered = function () {
 
     function viewEditEvent(info, callback) {
         if(info) {
-            var dialog = setUpDialog('entityInfo', getLatestRevision(info.id));
+            var templateData = _.extend(getLatestRevision(info.id), {timelineOrigin: _self.data.mrOrigin});
+            var dialog = setUpDialog('entityInfo', templateData);
         }
     }
 
@@ -478,8 +483,13 @@ Template.entityInfo.rendered = function () {
 };
 
 Template.entityInfo.helpers({
-    latestVersion: function() {
-        return getLatestRevision(this.mrOrigin);
+    latestInfo: function() {
+        // make sure to retain extra info that might have been passed along
+        var extraInfo = _.pick(this, 'mapOrigin', 'timelineOrigin');
+        var latest = getLatestRevision(this.mrOrigin);
+        if(latest) { 
+            return _.extend(latest, extraInfo);
+        }
     },
     isEntityType: function(checkType) {
         var type = getEntityType(this);
@@ -523,6 +533,31 @@ Template.entityInfo.events({
     'click .edit-entity': function(e, tpl) {
         e.preventDefault();
         tpl.$('.edit-entity-form').collapse('toggle');
+    },
+    'click .remove-entity': function(e, tpl) {
+        e.preventDefault();
+            console.log('this ' , this);
+        var _self = this;
+        var message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + '?'
+        
+        if(confirm(message)) {
+            var type = getEntityType(this);
+            var provAttributes = {
+                currentEntityOrigin: _self.mrOrigin
+            };
+
+            if(type === 'marker') { provAttributes.currentMapOrigin = this.mapOrigin; }
+            else if(type === 'event') { provAttributes.currentTimelineOrigin = this.timelineOrigin; }
+            else { provAttributes.currentCrisisOrigin = Session.get('currentCrisisOrigin'); }
+
+            Meteor.call('crisisEntityRemove', provAttributes, function (error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+        }
+
+
+        
     }
 });
 
