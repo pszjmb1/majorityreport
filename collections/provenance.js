@@ -140,6 +140,44 @@ Meteor.methods({
 	crisisReportRevision: function (provAttributes) {
 		reportRevision(provAttributes);
 	}, 
+	crisisEntityInvalidate: function(provAttributes) {
+		var user = Meteor.user(),
+			mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.provAtLocation});
+		
+		// Validate input ////////////////////////////////////////////////////////
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to be able to modify the crisis report");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id}),
+			currentCrisis = getLatestRevision(provAttributes.currentCrisisOrigin);
+
+		var revisionId = reportRevision(_.extend(provAttributes, {
+			currentCrisisId: currentCrisis._id,
+			dctermsTitle: currentCrisis.dctermsTitle,
+			dctermsDescription: currentCrisis.dctermsDescription
+		}));
+
+		var filteredMemberList = _.filter(currentCrisis.provHadMember, function(member) {
+			return member.mrEntity !== provAttributes.currentEntityOrigin;
+		});
+		// Update the revision with the filtered list.
+		Provenance.update(revisionId, { $set: {provHadMember: filteredMemberList} } );
+
+		var enterActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Media Removal from Report',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: provAttributes.currentEntityOrigin
+		};
+
+		Provenance.insert(enterActivity);
+
+
+	},
 	crisisReportMedia: function(provAttributes) {
 		var user = Meteor.user(),
 			mediaWithSameUrl = Provenance.findOne({provAtLocation: provAttributes.provAtLocation});

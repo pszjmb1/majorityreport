@@ -104,7 +104,6 @@ Template.freeform.helpers({
             attributes: getLatestRevision(this.mrAttribute),
             entity: getLatestRevision(this.mrEntity),
         };
-
         if(info.attributes && info.entity) {return info; }
     }
 });
@@ -194,6 +193,31 @@ Template.entity.events({
     'click .entity-info': function (e,tpl) {
         e.preventDefault();
         setUpDialog('entityInfo', this.entity);
+    },
+    'click .entity-remove': function(e, tpl) {
+        e.preventDefault();
+        var _self = this;
+        var message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + ' from the report?'
+        if(!confirm(message)) { return; }
+
+        var provAttributes = {
+            currentCrisisOrigin: Session.get('currentCrisisOrigin'),
+            currentEntityOrigin: _self.entity.mrOrigin,
+            dctermsTitle: _self.dctermsTitle,
+            dctermsDescription: _self.dctermsDescription
+        };
+            var filteredList = Session.get('renderedEntities');
+            console.log('filteredList ' , filteredList, _.omit(filteredList, _self.entity.mrOrigin));
+/*
+        Meteor.call('crisisEntityInvalidate', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+
+            // remove entity from the rendered lists
+            $(boardSelector).trigger('entityRemo');
+        });
+*/
+
     }
 });
 
