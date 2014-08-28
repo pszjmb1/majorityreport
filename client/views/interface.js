@@ -1,5 +1,5 @@
 var boardSelector = '#board',
-    plumber, maps = {}, markers = {},
+    plumber,
     dateFormat = "ddd, Do MMM YYYY",
     dateWithTimeFormat = "ddd, Do MMM YYYY - HH:mm";
 
@@ -215,8 +215,9 @@ Template.entity.events({
         e.preventDefault();
         setUpDialog('entityInfo', this.entity);
     },
-    'click .remove-entity': function(e, tpl) {
+    'click .entity-remove': function(e, tpl) {
         e.preventDefault();
+        e.stopPropagation();
 
         var _self = this;
         var message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + ' from the report?'
@@ -257,16 +258,18 @@ Template.media.helpers({
 Template.map.rendered = function () {
     var _self = this,
         containerSelector = _self.data.mrOrigin +'-map',
-        map, tileLayer;
+        markers = {}, tileLayer;
 
     L.Icon.Default.imagePath = '../packages/leaflet/images';
 
     // set up the map
-    map = L.map(containerSelector, {
+    var map = L.map(containerSelector, {
         center: [20.0, 5.0],
         minZoom: 1, zoom: 2,
         doubleClickZoom: false
     });
+
+    _self.map = map;
 
     // Add the tile layer
     tileLayer = L.tileLayer('http://{s}.mqcdn.com/tiles/1.0.0/map/{z}/{x}/{y}.jpeg', {
@@ -284,7 +287,10 @@ Template.map.rendered = function () {
     }));
 
     // bind events to map
-    map.on({ dblclick: function(info) { insertMarker(info.latlng); } });
+    map.on({ 
+        dblclick: insertMarker 
+    });
+
     $(boardSelector).bind('entityAttributeChange', function(event, entityOrigin) {
         if(entityOrigin === _self.data.mrOrigin) {
             L.Util.requestAnimFrame(map.invalidateSize, map, !1, map._container);
@@ -303,11 +309,13 @@ Template.map.rendered = function () {
 
     var markersQuery = Provenance.find({provType: 'MR: Marker', wasInvalidatedBy: { $exists: false} });
     markersQuery.observe({
-        added: processMarker,
-        changed: processMarker,
+        added: addUpdateMarker,
+        changed: addUpdateMarker,
+        removed: removeMarker,
+
     });
 
-    function processMarker(doc) {
+    function addUpdateMarker(doc) {
         // if origin id is not present, return
         // if the marker is not a member of the map, return 
         if(doc.mrOrigin === undefined || !_.contains(mapMarkerOrigins, doc.mrOrigin)) { 
@@ -337,21 +345,27 @@ Template.map.rendered = function () {
         }
 
         // Prepare marker popup
-        var templateData = _.extend(doc, {mapOrigin: _self.mrOrigin});
+        var templateData = _.extend(doc, {mapOrigin: _self.data.mrOrigin});
         var popupContent = document.createElement('div');
         UI.insert(UI.renderWithData(Template.entityInfo, templateData), popupContent);
         popup.setContent(popupContent);
 
     }
-
+    // Remove (Un-render) marker from the map
+    function removeMarker(doc) {
+        removeFromRenderedList(doc.mrOrigin);
+        if(markers[doc.mrOrigin]) {
+            map.removeLayer(markers[doc.mrOrigin]);
+        }
+    }
 
     // Insert marker function
-    function insertMarker(latlng) {
+    function insertMarker(info) {
         provAttributes = {
             currentMapOrigin: _self.data.mrOrigin,
             mrLatLng: {
-                lat: latlng.lat,
-                lng: latlng.lng
+                lat: info.latlng.lat,
+                lng: info.latlng.lng
             }
         };
         Meteor.call('crisisMapMarker', provAttributes, function (error, result) {
@@ -359,6 +373,10 @@ Template.map.rendered = function () {
                 return alert(error.reason);
         });
     }
+};
+
+Template.map.destroyed = function () {
+    this.map.remove();
 };
 
 /**
@@ -544,7 +562,7 @@ Template.entityInfo.events({
     'click .remove-entity': function(e, tpl) {
         e.preventDefault();
         var _self = this,
-            message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + '?';
+            message = 'Are you sure you want to remove '+ getEntityType(_self) + '?';
         
         if(confirm(message)) {
             var type = getEntityType(this);
