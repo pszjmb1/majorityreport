@@ -34,35 +34,38 @@ Template.freeform.rendered = function () {
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
     });
+    
+    // bind plumber events
+    // Bind the event when a new connection is drawn
+    plumber.bind('beforeDrop', addRelation);
+    // Bind just before a connection is detached
+    plumber.bind('beforeDetach', function (connection) {
+        var source = connection.sourceId,
+            target = connection.targetId;
 
-    plumber.bind('connectionDetached', function(info) {
-        var source = info.sourceId,
-            target = info.targetId;
-        
         var renderedEntities = Session.get('renderedEntities');
         if(_.contains(renderedEntities, source) && _.contains(renderedEntities, target) ) {
-            if(confirm('Are you sure you want to remove relationship?')) {
-                var connection = info.connection;
+            if( confirm('Are you sure you want to remove relationship?')) {
                 var provAttributes = {
                     // Gather source id, in case of markers look to the "data-id" attribute
                     currentRelationOrigin: connection.scope,
                     mrSource: source,
                     mrTarget: target
                 };
+
                 Meteor.call('entityRelationInvalidate', provAttributes, function (error, result) {
                     if(error)
                         return alert(error.reason);
                 });
+            } else {
+                return false;
             }
         }
-        
     });
 
-    plumber.bind('connectionMoved', function(info) {
-        
-
-    });
-
+    /**
+     * Observe new or modified relations and (un)draw them
+     */
     // (un)draw connections/relations
     var relationsQuery = Provenance.find({ 
         provType: 'MR: Relation', 
@@ -72,6 +75,13 @@ Template.freeform.rendered = function () {
     relationsQuery.observe({
         added: processRelation,
         changed: processRelation,
+        removed: function(doc) {
+            var connection = plumber.getConnections(doc.mrOrigin)[0];
+            connection._forceDetach = true;
+            plumber.detach(connection);
+            console.log('connection ' , connection);
+            
+        }
     });
 
     function processRelation(doc) {
@@ -88,6 +98,7 @@ Template.freeform.rendered = function () {
             if(!( _.contains(renderedEntities, doc.mrSource) && _.contains(renderedEntities, doc.mrTarget))) {
                 var connection = plumber.getConnections(doc.mrOrigin)[0];
                 if(connection) { plumber.detach(connection); }
+
                 // return without doing anything else
                 return;
             }
@@ -109,7 +120,6 @@ Template.freeform.rendered = function () {
                 }
             }
         });
-
     }
 
     function drawRelation(relation) {
@@ -130,6 +140,9 @@ Template.freeform.rendered = function () {
             return connection;
         }
     }
+
+
+
 };
 
 Template.freeform.destroyed = function () {
@@ -170,9 +183,6 @@ Template.entity.rendered = function () {
     plumber.draggable(outerWrapper, { 
         cancel: '.entity-item-timeline',
     });
-
-    // Bind the event when a new connection is drawn
-    target.bind('beforeDrop', addRelation);
 };
 
 Template.entity.destroyed = function () {
