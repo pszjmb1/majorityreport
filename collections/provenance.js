@@ -197,8 +197,6 @@ Meteor.methods({
 				provHadMember: _.without(parentEntity.provHadMember, provAttributes.currentEntityOrigin),
 				provGeneratedAtTime: now
 			};
-			
-			console.log('revisedParentEntity ' , revisedParentEntity);
 
 			var revisionEntry = _.extend(_.omit(parentEntity, '_id'), revisedParentEntity);
 			revisionId = Provenance.insert(revisionEntry);
@@ -228,10 +226,12 @@ Meteor.methods({
 
 			Provenance.insert(removalActivity);
 
-			//Invalidate the previous version
+			//Invalidate the previous versions
+			var currentEntityId = getLatestRevision(provAttributes.currentEntityOrigin)._id;
+			Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: removalActivity}});
+			//Invalidate previous parent version
 			Provenance.update(parentEntity._id, {$set: {wasInvalidatedBy: removalActivity}});
 		}
-
 	},
 	crisisReportMedia: function(provAttributes) {
 		var user = Meteor.user(),

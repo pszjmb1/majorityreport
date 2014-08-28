@@ -413,14 +413,12 @@ Template.timeline.rendered = function () {
 
     var eventsQuery = Provenance.find({provType: 'MR: Event', wasInvalidatedBy: { $exists: false} });
     eventsQuery.observe({
-        added: processEvents,
-        changed: processEvents,
-        removed: processEvents,
+        added: addUpdateEvent,
+        changed: addUpdateEvent,
+        removed: removeEvent,
     });
 
-    function processEvents(doc) {
-        // TODO: Handle removals; clear removed events from the timeline scene
-
+    function addUpdateEvent(doc) {
         // if origin id is not present, return
         // if the event is not a member of the current timleine, return 
         if(doc.mrOrigin === undefined || !_.contains(timelineEventOrigins, doc.mrOrigin)) { 
@@ -441,6 +439,15 @@ Template.timeline.rendered = function () {
 
         // Make sure the enity is in the rendered list, to subscribe for data reliably
         addToRenderedList(doc.mrOrigin);
+    }
+
+    function removeEvent(doc) {
+        //Remove from rendered list
+        removeFromRenderedList(doc.mrOrigin);
+        if(timelineData.get(doc.mrOrigin)) {
+            timelineData.remove(doc.mrOrigin);  
+            timeline.fit();
+        }
     }
 
     // Operations for adding a new timeline event
