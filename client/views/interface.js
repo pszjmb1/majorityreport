@@ -598,7 +598,6 @@ Template.displayAttributes.helpers({
     groupedAttributes: function() {
         var _self = this;
         var relatives = getEntityRelative(_self.mrOrigin);
-        console.log('relatives ' , relatives);
         // Get entity relatives to get the "related attributes"
         if(relatives) {
             var entityOrigins = _.keys(_.extend(relatives.mrSource, relatives.mrTarget));
