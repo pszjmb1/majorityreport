@@ -51,21 +51,16 @@ Template.freeform.rendered = function () {
         if(doc.mrOrigin === undefined) { return; }
 
         Deps.autorun(function() {
-
             // run everytime rendered list has changed
             // - therefore, also process when an *entity* is removed from the report 
             // -- e.g. remove drawn relations attached to the removed entity
             var renderedEntities = Session.get('renderedEntities');
 
+            // Remove drawn relations if associated entity has been removed 
             // Return if source and target are not rendered
-            // handle entity removal from report
-            if(!_.contains(renderedEntities, doc.mrSource) 
-                || !_.contains(renderedEntities, doc.mrTarget)) {
-
-
+            if(!( _.contains(renderedEntities, doc.mrSource) && _.contains(renderedEntities, doc.mrTarget))) {
                 var connection = plumber.getConnections(doc.mrOrigin)[0];
                 if(connection) { plumber.detach(connection); }
-
                 // return without doing anything else
                 return;
             }
