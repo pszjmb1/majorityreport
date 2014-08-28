@@ -181,8 +181,6 @@ Meteor.methods({
 			Provenance.insert(removalActivity);
 
 			if(memberItem.mrAttribute) {
-
-				console.log('memberItem.mrAttribute ' , memberItem.mrAttribute);
 				// In addition, remove the attributes of the entity related to the report (e.g. top, left width)
 				var currentAttribute = getLatestRevision(memberItem.mrAttribute);
 				Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: removalActivity}});

@@ -543,9 +543,8 @@ Template.entityInfo.events({
     },
     'click .remove-entity': function(e, tpl) {
         e.preventDefault();
-            console.log('this ' , this);
-        var _self = this;
-        var message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + '?'
+        var _self = this,
+            message = 'Are you sure you want to remove '+ getEntityType(_self.entity) + '?';
         
         if(confirm(message)) {
             var type = getEntityType(this);
