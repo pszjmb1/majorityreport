@@ -460,6 +460,78 @@ Meteor.methods({
 
 		return relationId;
 	},
+	entityRelationInvalidate: function(provAttributes) {
+		var user = Meteor.user();
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new relation");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId: user._id});
+
+		// Invalidate the current relation
+		var currentRelation = getLatestRevision(provAttributes.currentRelationOrigin);
+		var removalActivity = Provenance.insert({
+			provClasses:['Activity'],
+			provType:'MR: Entities Relation Removal',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provInvalidated: provAttributes.currentRelationOrigin
+		});
+
+		Provenance.update(currentRelation._id, {$set: {wasInvalidatedBy: removalActivity}});
+		
+		// Remove relation from the source's relatives list//////////////////////////////////////
+		var sourceRelative = getEntityRelative(provAttributes.mrSource);
+
+		sourceRelative.mrTarget[provAttributes.mrTarget] = _.without(
+			sourceRelative.mrTarget[provAttributes.mrTarget], 
+			provAttributes.currentRelationOrigin
+		);
+
+		var revisionId = Provenance.insert(_.omit(sourceRelative, '_id'));
+		// Add a corresponding revision provenance /////////////////////////////
+		var relationRevisionActivity = Provenance.insert({
+			provClasses:['Derivation'],
+			mrReason: 'Entity Relative Update: Removal',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: sourceRelative._id, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		});
+
+		Provenance.update(sourceRelative._id, {$set: {wasInvalidatedBy: relationRevisionActivity}});
+
+		// Remove relation from the target's relatives list//////////////////////////////////////
+		var targetRelative = getEntityRelative(provAttributes.mrTarget);
+
+		targetRelative.mrSource[provAttributes.mrSource] = _.without(
+			targetRelative.mrSource[provAttributes.mrSource], 
+			provAttributes.currentRelationOrigin
+		);
+
+		var revisionId = Provenance.insert(_.omit(targetRelative, '_id'));
+		// Add a corresponding revision provenance /////////////////////////////
+		var relationRevisionActivity = Provenance.insert({
+			provClasses:['Derivation'],
+			mrReason: 'Entity Relative Update: Removal',
+			provAtTime : now,
+			provWasStartedBy: userProv._id,
+			provWasDerivedFrom: {
+				provGenerated: revisionId, 
+				provDerivedFrom: targetRelative._id, 
+				provAttributes: [{provType: 'provRevision'}]
+			}
+		});
+
+		Provenance.update(targetRelative._id, {$set: {wasInvalidatedBy: relationRevisionActivity}});
+
+
+	},
 	entityRelatedAttributeAdd: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in

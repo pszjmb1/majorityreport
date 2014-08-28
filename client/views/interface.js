@@ -35,7 +35,35 @@ Template.freeform.rendered = function () {
         plumber.repaintEverything();
     });
 
-    // draw connections/relations
+    plumber.bind('connectionDetached', function(info) {
+        var source = info.sourceId,
+            target = info.targetId;
+        
+        var renderedEntities = Session.get('renderedEntities');
+        if(_.contains(renderedEntities, source) && _.contains(renderedEntities, target) ) {
+            if(confirm('Are you sure you want to remove relationship?')) {
+                var connection = info.connection;
+                var provAttributes = {
+                    // Gather source id, in case of markers look to the "data-id" attribute
+                    currentRelationOrigin: connection.scope,
+                    mrSource: source,
+                    mrTarget: target
+                };
+                Meteor.call('entityRelationInvalidate', provAttributes, function (error, result) {
+                    if(error)
+                        return alert(error.reason);
+                });
+            }
+        }
+        
+    });
+
+    plumber.bind('connectionMoved', function(info) {
+        
+
+    });
+
+    // (un)draw connections/relations
     var relationsQuery = Provenance.find({ 
         provType: 'MR: Relation', 
         wasInvalidatedBy: { $exists: false} 
@@ -44,7 +72,6 @@ Template.freeform.rendered = function () {
     relationsQuery.observe({
         added: processRelation,
         changed: processRelation,
-        removed: processRelation,
     });
 
     function processRelation(doc) {
@@ -1150,10 +1177,16 @@ Template.tools.events({
  * Shared DB Operation helpers
  */
 function addRelation(info) {
+    var source = $(info.source).attr('data-id') || info.sourceId,
+        target = info.targetId;
+
+    // do not allow relation to self
+    if(source === target) { return; }
+
     var provAttributes = {
         // Gather source id, in case of markers look to the "data-id" attribute
-        mrSource: $(info.source).attr('data-id') || info.sourceId,
-        mrTarget: info.targetId
+        mrSource: source,
+        mrTarget: target
     };
     Meteor.call('entityRelation', provAttributes, function (error, result) {
         if(error)
