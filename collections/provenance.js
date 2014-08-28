@@ -169,16 +169,14 @@ Meteor.methods({
 			// Update the revision with the filtered list.
 			Provenance.update(revisionId, { $set: {provHadMember: filteredMemberList} } );
 
-			var removalActivity = {
+			var removalActivity = Provenance.insert({
 				provClasses:['Activity'],
 				provType:'MR: Report Entity Removal',
 				provStartedAtTime: now,
 				provEndedAtTime: now,
 				provWasStartedBy: userProv._id,
 				provGenerated: revisionId
-			};
-
-			Provenance.insert(removalActivity);
+			});
 
 			if(memberItem.mrAttribute) {
 				// In addition, remove the attributes of the entity related to the report (e.g. top, left width)
@@ -200,7 +198,7 @@ Meteor.methods({
 			revisionId = Provenance.insert(revisionEntry);
 
 			// Add a corresponding revision provenance /////////////////////////////
-			var revisionActivity = {
+			var revisionActivity = Provenance.insert({
 				provClasses:['Derivation'],
 				provType: 'MR: '+ getEntityType(parentEntity, false) +' Entity Revision',
 				provAtTime : now,
@@ -210,23 +208,20 @@ Meteor.methods({
 					provDerivedFrom: parentEntity._id, 
 					provAttributes: [{provType: 'provRevision'}]
 				}
-			};
-			Provenance.insert(revisionActivity);
+			});
 
-			var removalActivity = {
+			var removalActivity = Provenance.insert({
 				provClasses:['Activity'],
 				provType:'MR: Entity Removal',
 				provStartedAtTime: now,
 				provEndedAtTime: now,
 				provWasStartedBy: userProv._id,
 				provGenerated: revisionId
-			};
-
-			Provenance.insert(removalActivity);
+			});
 
 			//Invalidate the previous versions
-			var currentEntityId = getLatestRevision(provAttributes.currentEntityOrigin)._id;
-			Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: removalActivity}});
+			var currentEntity = getLatestRevision(provAttributes.currentEntityOrigin);
+			Provenance.update(currentEntity._id, {$set: {wasInvalidatedBy: removalActivity}});
 			//Invalidate previous parent version
 			Provenance.update(parentEntity._id, {$set: {wasInvalidatedBy: removalActivity}});
 		}
@@ -575,7 +570,7 @@ Meteor.methods({
 		var attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
 		var revisionId = Provenance.insert(newAttribute); 
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: 'Entity Update',
 			provAtTime : now,
@@ -585,7 +580,7 @@ Meteor.methods({
 				provDerivedFrom: currentAttributeId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
+		});
 		return revisionId;
 	},
 	entityAttributeRelationAgree: function(provAttributes) {
@@ -642,7 +637,7 @@ Meteor.methods({
 		var revisionId = Provenance.insert(relationEntry);
 				
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: 'Update Related Attribute Certainity',
 			provAtTime : now,
@@ -652,9 +647,7 @@ Meteor.methods({
 				provDerivedFrom: currentRelationId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
-
-		Provenance.insert(revisionActivity);
+		});
 
 		//Invalidate the previous version
 		Provenance.update(currentRelationId, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -692,18 +685,16 @@ Meteor.methods({
 		var revisionId = Provenance.insert(entityEntry);
 
 		// Add an activity for inserting new attribute /////////////////////////
-		var activity = {
+		var activity = Provenance.insert({
 			provClasses:['Activity'],
 			provType: 'MR: Entity Attribute Deletion',
 			provStartedAtTime: now,
 			provEndedAtTime: now,
 			provWasStartedBy: userProv._id,
 			provGenerated: revisionId
-		};
-
-		Provenance.insert(activity);
+		});
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: 'Entity Update',
 			provAtTime : now,
@@ -713,9 +704,7 @@ Meteor.methods({
 				provDerivedFrom: currentEntityId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
-
-		Provenance.insert(revisionActivity);
+		});
 
 		//Invalidate the previous version
 		Provenance.update(currentEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -749,7 +738,7 @@ Meteor.methods({
 		var revisionId = Provenance.insert(attributeEntry);
 				
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: 'Entity Report Attribute Update',
 			provAtTime : now,
@@ -759,9 +748,7 @@ Meteor.methods({
 				provDerivedFrom: currentAttribute._id, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
-
-		Provenance.insert(revisionActivity);
+		});
 
 		//Invalidate the previous version
 		Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -885,7 +872,7 @@ Meteor.methods({
 		var mapRevisionId = Provenance.insert(mapEntry);
 
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: provAttributes.reason,
 			provAtTime : now,
@@ -895,9 +882,7 @@ Meteor.methods({
 				provDerivedFrom: currentMapId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
-
-		Provenance.insert(revisionActivity);
+		});
 
 		//Invalidate the previous version
 		Provenance.update(currentMapId, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -1019,7 +1004,7 @@ Meteor.methods({
 		var timelineRevisionId = Provenance.insert(timelineEntry);
 
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: provAttributes.reason,
 			provAtTime : now,
@@ -1029,9 +1014,7 @@ Meteor.methods({
 				provDerivedFrom: currentTimelineId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
-
-		Provenance.insert(revisionActivity);
+		});
 
 		//Invalidate the previous version
 		Provenance.update(currentTimelineId, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -1061,7 +1044,7 @@ Meteor.methods({
 		var revisionId = Provenance.insert(eventEntityEntry);   
 				
 		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = {
+		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
 			mrReason: 'Event Details Update',
 			provAtTime : now,
@@ -1071,9 +1054,7 @@ Meteor.methods({
 				provDerivedFrom: currentEventEntityId, 
 				provAttributes: [{provType: 'provRevision'}]
 			}
-		};
-
-		Provenance.insert(revisionActivity);
+		});
 
 		//Invalidate the previous version
 		Provenance.update(currentEventEntityId, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -1122,7 +1103,7 @@ function reportRevision(provAttributes) {
 	var revisionId = Provenance.insert(crisisEntry);
 	
 	// Add a corresponding revision provenance /////////////////////////////
-	var revisionActivity = {
+	var revisionActivity = Provenance.insert({
 		provClasses:['Derivation'],
 		mrReason: provAttributes.reason,
 		provAtTime : now,
@@ -1132,9 +1113,7 @@ function reportRevision(provAttributes) {
 			provDerivedFrom: currentCrisisId, 
 			provAttributes: [{provType: 'provRevision'}]
 		}
-	};
-
-	Provenance.insert(revisionActivity);
+	});
 
 	//Invalidate the previous version
 	Provenance.update(currentCrisisId, {$set: {wasInvalidatedBy: revisionActivity}});
@@ -1189,7 +1168,7 @@ function addEntityRelative(provAttributes, relationId) {
 			var relationRevisionId = Provenance.insert(revisionEntry);
 
 			// Add a corresponding revision provenance /////////////////////////////
-			var relationRevisionActivity = {
+			var relationRevisionActivity = Provenance.insert({
 				provClasses:['Derivation'],
 				mrReason: 'Entity Relative Update',
 				provAtTime : now,
@@ -1199,9 +1178,7 @@ function addEntityRelative(provAttributes, relationId) {
 					provDerivedFrom: existingId, 
 					provAttributes: [{provType: 'provRevision'}]
 				}
-			};
-
-			Provenance.insert(relationRevisionActivity);
+			});
 			//Invalidate the previous version
 			Provenance.update(existingId, {$set: {wasInvalidatedBy: relationRevisionActivity}});
 
@@ -1257,7 +1234,7 @@ function addEntityRelative(provAttributes, relationId) {
 			var listRevisionId = Provenance.insert(collectionEntry);
 
 			// Add a corresponding revision provenance /////////////////////////////
-			var listRevisionActivity = {
+			var listRevisionActivity = Provenance.insert({
 				provClasses:['Derivation'],
 				mrReason: "Relations List Update",
 				provAtTime : now,
@@ -1267,9 +1244,7 @@ function addEntityRelative(provAttributes, relationId) {
 					provDerivedFrom: currentCollectionId, 
 					provAttributes: [{provType: 'provRevision'}]
 				}
-			};
-
-			Provenance.insert(listRevisionActivity);
+			});
 
 			//Invalidate the previous version
 			Provenance.update(currentCollectionId, {$set: {wasInvalidatedBy: listRevisionActivity}});
