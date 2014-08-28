@@ -97,7 +97,7 @@ Template.freeform.rendered = function () {
             });
 
             connection.bind('click', function(conn, e) {
-                setUpDialog('formAttribute', relation, 'form-attr');
+                setUpDialog('entityInfo', relation);
             });
 
             return connection;
@@ -598,6 +598,7 @@ Template.displayAttributes.helpers({
     groupedAttributes: function() {
         var _self = this;
         var relatives = getEntityRelative(_self.mrOrigin);
+        console.log('relatives ' , relatives);
         // Get entity relatives to get the "related attributes"
         if(relatives) {
             var entityOrigins = _.keys(_.extend(relatives.mrSource, relatives.mrTarget));
@@ -828,36 +829,35 @@ Template.formAttribute.events({
             var msg = 'Similar value already exists for this entity.'
                 +'\nExisting value: '+ similarAttribute.mrLabel +': '+ similarAttribute.mrValue
                 +'\nYour input value: ' + label +': '+ value
-                +'\n\n Press OK to update the existing value'
+                +'\n\n Press OK to update the existing value';
 
-            var updateExistingAttribute = confirm(msg);
+            if(confirm(msg)) { 
+                // update existing attribute value
+                var provAttributes = {
+                        currentAttributeOrigin: similarAttribute.mrOrigin,
+                        mrLabel: label,
+                        mrValue: value
+                    };
+                Meteor.call('relatedAttributeUpdate', provAttributes, function (error, result) {
+                    if(error)
+                        return alert(error.reason);
+                });
 
-            if(!updateExistingAttribute) { return; }
-            // update existing attribute value
-            var provAttributes = {
+                // update certainity record
+                var provAttributes = {
                     currentAttributeOrigin: similarAttribute.mrOrigin,
-                    mrLabel: label,
-                    mrValue: value
+                    currentEntityOrigin: this.mrOrigin,
+                    mrCertainity: {
+                        upAssertionConfidence: certainity,
+                        upAssertionType: 'upHumanAsserted',
+                        mrAssertionReason: reason,
+                    }
                 };
-            Meteor.call('relatedAttributeUpdate', provAttributes, function (error, result) {
-                if(error)
-                    return alert(error.reason);
-            });
-
-            // update certainity record
-            var provAttributes = {
-                currentAttributeOrigin: similarAttribute.mrOrigin,
-                currentEntityOrigin: this.mrOrigin,
-                mrCertainity: {
-                    upAssertionConfidence: certainity,
-                    upAssertionType: 'upHumanAsserted',
-                    mrAssertionReason: reason,
-                }
-            };
-            Meteor.call('entityAttributeRelationAgree', provAttributes, function(error, result) {
-                if(error)
-                    return alert(error.reason);
-            });
+                Meteor.call('entityRelatedAttributeAgree', provAttributes, function(error, result) {
+                    if(error)
+                        return alert(error.reason);
+                });
+            }
         } else {
             // new attribute
             var provAttributes = {
@@ -870,7 +870,8 @@ Template.formAttribute.events({
                     mrAssertionReason: reason,
                 }
             };
-            Meteor.call('entityAttributeRelationAdd', provAttributes, function (error, result) {
+
+            Meteor.call('entityRelatedAttributeAdd', provAttributes, function (error, result) {
                 if(error)
                     return alert(error.reason);
             });
@@ -966,7 +967,7 @@ Template.formAgreeAttribute.events({
                 mrAssertionReason: reason,
             }
         };
-        Meteor.call('entityAttributeRelationAgree', provAttributes, function(error, result) {
+        Meteor.call('entityRelatedAttributeAgree', provAttributes, function(error, result) {
             if(error)
                 return alert(error.reason);
 

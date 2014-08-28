@@ -460,7 +460,7 @@ Meteor.methods({
 
 		return relationId;
 	},
-	entityAttributeRelationAdd: function(provAttributes) {
+	entityRelatedAttributeAdd: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
@@ -583,7 +583,7 @@ Meteor.methods({
 		});
 		return revisionId;
 	},
-	entityAttributeRelationAgree: function(provAttributes) {
+	entityRelatedAttributeAgree: function(provAttributes) {
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
