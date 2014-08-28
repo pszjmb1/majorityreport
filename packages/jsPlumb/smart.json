@@ -3,7 +3,7 @@
   "description": "jsPlumb provides a means for a developer to visually connect elements on their web pages. (http://jsplumbtoolkit.com)",
   "homepage": "http://jsplumbtoolkit.com",
   "author": "Sangeet Gyawali <sangeight@gmail.com> (http://sangeight.com)",
-  "version": "0.0.1",
-  "git": "",
+  "version": "1.6.4",
+  "git": "https://github.com/sporritt/jsPlumb",
   "packages": {}
 }
