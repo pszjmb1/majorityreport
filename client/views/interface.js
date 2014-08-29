@@ -29,7 +29,7 @@ Template.freeform.rendered = function () {
     var _self = this,
         board = this.$(boardSelector);
 
-    // board.selectable({ filter: '.entity-outer' });
+    board.selectable({ filter: '.entity-outer' });
 
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
@@ -211,7 +211,7 @@ Template.entity.helpers({
         $(boardSelector).trigger('entityAttributeChange', this.entity.mrOrigin);
 
         var keys = ['width', 'height'],
-            outerOffset = { width: 0, height: 50 };        
+            outerOffset = { width: 0, height: 30 };        
         if(type === 'outer') { keys = keys.concat(['top', 'left', 'z-index']); }
 
         // Convert key/vals to styles 

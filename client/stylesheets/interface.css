@@ -14,14 +14,10 @@ body > .container, #main {
 }
 
 #board .ui-selecting {
-	background-color: #0cc;
+	background-color: #8de;
 }
 #board .ui-selecting > * {
-	opacity: 0.7
-}
-
-#board .ui-selected {
-	background-color: #0cc;
+	opacity: 0.7;
 }
 
 .entity-outer {
@@ -56,6 +52,10 @@ body > .container, #main {
 .entity-outer:hover .entity-inner,
 .entity-outer.ui-selecting .entity-inner {
 	border-color: #0cc;
+}
+
+.entity-outer.ui-selected .entity-inner {
+	border: 2px solid #0ce;
 }
 
 .entity-item-media > img {
