@@ -94,7 +94,8 @@
 										{{#with confidence}}
 											{{printArray upAssertionConfidence '-'}}%
 		                                    <div class="bar-certainity">
-		                                        <div class="bar-confidence" style="margin-left:{{confidenceMin}}%; width: {{confidenceRange}}%"></div>
+                                                <div class="bar-confidence-offset" style="width:{{confidenceMin}}%;"></div>
+		                                        <div class="bar-confidence" style="width: {{confidenceRange}}%"></div>
 		                                    </div>
 										{{/with}}
 	                                    {{#each this}}

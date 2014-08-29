@@ -92,12 +92,22 @@ body > .container, #main {
 	border: 1px solid #ccc;
 }
 
+.bar-certainity > div {
+	float: left;
+	height: 100%;
+
+}
+.bar-certainity .bar-confidence-offset {
+	min-width: 5px;
+	background-color: #ccc;
+	border-radius: 10px 0 0 10px;
+}
 .bar-certainity .bar-confidence {
 	width: 0;
-	display: block;
-	height: 100%;
 	background-color: #e63;
 	border-radius: 10px;
+	padding-left: 5px;
+	margin-left: -5px;
 }
 
 

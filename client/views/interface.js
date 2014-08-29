@@ -663,8 +663,16 @@ Template.displayAttributes.helpers({
                 });
             // Group everything by attribute label
             var grouped = _.map(_.groupBy(attributes, 'mrLabel'), function(value, key) {
-                return {mrLabel: key, values: value};
+
+                var sortedValues = _.sortBy(value, function(v) {
+                    var confidences = _.pluck(v.mrCertainity, 'upAssertionConfidence');
+                    return _.max(_.flatten(confidences));                   
+                });
+
+                return {mrLabel: key, values: sortedValues.reverse()};
             });
+
+            
 
             return grouped;
         }
