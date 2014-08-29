@@ -1164,7 +1164,6 @@ Template.tools.events({
             if (error)
                 return alert(error.reason);
         });
-
     },
     'submit form[name=media]': function (e, tpl) {
         e.preventDefault();
@@ -1215,6 +1214,35 @@ Template.tools.events({
             if(error)
                 return alert(error.reason);
         });
+    },
+    'click .entity-group': function(e, tpl) {
+        e.preventDefault();
+        var selectedItems = $('.ui-selected'),
+            members = _.map(selectedItems, function(item) {
+                var data = UI.getElementData(item);
+                if(data) {
+                    return {
+                        mrEntity: data.entity.mrOrigin,
+                        mrAttribute: data.attributes.mrOrigin
+                    };
+                }
+            });
+
+        var panelBox = calculcatePanelBox('.ui-selected');
+        console.log('panelBox ' , panelBox);
+        
+        /*
+        var provAttributes = {
+            currentCrisisId: this._id,
+            currentCrisisOrigin: this.mrOrigin,
+            dctermsTitle: this.dctermsTitle,
+            dctermsDescription: this.dctermsDescription
+        };
+
+        Meteor.call('crisisReportTimeline', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });*/
     }
 });
 
@@ -1347,4 +1375,54 @@ function getOffsetRect(elem) {
     var left = box.left + scrollLeft - clientLeft;
     
     return { top: Math.round(top), left: Math.round(left) };
+}
+
+function calculcatePanelBox(itemSelector, padding) {
+    // Any paddings that we want for parent container
+    padding = padding || { top: 10, right: 10, bottom: 10, left: 10 };
+
+    // initial box values
+    var box = { right: 0, bottom: 0, top: -1, left: -1 },
+        items = [];
+
+    $(itemSelector).each(function() {
+        // get current item's properties
+        var itemBox = {
+            left:  $(this).position().left,
+            top: $(this).position().top,
+            right: $(this).position().left + $(this).outerWidth(),
+            bottom: $(this).position().top + $(this).outerHeight(),
+        };
+
+        // find the minimum top and left and the maximum bottom and right
+        if(box.left < 0 || box.left > itemBox.left) { box.left = itemBox.left; }
+        if(box.top < 0 || box.top > itemBox.top) { box.top = itemBox.top; }
+        if(box.right < itemBox.right) { box.right = itemBox.right; }
+        if(box.bottom < itemBox.bottom) { box.bottom = itemBox.bottom; }
+
+        // store the index
+        var itemId = $(this).attr('id');
+        items.push({entityOrigin: itemId, mrAttribute: _.omit(itemBox, 'right', 'bottom')});
+
+    });
+
+    // Calculate the size and position for the parent container
+    box.width = box.right - box.left;
+    box.height = box.bottom - box.top;
+    box.left = box.left;
+    box.top = box.top;
+
+    // Calulate position of each item relative to the calculated parent container
+    _.each(items, function(item) {
+        item.mrAttribute.top -= box.top;
+        item.mrAttribute.left -= box.left;
+    });
+
+
+    var output = {
+        panel: _.omit(box, 'right', 'bottom'),
+        items: items
+    }
+
+    return output;
 }

@@ -140,6 +140,24 @@ Meteor.methods({
 		Provenance.update(currentCrisisId, {$set: {wasInvalidatedBy: removalActivity}});
 	},
 	crisisReportRevision: function (provAttributes) {
+		var user = Meteor.user();
+
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to revise a crisis");
+
+		// ensure the currentCrisisId has been set
+		if (!provAttributes.currentCrisisOrigin)
+			throw new Meteor.Error(422, 'Please include the currentCrisis origin');
+
+		// ensure the crisis has a dctermsTitle
+		if (!provAttributes.dctermsTitle)
+			throw new Meteor.Error(422, 'Please fill in the title');
+
+		// ensure the crisis has a dctermsDescription
+		if (!provAttributes.dctermsDescription)
+			throw new Meteor.Error(422, 'Please fill in the description');
+
 		reportRevision(provAttributes);
 	}, 
 	crisisEntityRemove: function(provAttributes) {
@@ -467,7 +485,6 @@ Meteor.methods({
 			throw new Meteor.Error(401, "Please login to add a new relation");
 
 		invalidateRelation(provAttributes);
-
 	},
 	entityRelatedAttributeAdd: function(provAttributes) {
 		var user = Meteor.user();
@@ -1063,38 +1080,14 @@ Meteor.methods({
 
 
 function reportRevision(provAttributes) {
-	// Invalidate the record, rather than deleting it  
-	var user = Meteor.user();
+	var now = new Date().getTime(),
+		userProv = Provenance.findOne({mrUserId: Meteor.user()._id});
 
-	// ensure the user is logged in
-	if (!user)
-		throw new Meteor.Error(401, "Please login to revise a crisis");
-
-	// ensure the currentCrisisId has been set
-	if (!provAttributes.currentCrisisId)
-		throw new Meteor.Error(422, 'Please include the currentCrisisId');
-
-	// ensure the crisis has a dctermsTitle
-	if (!provAttributes.dctermsTitle)
-		throw new Meteor.Error(422, 'Please fill in the title');
-
-	// ensure the crisis has a dctermsDescription
-	if (!provAttributes.dctermsDescription)
-		throw new Meteor.Error(422, 'Please fill in the description');
-
-	var now = new Date().getTime(); 
-	var userProv = Provenance.findOne({mrUserId: user._id});
-
-	var crisisProperties = {
-		dctermsTitle: provAttributes.dctermsTitle,
-		dctermsDescription: provAttributes.dctermsDescription,
-		provGeneratedAtTime: now
-	};
+	provAttributes.provGeneratedAtTime = now;
 
 	// Clone the current crisis record to retain the original provenance details    
-	var crisis = Provenance.findOne(provAttributes.currentCrisisId),
-		currentCrisisId = crisis._id,
-		crisisEntry = _.extend(_.omit(crisis, '_id'), crisisProperties);
+	var currentCrisis = getLatestRevision(provAttributes.currentCrisisOrigin);
+	var crisisEntry = _.extend(_.omit(currentCrisis, '_id'), provAttributes);
 
 	var revisionId = Provenance.insert(crisisEntry);
 	
@@ -1106,13 +1099,13 @@ function reportRevision(provAttributes) {
 		provWasStartedBy: userProv._id,
 		provWasDerivedFrom: {
 			provGenerated: revisionId, 
-			provDerivedFrom: currentCrisisId, 
+			provDerivedFrom: currentCrisis._id, 
 			provAttributes: [{provType: 'provRevision'}]
 		}
 	});
 
 	//Invalidate the previous version
-	Provenance.update(currentCrisisId, {$set: {wasInvalidatedBy: revisionActivity}});
+	Provenance.update(currentCrisis._id, {$set: {wasInvalidatedBy: revisionActivity}});
 
 	return revisionId;
 }

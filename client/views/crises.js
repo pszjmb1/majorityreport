@@ -44,7 +44,7 @@ Template.editCrisis.events({
 
     if (confirm("Edit this crisis report?")) {
       var crisis = {
-        currentCrisisId: this._id,
+        currentCrisisOrigin: this.mrOrigin,
         dctermsTitle: $(e.target).find('[name=dctermsTitle]').val(),
         dctermsDescription: 
                 $(e.target).find('[name=dctermsDescription]').val(),
