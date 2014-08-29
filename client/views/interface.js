@@ -40,27 +40,32 @@ Template.freeform.rendered = function () {
     plumber.bind('beforeDrop', addRelation);
     // Bind just before a connection is detached
     plumber.bind('beforeDetach', function (connection) {
-        var source = connection.sourceId,
-            target = connection.targetId;
+        if(!connection.invalidateRelation) {
+            var source = connection.sourceId,
+                target = connection.targetId;
 
-        var renderedEntities = Session.get('renderedEntities');
-        if(_.contains(renderedEntities, source) && _.contains(renderedEntities, target) ) {
-            if( confirm('Are you sure you want to remove relationship?')) {
-                var provAttributes = {
-                    // Gather source id, in case of markers look to the "data-id" attribute
-                    currentRelationOrigin: connection.scope,
-                    mrSource: source,
-                    mrTarget: target
-                };
+            var renderedEntities = Session.get('renderedEntities');
+            if(_.contains(renderedEntities, source) && _.contains(renderedEntities, target) ) {
+                if( confirm('Are you sure you want to remove relationship?')) {
+                    var provAttributes = {
+                        // Gather source id, in case of markers look to the "data-id" attribute
+                        currentRelationOrigin: connection.scope,
+                        mrSource: source,
+                        mrTarget: target
+                    };
 
-                Meteor.call('entityRelationInvalidate', provAttributes, function (error, result) {
-                    if(error)
-                        return alert(error.reason);
-                });
-            } else {
-                return false;
+                    Meteor.call('entityRelationInvalidate', provAttributes, function (error, result) {
+                        if(error)
+                            return alert(error.reason);
+                    });
+                } else {
+                    // return false to keep the relationship rendered
+                    return false;
+                }
             }
         }
+
+        return true;
     });
 
     /**
@@ -77,10 +82,9 @@ Template.freeform.rendered = function () {
         changed: processRelation,
         removed: function(doc) {
             var connection = plumber.getConnections(doc.mrOrigin)[0];
-            connection._forceDetach = true;
-            plumber.detach(connection);
-            console.log('connection ' , connection);
-            
+            // get past the 'beforeDetach' event to force detach the connection without any prompts
+            connection.invalidateRelation = true;
+            plumber.detach(connection);            
         }
     });
 
