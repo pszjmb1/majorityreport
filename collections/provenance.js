@@ -726,40 +726,9 @@ Meteor.methods({
 		var user = Meteor.user();
 		// ensure the user is logged in
 		if (!user)
-			throw new Meteor.Error(401, "Please login to update the report");
-		
-		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId: user._id});
+			throw new Meteor.Error(401, "Please login to update the entity's attributes");
 
-		
-		// Prepare the new information
-		var newAttribute = {
-			mrAttribute: provAttributes.mrAttribute,
-			provGeneratedAtTime: now
-		};
-
-		// Clone the latest media attribute and update them
-		// Insert a new revision
-		var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin),
-			attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
-
-		var revisionId = Provenance.insert(attributeEntry);
-				
-		// Add a corresponding revision provenance /////////////////////////////
-		var revisionActivity = Provenance.insert({
-			provClasses:['Derivation'],
-			mrReason: 'Entity Report Attribute Update',
-			provAtTime : now,
-			provWasStartedBy: userProv._id,
-			provWasDerivedFrom: {
-				provGenerated: revisionId, 
-				provDerivedFrom: currentAttribute._id, 
-				provAttributes: [{provType: 'provRevision'}]
-			}
-		});
-
-		//Invalidate the previous version
-		Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: revisionActivity}});
+		var revisionId = updateEntityReportAttribute(provAttributes);
 
 		return revisionId;
 	},
@@ -1069,6 +1038,104 @@ Meteor.methods({
 
 		return revisionId;
 	},
+	crisisReportPanel: function(provAttributes) {
+		var user = Meteor.user();
+		
+		// Validate input ////////////////////////////////////////////////////////
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+		
+		// - First insert the panel
+		// - Move the children entities from report's member list to the new panel's member list
+		// Insert new panel entity ///////////////////////////////////////////////
+		var panel = {
+			provClasses: ['Entity'],
+			provType: 'Collection',
+			mrCollectionType: 'Panel',
+			provGeneratedAtTime: now,
+			provHadMember: []
+		};
+		var panelId = Provenance.insert(panel);
+		Provenance.update(panelId, {$set: {mrOrigin: panelId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var panelActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Panel Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: panelId
+		};
+
+		Provenance.insert(panelActivity);
+
+		// Prepare entity that defines panel and 
+		// its attributes **relative** to the report, i.e. position, dimensions
+		var panelAttribute = {
+			provClasses: ['Entity'],
+			provType: 'MR: Entity Report Attributes',
+			provGeneratedAtTime: now,
+			mrAttribute: provAttributes.mrAttribute || {}
+		}; 
+
+		var panelAttributeId = Provenance.insert(panelAttribute);
+		Provenance.update(panelAttributeId, {$set: {mrOrigin: panelAttributeId}});
+
+		// Add a corresponding creation provenance activity ////////////////////
+		var attrActivity = {
+			provClasses:['Activity'],
+			provType:'MR: Panel Attribute Insertion',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provGenerated: panelAttributeId
+		};
+		
+		Provenance.insert(attrActivity);
+
+		////////////////////////////////////////////////////////////////////////////////
+		// Transfer the sub entities //////////////////////////////////////////////////
+		var currentReport = getLatestRevision(provAttributes.currentCrisisOrigin),
+			reportMembers = currentReport.provHadMember,
+			childEntitiesOrigin = _.pluck(provAttributes.members, 'entityOrigin');
+
+		// extract the children and attribute entry from the report's members list
+		var childEntitiesMembership = _.filter(reportMembers, function(member) {
+			return _.contains(childEntitiesOrigin, member.mrEntity);
+		});
+
+		// remove the children membership and insert the panel membership
+		var updateReportMembers = _.difference(reportMembers, childEntitiesMembership);
+		// // Prepare new revision of the report before inserting the panel entity
+		var revisionId = reportRevision(_.pick(provAttributes, 'currentCrisisOrigin')),
+			panelReportMembership = {
+				mrEntity: panelId,
+				mrAttribute: panelAttributeId
+			};
+		// Insert the panel to the report
+		Provenance.update(revisionId, { $set: {provHadMember: [panelReportMembership]} } );
+		// Insert the children to the panel 
+		Provenance.update(panelId, { $set: {provHadMember: childEntitiesMembership} } );
+		
+		// Update the children entities' atrribute(position) relative to the new panel's properties
+		_.each(childEntitiesMembership, function(member) {
+			var newAttribute = _.findWhere(provAttributes.members, {entityOrigin: member.mrEntity});
+			var details = {
+				currentAttributeOrigin: member.mrAttribute, // existing attribute origin
+				mrAttribute: newAttribute
+			};
+			// update the attributes
+			updateEntityReportAttribute(details);
+		});
+
+		console.log('panelId ' , panelId);
+		return panelId;
+	},
 	
 
 });
@@ -1101,6 +1168,43 @@ function reportRevision(provAttributes) {
 
 	//Invalidate the previous version
 	Provenance.update(currentCrisis._id, {$set: {wasInvalidatedBy: revisionActivity}});
+
+	return revisionId;
+}
+
+function updateEntityReportAttribute(provAttributes) {
+	var now = new Date().getTime(),
+		userProv = Provenance.findOne({mrUserId: Meteor.user()._id});
+
+
+	// Clone the latest media attribute and update them
+	// Insert a new revision
+	var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin);
+	// Prepare the new information
+	var newAttribute = {
+		mrAttribute: _.extend(currentAttribute.mrAttribute, provAttributes.mrAttribute),
+		provGeneratedAtTime: now
+	};
+
+	var attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
+
+	var revisionId = Provenance.insert(attributeEntry);
+			
+	// Add a corresponding revision provenance /////////////////////////////
+	var revisionActivity = Provenance.insert({
+		provClasses:['Derivation'],
+		mrReason: 'Entity Report Attribute Update',
+		provAtTime : now,
+		provWasStartedBy: userProv._id,
+		provWasDerivedFrom: {
+			provGenerated: revisionId, 
+			provDerivedFrom: currentAttribute._id, 
+			provAttributes: [{provType: 'provRevision'}]
+		}
+	});
+
+	//Invalidate the previous version
+	Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: revisionActivity}});
 
 	return revisionId;
 }

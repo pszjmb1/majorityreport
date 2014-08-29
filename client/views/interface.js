@@ -198,11 +198,6 @@ Template.entity.helpers({
     entityType: function () {
         return getEntityType(this.entity);
     },
-    title: function() {
-        if(_.has(this.entity.mrAttribute, 'title')) {
-            return this.entity.mrAttribute.title;
-        }
-    },
     entityAttributes: function(type) {
         if(!this.attributes || _.isEmpty(this.attributes.mrAttribute)) {
             return;
@@ -234,7 +229,6 @@ Template.entity.events({
             innerWrapper = tpl.$('.entity-inner');
 
         var provAttributes = {
-            mrEntity: this.entity.mrOrigin,
             currentAttributeOrigin: this.attributes.mrOrigin,
             mrAttribute: {
                 width: innerWrapper.css('width'),
@@ -1205,32 +1199,21 @@ Template.tools.events({
     },
     'click .entity-group': function(e, tpl) {
         e.preventDefault();
-        var selectedItems = $('.ui-selected'),
-            members = _.map(selectedItems, function(item) {
-                var data = UI.getElementData(item);
-                if(data) {
-                    return {
-                        mrEntity: data.entity.mrOrigin,
-                        mrAttribute: data.attributes.mrOrigin
-                    };
-                }
-            });
+        var selectedItems = $('.ui-selected');
 
-        var panelBox = calculcatePanelBox('.ui-selected');
-        console.log('panelBox ' , panelBox);
+        var panel = calculateNewPanel('.ui-selected');
 
-        /*
         var provAttributes = {
-            currentCrisisId: this._id,
             currentCrisisOrigin: this.mrOrigin,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription
+            mrAttribute: panel.panelAttribute,
+            members: panel.itemsAndAttributes
         };
 
-        Meteor.call('crisisReportTimeline', provAttributes, function (error, result) {
+        console.log('provAttributes ' , provAttributes);
+        Meteor.call('crisisReportPanel', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
-        });*/
+        });
     }
 });
 
@@ -1365,7 +1348,7 @@ function getOffsetRect(elem) {
     return { top: Math.round(top), left: Math.round(left) };
 }
 
-function calculcatePanelBox(itemSelector, padding) {
+function calculateNewPanel(itemSelector, padding) {
     // Any paddings that we want for parent container
     padding = padding || { top: 10, right: 10, bottom: 10, left: 10 };
 
@@ -1408,8 +1391,8 @@ function calculcatePanelBox(itemSelector, padding) {
 
 
     var output = {
-        panel: _.omit(box, 'right', 'bottom'),
-        items: items
+        panelAttribute: _.omit(box, 'right', 'bottom'),
+        itemsAndAttributes: items
     }
 
     return output;
