@@ -67,6 +67,8 @@ Template.freeform.rendered = function () {
 
         return true;
     });
+    // TODO: Ability to change relationship by dragging
+    
 
     /**
      * Observe new or modified relations and (un)draw them
@@ -82,9 +84,11 @@ Template.freeform.rendered = function () {
         changed: processRelation,
         removed: function(doc) {
             var connection = plumber.getConnections(doc.mrOrigin)[0];
-            // get past the 'beforeDetach' event to force detach the connection without any prompts
-            connection.invalidateRelation = true;
-            plumber.detach(connection);            
+            if(connection) {
+                // get past the 'beforeDetach' event to force detach the connection without any prompts
+                connection.invalidateRelation = true;
+                plumber.detach(connection);
+            }
         }
     });
 
@@ -144,9 +148,6 @@ Template.freeform.rendered = function () {
             return connection;
         }
     }
-
-
-
 };
 
 Template.freeform.destroyed = function () {
@@ -655,7 +656,9 @@ Template.displayAttributes.helpers({
 
                     // return attribute combined with the relation info
                     return _.extend(attrib, {
-                            entityOrigin: _self.mrOrigin, mrCertainity: relation.mrAttribute.mrCertainity
+                            entityOrigin: _self.mrOrigin, 
+                            relationOrigin: relation.mrOrigin, 
+                            mrCertainity: relation.mrAttribute.mrCertainity
                         });
                 });
             // Group everything by attribute label
@@ -731,19 +734,26 @@ Template.displayAttributes.events({
         e.preventDefault();
         $(e.currentTarget).siblings('.agree-attribute-form').toggle('collapse');
     },
-    'click .remove-attribute': function (e,tpl) {
+    'click .delete-attribute-value': function (e,tpl) {
+    console.log('tpl ' , tpl, this);
         e.preventDefault();
-        var attrKey = this.label;
-
         var provAttributes = {
-            currentEntityOrigin: tpl.data.mrOrigin,
-            attrKey: attrKey
+            currentAttributeOrigin: this.mrOrigin,
+            currentEntityOrigin: this.entityOrigin,
+            currentRelationOrigin: this.relationOrigin,
         };
 
-        Meteor.call('entityAttributeRemove', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
+        // Meteor.call('entityAttributeRemove', provAttributes, function (error, result) {
+        //     if(error)
+        //         return alert(error.reason);
+        // });
+        // var attrKey = this.label;
+
+        // var provAttributes = {
+        //     currentEntityOrigin: tpl.data.mrOrigin,
+            
+        // };
+
     }
 });
 

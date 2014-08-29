@@ -529,8 +529,6 @@ Meteor.methods({
 		});
 
 		Provenance.update(targetRelative._id, {$set: {wasInvalidatedBy: relationRevisionActivity}});
-
-
 	},
 	entityRelatedAttributeAdd: function(provAttributes) {
 		var user = Meteor.user();
@@ -640,7 +638,8 @@ Meteor.methods({
 		};
 
 		var attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
-		var revisionId = Provenance.insert(newAttribute); 
+		var revisionId = Provenance.insert(attributeEntry); 
+		
 		// Add a corresponding revision provenance /////////////////////////////
 		var revisionActivity = Provenance.insert({
 			provClasses:['Derivation'],
@@ -653,6 +652,10 @@ Meteor.methods({
 				provAttributes: [{provType: 'provRevision'}]
 			}
 		});
+
+		// Invalidate previous version
+		Provenance.update(currentAttributeId, {$set: {wasInvalidatedBy: revisionActivity}});
+
 		return revisionId;
 	},
 	entityRelatedAttributeAgree: function(provAttributes) {
