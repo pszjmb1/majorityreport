@@ -734,21 +734,39 @@ Template.displayAttributes.events({
         e.preventDefault();
         $(e.currentTarget).siblings('.agree-attribute-form').toggle('collapse');
     },
+    'click .delete-attribute-and-values': function (e,tpl) {
+        e.preventDefault();
+        var msg = "Are you sure you want delete attribute '"+ this.label +"' and all its values?";
+        if(confirm(msg)) {
+            var provAttributes = _.map(this.values, function(attr) {
+                return {
+                    currentAttributeOrigin: attr.mrOrigin,
+                    currentEntityOrigin: attr.entityOrigin,
+                    currentRelationOrigin: attr.relationOrigin,
+                };
+            });
+
+            Meteor.call('entityRelatedAttributeRemove', provAttributes, function (error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+        }
+    },
     'click .delete-attribute-value': function (e,tpl) {
         e.preventDefault();
-        var provAttributes = {
-            currentAttributeOrigin: this.mrOrigin,
-            currentEntityOrigin: this.entityOrigin,
-            currentRelationOrigin: this.relationOrigin,
-        };
+        var msg = "Are you sure you want delete attribute value '"+ this.mrValue +"' for the label '"+ this.mrLabel +"'?";
+        if(confirm(msg)) {
+            var provAttributes = {
+                currentAttributeOrigin: this.mrOrigin,
+                currentEntityOrigin: this.entityOrigin,
+                currentRelationOrigin: this.relationOrigin,
+            };
 
-        console.log('provAttributes ' , provAttributes);
-
-        Meteor.call('entityRelatedAttributeRemove', provAttributes, function (error, result) {
-            if(error)
-                return alert(error.reason);
-        });
-
+            Meteor.call('entityRelatedAttributeRemove', provAttributes, function (error, result) {
+                if(error)
+                    return alert(error.reason);
+            });
+        }
     }
 });
 

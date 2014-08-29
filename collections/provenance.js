@@ -675,30 +675,37 @@ Meteor.methods({
 		if (!user)
 			throw new Meteor.Error(401, "Please login to remove the attribute");
 
-
 		var now = new Date().getTime(),
-			userProv = Provenance.findOne({mrUserId:user._id}),
-			currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin);
-		// Invalidate the attribute
-		var removalActivity = Provenance.insert({
-			provClasses:['Activity'],
-			provType:'MR: Entities Attribute Removal',
-			provStartedAtTime: now,
-			provEndedAtTime: now,
-			provWasStartedBy: userProv._id,
-			provInvalidated: provAttributes.currentAttributeOrigin
+			userProv = Provenance.findOne({mrUserId:user._id});
+
+		// Convert provAttributes to an array if only a single item is passed
+		// -- this is to be able to process multiple attributes and single attribute
+		provAttributes = (_.isArray(provAttributes)) ? provAttributes : [provAttributes];
+
+		_.each(provAttributes, function(data) {
+			var currentAttribute = getLatestRevision(data.currentAttributeOrigin);
+			
+			// Invalidate the attribute
+			var removalActivity = Provenance.insert({
+				provClasses:['Activity'],
+				provType:'MR: Entities Attribute Removal',
+				provStartedAtTime: now,
+				provEndedAtTime: now,
+				provWasStartedBy: userProv._id,
+				provInvalidated: data.currentAttributeOrigin
+			});
+
+			Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: removalActivity}});
+
+			// Invalidate relation and maintain the relatives list
+			var prov = {
+				currentRelationOrigin: data.currentRelationOrigin,
+				mrSource: data.currentEntityOrigin,
+				mrTarget: data.currentAttributeOrigin,
+			};
+
+			invalidateRelation(prov);
 		});
-
-		Provenance.update(currentAttribute._id, {$set: {wasInvalidatedBy: removalActivity}});
-
-		// Invalidate relation and maintain the relatives list
-		var prov = {
-			currentRelationOrigin: provAttributes.currentRelationOrigin,
-			mrSource: provAttributes.currentEntityOrigin,
-			mrTarget: provAttributes.currentAttributeOrigin,
-		};
-
-		invalidateRelation(prov);
 	},
 	/**
 	 * Update entities' attribute relative to report (i.e. position, dimension etc..)
