@@ -451,7 +451,7 @@ Template.timeline.rendered = function () {
     $(boardSelector).on('entityAttributeChange', function(event, entityOrigin) {
         var parentBox = container.parentNode.getBoundingClientRect();
         if($(container).height() !== parentBox.height) {
-            timeline.setOptions({height: parentBox.height});
+            timeline.setOptions({height: parentBox.height - 10});
         }
     });
 
