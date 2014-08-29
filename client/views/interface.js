@@ -735,7 +735,6 @@ Template.displayAttributes.events({
         $(e.currentTarget).siblings('.agree-attribute-form').toggle('collapse');
     },
     'click .delete-attribute-value': function (e,tpl) {
-    console.log('tpl ' , tpl, this);
         e.preventDefault();
         var provAttributes = {
             currentAttributeOrigin: this.mrOrigin,
@@ -743,16 +742,12 @@ Template.displayAttributes.events({
             currentRelationOrigin: this.relationOrigin,
         };
 
-        // Meteor.call('entityAttributeRemove', provAttributes, function (error, result) {
-        //     if(error)
-        //         return alert(error.reason);
-        // });
-        // var attrKey = this.label;
+        console.log('provAttributes ' , provAttributes);
 
-        // var provAttributes = {
-        //     currentEntityOrigin: tpl.data.mrOrigin,
-            
-        // };
+        Meteor.call('entityRelatedAttributeRemove', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
 
     }
 });
@@ -888,7 +883,7 @@ Template.formAttribute.events({
                         mrLabel: label,
                         mrValue: value
                     };
-                Meteor.call('relatedAttributeUpdate', provAttributes, function (error, result) {
+                Meteor.call('entityRelatedAttributeUpdate', provAttributes, function (error, result) {
                     if(error)
                         return alert(error.reason);
                 });
