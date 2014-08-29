@@ -263,8 +263,6 @@ Template.entity.events({
             var provAttributes = {
                 currentCrisisOrigin: Session.get('currentCrisisOrigin'),
                 currentEntityOrigin: _self.entity.mrOrigin,
-                dctermsTitle: _self.dctermsTitle,
-                dctermsDescription: _self.dctermsDescription
             };
 
             Meteor.call('crisisEntityRemove', provAttributes, function (error, result) {
@@ -449,9 +447,11 @@ Template.timeline.rendered = function () {
     // Bind events
     // Set timeline height on resize. Auto resize on width is already support by vis.js
     $(boardSelector).on('entityAttributeChange', function(event, entityOrigin) {
-        var parentBox = container.parentNode.getBoundingClientRect();
-        if($(container).height() !== parentBox.height) {
-            timeline.setOptions({height: parentBox.height - 10});
+        if(container.parentNode) {
+            var parentBox = container.parentNode.getBoundingClientRect();
+            if($(container).height() !== parentBox.height) {
+                timeline.setOptions({height: parentBox.height - 10});
+            }
         }
     });
 
@@ -1153,11 +1153,8 @@ Template.tools.events({
         var textContent = tpl.$('textarea[name=textContent]').val();
 
         var provAttributes = {
-            currentCrisisId: this._id,
             currentCrisisOrigin: this.mrOrigin,
-            mrContent: textContent,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription,
+            mrContent: textContent
         };
 
         Meteor.call('crisisReportText', provAttributes, function(error, id) {
@@ -1172,11 +1169,8 @@ Template.tools.events({
 
         // Insert appropriate provenances for the entity and the activity: revision, entity, membership
         var provAttributes = {
-            currentCrisisId: this._id,
             currentCrisisOrigin: this.mrOrigin,
             provAtLocation: mediaUrl,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription,
             dctermsFormat: mediaFormat // Mime type
         };
 
@@ -1189,10 +1183,7 @@ Template.tools.events({
         e.preventDefault();
 
         var provAttributes = {
-            currentCrisisId: this._id,
             currentCrisisOrigin: this.mrOrigin,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription
         };
 
         Meteor.call('crisisReportMap', provAttributes, function (error, result) {
@@ -1204,10 +1195,7 @@ Template.tools.events({
         e.preventDefault();
 
         var provAttributes = {
-            currentCrisisId: this._id,
-            currentCrisisOrigin: this.mrOrigin,
-            dctermsTitle: this.dctermsTitle,
-            dctermsDescription: this.dctermsDescription
+            currentCrisisOrigin: this.mrOrigin
         };
 
         Meteor.call('crisisReportTimeline', provAttributes, function (error, result) {
@@ -1230,7 +1218,7 @@ Template.tools.events({
 
         var panelBox = calculcatePanelBox('.ui-selected');
         console.log('panelBox ' , panelBox);
-        
+
         /*
         var provAttributes = {
             currentCrisisId: this._id,

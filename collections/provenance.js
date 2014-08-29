@@ -169,23 +169,18 @@ Meteor.methods({
 		if (!user)
 			throw new Meteor.Error(401, "Please login to be able to modify the crisis report");
 
-		var revisionId,
-			now = new Date().getTime(),
+		var now = new Date().getTime(),
 			userProv = Provenance.findOne({mrUserId:user._id});
 
 		if(provAttributes.currentCrisisOrigin) {
 			var currentCrisis = getLatestRevision(provAttributes.currentCrisisOrigin);
 
-			revisionId = reportRevision(_.extend(provAttributes, {
-				currentCrisisId: currentCrisis._id,
-				dctermsTitle: currentCrisis.dctermsTitle,
-				dctermsDescription: currentCrisis.dctermsDescription
-			}));
+			var reportRevisionId = reportRevision(provAttributes);
 
 			var memberItem = _.findWhere(currentCrisis.provHadMember, {mrEntity: provAttributes.currentEntityOrigin});
 			var filteredMemberList = _.without(currentCrisis.provHadMember, memberItem);
 			// Update the revision with the filtered list.
-			Provenance.update(revisionId, { $set: {provHadMember: filteredMemberList} } );
+			Provenance.update(reportRevisionId, { $set: {provHadMember: filteredMemberList} } );
 
 			var removalActivity = Provenance.insert({
 				provClasses:['Activity'],
@@ -193,7 +188,7 @@ Meteor.methods({
 				provStartedAtTime: now,
 				provEndedAtTime: now,
 				provWasStartedBy: userProv._id,
-				provGenerated: revisionId
+				provGenerated: reportRevisionId
 			});
 
 			if(memberItem.mrAttribute) {
@@ -213,7 +208,7 @@ Meteor.methods({
 			};
 
 			var revisionEntry = _.extend(_.omit(parentEntity, '_id'), revisedParentEntity);
-			revisionId = Provenance.insert(revisionEntry);
+			var parentRevisionId = Provenance.insert(revisionEntry);
 
 			// Add a corresponding revision provenance /////////////////////////////
 			var revisionActivity = Provenance.insert({
@@ -222,7 +217,7 @@ Meteor.methods({
 				provAtTime : now,
 				provWasStartedBy: userProv._id,
 				provWasDerivedFrom: {
-					provGenerated: revisionId, 
+					provGenerated: parentRevisionId, 
 					provDerivedFrom: parentEntity._id, 
 					provAttributes: [{provType: 'provRevision'}]
 				}
@@ -234,7 +229,7 @@ Meteor.methods({
 				provStartedAtTime: now,
 				provEndedAtTime: now,
 				provWasStartedBy: userProv._id,
-				provGenerated: revisionId
+				provGenerated: parentRevisionId
 			});
 
 			//Invalidate the previous versions
