@@ -186,6 +186,7 @@ Template.entity.rendered = function () {
     });
     
     plumber.draggable(outerWrapper, { 
+        handle: '.entity-controls',
         cancel: '.entity-item-timeline',
     });
 };
@@ -225,8 +226,8 @@ Template.entity.helpers({
 
 Template.entity.events({
     'dragstop .entity-outer, resizestop .entity-inner': function(e, tpl) {
-        e.preventDefault();
         e.stopPropagation();
+
         var outerWrapper = tpl.$('.entity-outer'),
             innerWrapper = tpl.$('.entity-inner');
 
