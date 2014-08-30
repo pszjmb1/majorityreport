@@ -49,6 +49,16 @@
     <div id="{{mrOrigin}}-timeline" class="timeline"></div>
 </template>
 
+<template name="panel">
+    <div id="{{mrOrigin}}-panel" class="timeline">
+        {{#each provHadMember}}
+            {{#with entityWithAttributes}}
+                {{> entity}}
+            {{/with}}
+        {{/each}}
+    </div>
+</template>
+
 <template name="entityInfo">
     {{#with latestInfo}}
         {{!-- Entity options --}}

@@ -524,6 +524,18 @@ Template.timeline.rendered = function () {
     }
 };
 
+/*
+  Panel
+ */
+Template.panel.helpers({
+    entityWithAttributes: function () {
+        var info = {
+            attributes: getLatestRevision(this.mrAttribute),
+            entity: getLatestRevision(this.mrEntity),
+        };
+        if(info.attributes && info.entity) {return info; }
+    }
+});
 /**
  * Marker Popup
  */
@@ -1209,7 +1221,6 @@ Template.tools.events({
             members: panel.itemsAndAttributes
         };
 
-        console.log('provAttributes ' , provAttributes);
         Meteor.call('crisisReportPanel', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
@@ -1385,10 +1396,15 @@ function calculateNewPanel(itemSelector, padding) {
 
     // Calulate position of each item relative to the calculated parent container
     _.each(items, function(item) {
-        item.mrAttribute.top -= box.top;
-        item.mrAttribute.left -= box.left;
+        item.mrAttribute.top = item.mrAttribute.top - box.top + 'px';
+        item.mrAttribute.left = item.mrAttribute.left - box.left + 'px';
     });
 
+    // add unit to the measurements
+    box.width += 'px';
+    box.height += 'px';
+    box.left += 'px';
+    box.top += 'px';
 
     var output = {
         panelAttribute: _.omit(box, 'right', 'bottom'),

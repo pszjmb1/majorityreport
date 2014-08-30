@@ -1124,16 +1124,15 @@ Meteor.methods({
 		
 		// Update the children entities' atrribute(position) relative to the new panel's properties
 		_.each(childEntitiesMembership, function(member) {
-			var newAttribute = _.findWhere(provAttributes.members, {entityOrigin: member.mrEntity});
+			var passedAttribute = _.findWhere(provAttributes.members, {entityOrigin: member.mrEntity});
 			var details = {
 				currentAttributeOrigin: member.mrAttribute, // existing attribute origin
-				mrAttribute: newAttribute
+				mrAttribute: passedAttribute.mrAttribute
 			};
 			// update the attributes
 			updateEntityReportAttribute(details);
 		});
 
-		console.log('panelId ' , panelId);
 		return panelId;
 	},
 	
@@ -1181,10 +1180,9 @@ function updateEntityReportAttribute(provAttributes) {
 	// Insert a new revision
 	var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin);
 	// Prepare the new information
-	var newAttribute = {
-		mrAttribute: _.extend(currentAttribute.mrAttribute, provAttributes.mrAttribute),
+	var newAttribute = _.extend(_.pick(provAttributes, 'mrAttribute'), {
 		provGeneratedAtTime: now
-	};
+	});
 
 	var attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
 
