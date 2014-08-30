@@ -225,6 +225,8 @@ Template.entity.helpers({
 
 Template.entity.events({
     'dragstop .entity-outer, resizestop .entity-inner': function(e, tpl) {
+        e.preventDefault();
+        e.stopPropagation();
         var outerWrapper = tpl.$('.entity-outer'),
             innerWrapper = tpl.$('.entity-inner');
 

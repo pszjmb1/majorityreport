@@ -1180,9 +1180,10 @@ function updateEntityReportAttribute(provAttributes) {
 	// Insert a new revision
 	var currentAttribute = getLatestRevision(provAttributes.currentAttributeOrigin);
 	// Prepare the new information
-	var newAttribute = _.extend(_.pick(provAttributes, 'mrAttribute'), {
+	var newAttribute = {
+		mrAttribute: _.extend(currentAttribute.mrAttribute, provAttributes.mrAttribute),
 		provGeneratedAtTime: now
-	});
+	};
 
 	var attributeEntry = _.extend(_.omit(currentAttribute, '_id'), newAttribute);
 
