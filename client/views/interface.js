@@ -1262,6 +1262,7 @@ function addUpdateTimelineEvent(provAttributes) {
     Meteor.call(method, provAttributes, function (error, result) {
         if(error) 
             return alert(error.reason);
+        console.log('result ' , result);
     });
 }
 
