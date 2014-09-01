@@ -71,9 +71,7 @@ body > .container, #main {
 }
 
 
-.ui-draggable:hover,
-.ui-draggable:active,
-:not(.ui-draggable > * > *) {
+.ui-draggable > .entity-controls:hover {
 	cursor: move;
 }
 
