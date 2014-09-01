@@ -1138,18 +1138,29 @@ Template.formEvent.events({
 /**  Tools */
 Template.tools.rendered = function () {
     var _self = this,
-        btnEntityGroup = _self.$('.entity-group');
+        btnEntityGroup = _self.$('.entity-group'),
+        btnEntityUngroup = _self.$('.entity-ungroup');
 
     btnEntityGroup.attr('disabled', true);
+    btnEntityUngroup.attr('disabled', true);
 
-    $(board).on('selectableselecting selectableunselecting', function(e, ui) {
+    $(board).on('selectableselecting selectableunselecting selectableselected', function(e, ui) {
         if( $(".ui-selecting").length > 1 || $(".ui-selected").length > 1 ) {
             btnEntityGroup.attr('disabled', false);
         } else {
             btnEntityGroup.attr('disabled', true);
         }
+        
+        // Disable ungroup button beforehand
+        btnEntityUngroup.attr('disabled', true);
+        if( $(".ui-selected").length == 1) {
+            // get the id of the entity
+            var entityId = $(".ui-selected").attr('id')
+            if(entityId && getEntityType(getLatestRevision(entityId)) === 'panel') {
+                btnEntityUngroup.attr('disabled', false); 
+            }
+        }
     });
-
 
     _self.$('.dropdown-menu textarea').on('click', function(e) {
         e.stopPropagation();
@@ -1225,6 +1236,20 @@ Template.tools.events({
         };
 
         Meteor.call('crisisReportPanel', provAttributes, function (error, result) {
+            if(error)
+                return alert(error.reason);
+        });
+    },
+    'click .entity-ungroup': function(e, tpl) {
+        e.preventDefault();
+        var selectedItems = $('.ui-selected');
+
+        var provAttributes = {
+            currentCrisisOrigin: this.mrOrigin,
+            currentPanelOrigin: selectedItems.attr('id')
+        };
+
+        Meteor.call('crisisReportPanelUngroup', provAttributes, function (error, result) {
             if(error)
                 return alert(error.reason);
         });

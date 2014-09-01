@@ -1135,6 +1135,56 @@ Meteor.methods({
 
 		return panelId;
 	},
+	crisisReportPanelUngroup: function(provAttributes) {
+		var user = Meteor.user();
+		
+		// Validate input ////////////////////////////////////////////////////////
+		// ensure the user is logged in
+		if (!user)
+			throw new Meteor.Error(401, "Please login to add a new media");
+
+		var now = new Date().getTime(),
+			userProv = Provenance.findOne({mrUserId:user._id});
+			
+		var currentReport = getLatestRevision(provAttributes.currentCrisisOrigin),
+			currentPanel = getLatestRevision(provAttributes.currentPanelOrigin),
+			panelReportMembership = _.findWhere(currentReport.provHadMember, {mrEntity: currentPanel.mrOrigin}),
+			panelMembers = currentPanel.provHadMember,
+			panelAttributes = getLatestRevision(panelReportMembership.mrAttribute).mrAttribute;
+
+
+		// Transfer the sub-entities from panel to report
+		var revisionId = reportRevision(_.pick(provAttributes, 'currentCrisisOrigin')),
+			updateReportMembers = _.without(currentReport.provHadMember, panelReportMembership).concat(panelMembers);
+
+		Provenance.update(revisionId, { $set: {provHadMember: updateReportMembers} } );
+
+		// Update the positional attribtues of the sub-entities relative to the report
+		_.map(panelMembers, function(member) {
+			var memberAttribute = getLatestRevision(member.mrAttribute);
+			var updatedAttribute = {
+				currentAttributeOrigin: memberAttribute.mrOrigin,
+				mrAttribute: {
+					top: parseInt(panelAttributes.top, 10) + parseInt(memberAttribute.mrAttribute.top, 10) +'px',
+					left: parseInt(panelAttributes.left, 10) + parseInt(memberAttribute.mrAttribute.left, 10) +'px',
+				}
+			};
+			updateEntityReportAttribute(updatedAttribute);
+		});
+
+		// Invalidate the panel
+		var removalActivity = Provenance.insert({
+			provClasses:['Activity'],
+			provType:'MR: Panel Ungroup',
+			provStartedAtTime: now,
+			provEndedAtTime: now,
+			provWasStartedBy: userProv._id,
+			provInvalidated: currentPanel._id
+		});
+
+		Provenance.update(currentPanel._id, {$set: {wasInvalidatedBy: removalActivity}});
+		
+	},
 	
 
 });
