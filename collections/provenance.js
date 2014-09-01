@@ -1117,7 +1117,8 @@ Meteor.methods({
 				mrAttribute: panelAttributeId
 			};
 		// Insert the panel to the report
-		Provenance.update(revisionId, { $set: {provHadMember: [panelReportMembership]} } );
+		updateReportMembers.push(panelReportMembership);
+		Provenance.update(revisionId, { $set: {provHadMember: updateReportMembers} } );
 		// Insert the children to the panel 
 		Provenance.update(panelId, { $set: {provHadMember: childEntitiesMembership} } );
 		
