@@ -1240,6 +1240,25 @@ function addRelation(info) {
 
     // do not allow relation to self
     if(source === target) { return; }
+    // do not allow linking between a panel and its entities
+    var sourceEntity = getLatestRevision(source),
+        targetEntity = getLatestRevision(target),
+        panelEntity, subEntity;
+    if(getEntityType(sourceEntity) === 'panel') {
+        panelEntity = sourceEntity; 
+        subEntity = target;
+    } else if(getEntityType(targetEntity) === 'panel') {
+        panelEntity = targetEntity; 
+        subEntity = source;
+    }
+    if(panelEntity) {
+        var subEntityMembership = _.findWhere(panelEntity.provHadMember, {mrEntity: subEntity});
+        if(subEntityMembership) { 
+            // if entity exists within the panel. return without doing anything else.
+            console.log("RETURNNN");
+            return; 
+        }
+    }
 
     var provAttributes = {
         // Gather source id, in case of markers look to the "data-id" attribute
@@ -1262,7 +1281,6 @@ function addUpdateTimelineEvent(provAttributes) {
     Meteor.call(method, provAttributes, function (error, result) {
         if(error) 
             return alert(error.reason);
-        console.log('result ' , result);
     });
 }
 
