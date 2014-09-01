@@ -9,6 +9,7 @@
     "accounts-ui-bootstrap-3": {},
     "bootstrap3-datetimepicker": {},
     "momentjs": {},
-    "kadira": {}
+    "kadira": {},
+    "bootstrap3-less": {}
   }
 }

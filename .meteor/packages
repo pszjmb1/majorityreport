@@ -13,7 +13,6 @@ fontawesome4
 jsPlumb
 leaflet
 leaflet-search
-bootstrap-3
 accounts-ui-bootstrap-3
 visjs
 bootstrap3-datetimepicker
@@ -21,3 +20,5 @@ momentjs
 jquery-panzoom
 kadira
 jquery-ui
+bootstrap3-less
+less
