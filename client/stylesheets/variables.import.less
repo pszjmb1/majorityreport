@@ -7,7 +7,8 @@
 //## Gray and brand colors for use across Bootstrap.
 
 @purple-primary:		#5f2390;
-@purple-secondary:		lighten(desaturate(@purple-primary, 50%), 50%);
+@purple-secondary:		#5b5596;
+@purple-light:			lighten(desaturate(@purple-primary, 35%), 50%);
 
 @green-primary:			#579341;
 @green-secondary:		lighten(desaturate(@green-primary, 50%), 50%);
@@ -22,7 +23,7 @@
 @yellow-secondary:		lighten(desaturate(@yellow-primary, 50%), 50%);
 
 @gold-primary:			#d4d194;
-@gold-secondary:		darken(@gold-primary, 10%);
+@gold-secondary:		darken(@gold-primary, 20%);
 
 @red-primary:			#eb214c;
 @red-secondary:			lighten(desaturate(@red-primary, 50%), 50%);
@@ -46,14 +47,14 @@
 //## Settings for some of the most global styles.
 
 //** Background color for `<body>`.
-@body-bg:               @purple-secondary;
+@body-bg:               @purple-light;
 //** Global text color on `<body>`.
 @text-color:            @gray-dark;
 
 //** Global textual link color.
 @link-color:            @green-primary;
 //** Link hover color set via `darken()` function.
-@link-hover-color:      darken(@link-color, 15%);
+@link-hover-color:      darken(@link-color, 10%);
 
 
 //== Typography
@@ -120,14 +121,14 @@
 @line-height-large:         1.33;
 @line-height-small:         1.5;
 
-@border-radius-base:        4px;
-@border-radius-large:       6px;
-@border-radius-small:       3px;
+@border-radius-base:        3px;
+@border-radius-large:       5px;
+@border-radius-small:       2px;
 
 //** Global color for active items (e.g., navs or dropdowns).
-@component-active-color:    #fff;
+@component-active-color:    @gray-lighter;
 //** Global background color for active items (e.g., navs or dropdowns).
-@component-active-bg:       @brand-primary;
+@component-active-bg:       @purple-primary;
 
 //** Width of the `border` for generating carets that indicator dropdowns.
 @caret-width-base:          4px;
@@ -356,23 +357,23 @@
 //##
 
 // Basics of a navbar
-@navbar-height:                    50px;
+@navbar-height:                    30px;
 @navbar-margin-bottom:             @line-height-computed;
-@navbar-border-radius:             @border-radius-base;
+@navbar-border-radius:             0;
 @navbar-padding-horizontal:        floor((@grid-gutter-width / 2));
 @navbar-padding-vertical:          ((@navbar-height - @line-height-computed) / 2);
 @navbar-collapse-max-height:       340px;
 
-@navbar-default-color:             #777;
-@navbar-default-bg:                #f8f8f8;
-@navbar-default-border:            darken(@navbar-default-bg, 6.5%);
+@navbar-default-color:             @gray-light;
+@navbar-default-bg:                transparent;
+@navbar-default-border:            0 none;
 
 // Navbar links
-@navbar-default-link-color:                #777;
-@navbar-default-link-hover-color:          #333;
-@navbar-default-link-hover-bg:             transparent;
-@navbar-default-link-active-color:         #555;
-@navbar-default-link-active-bg:            darken(@navbar-default-bg, 6.5%);
+@navbar-default-link-color:                @purple-secondary;
+@navbar-default-link-hover-color:          @purple-primary;
+@navbar-default-link-hover-bg:             darken(@purple-light, 3%);
+@navbar-default-link-active-color:         @navbar-default-link-hover-color;
+@navbar-default-link-active-bg:            darken(@purple-light, 6%);
 @navbar-default-link-disabled-color:       #ccc;
 @navbar-default-link-disabled-bg:          transparent;
 

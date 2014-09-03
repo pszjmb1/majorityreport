@@ -1,14 +1,33 @@
+@navitem-active-bg: darken(@purple-primary, 4%);
+
 body.page-home {
 	background-color: @brand-primary;
 	color: @gray-lighter;
-
-	a {
-		color: @gold-primary;
-		&:hover {
+	
+	a:not(.btn) {
+		&:hover, &:active {
 			color: @gray-light;
 		}
 	}
 	
+	a.navbar-brand {
+		color: @purple-light;
+	}	
+
+	.navbar-default .navbar-nav > li > a {
+		color: @gold-primary;
+		
+		&:hover, &:active {
+			color: @gold-secondary;
+			background-color: @navitem-active-bg;
+		}
+	}
+	
+	.navbar-default .navbar-nav > .open > a {
+			color: @gold-secondary;
+			background-color: @navitem-active-bg;
+	}
+
 	.intro {
 		position: absolute;
 		bottom: 40px;
