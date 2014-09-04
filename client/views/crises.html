@@ -1,9 +1,28 @@
 <template name="crises">
   {{#if currentUser}}<p><a href="{{pathFor 'newCrisis'}}" class="btn">Add a Crisis</a></p>{{/if}}
-  <div class="crises">
-    {{#each crises}}
-      {{> crisisHeading}}
-    {{/each}}
+    <div class="crises-list">
+      {{#each crises}}
+        <div class="crises-list-item">
+          {{> crisisHeading}}
+        </div>
+      {{/each}}
+    </div>
+</template>
+
+<template name="crisisHeading">
+  <div class="crisis-heading">
+    <h3>{{dctermsTitle}}</h3>
+    <span>{{dctermsDescription}}</span>
+    submitted by {{getAgentName agent}}
+    {{#if isOwner agent}}<a href="{{provEditLink}}">Edit</a>{{/if}}      
+    <a href="{{provLink}}" class="discuss btn">Investigate</a>
+  </div>
+</template>
+
+<template name="crisisContainer">
+  <div class="crisis-content">
+    {{> crisisHeading}}
+    {{#with this}} {{> freeform}} {{/with}}
   </div>
 </template>
 
@@ -67,22 +86,4 @@
         </div>
     </div>
   </form>
-</template>
-
-<template name="crisisHeading">
-  <div class="crisis">
-    <div class="crisis-heading">
-      <h3>{{dctermsTitle}}<span>{{dctermsDescription}}</span></h3>
-      <p>
-        submitted by {{getAgentName agent}}
-        {{#if isOwner agent}}<a href="{{provEditLink}}">Edit</a>{{/if}}      
-      </p> 
-    </div>
-    <a href="{{provLink}}" class="discuss btn">Investigate</a>
-  </div>
-</template>
-
-<template name="crisisContainer">
-  {{> crisisHeading}}
-  {{#with this}} {{> freeform}} {{/with}}
 </template>
