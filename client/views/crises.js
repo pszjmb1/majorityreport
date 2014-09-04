@@ -30,7 +30,7 @@ Template.crises.helpers({
       if (error)
         return alert(error.reason);
       
-      Router.go('crisisContainer', {_id: id});
+      Router.go('crisisContent', {_id: id});
     });
   }
 });

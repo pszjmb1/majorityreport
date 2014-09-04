@@ -1,0 +1,37 @@
+.crisis-heading { 
+	.crisis-description {
+		font-family: @font-family-serif;
+	}
+}
+
+.crises-list {
+	.crises-list-item {
+		.crisis-heading {
+			border-radius: @border-radius-base;
+			background-color: @gray-lighter;
+			box-shadow: 0 0 5px rgba(0,0,0,0.1);
+			overflow: hidden;
+
+			.crisis-title, 
+			.crisis-description, 
+			.crisis-author {
+				padding: 0 10px;
+				display: block;
+			}
+
+			.crisis-author {
+				font-size: @font-size-small;
+			}
+
+			.btn-investigate {
+				margin-top: 20px;
+				display: block;
+				border: 0 none;
+				border-top-right-radius: 0;
+				border-top-left-radius: 0;
+			}
+
+		}
+
+	}
+}

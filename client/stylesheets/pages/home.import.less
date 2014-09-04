@@ -39,7 +39,10 @@ body.page-home {
 			color: @gray-lighter;
 			background-color: transparent;
 			
-			h1{ font-size: @font-size-h1; }
+			h1{ 
+				font-size: floor(@font-size-h1 * 1.5); 
+				font-family: @font-family-serif;
+			}
 		}
 	}
 }

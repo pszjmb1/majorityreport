@@ -1,3 +1,10 @@
+<template name="crisisContent">
+  <div class="crisis-content">
+    <div class="col-md-12">{{> crisisHeading}}</div>
+    {{#with this}} {{> freeform}} {{/with}}
+  </div>
+</template>
+
 <template name='freeform'>
     {{> tools}}
     <div id="board">
