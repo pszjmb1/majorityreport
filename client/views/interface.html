@@ -17,10 +17,14 @@
                         {{> entity}}
                     {{/with}}
                 {{/each}}
-                
             </div>
+            {{> panAndZoom}}
         </div>
     </div>
+</template>
+
+<template name="panAndZoom">
+    <button class="btn btn-xs reset">Reset</button>
 </template>
 
 <template name="entity">

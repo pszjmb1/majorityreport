@@ -30,7 +30,7 @@ Template.freeform.rendered = function () {
     var _self = this,
         board = this.$(boardSelector);
 
-    /* Initial setup and listeners */
+    /* Initial setup, plugins and listeners */
     board.selectable({ filter: '.entity-outer' });
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
@@ -43,7 +43,7 @@ Template.freeform.rendered = function () {
 
         var fullHeight = windowHeight - divOffset.top - bottomMargin;
         board.height(fullHeight);
-        
+
     }).trigger('resize');
     
 
@@ -174,6 +174,27 @@ Template.freeform.helpers({
         if(info.attributes && info.entity) {return info; }
     }
 });
+
+/**
+ * Pan and Zoom
+ */
+Template.panAndZoom.rendered = function () {
+    var _self = this,
+        btnReset = _self.$('.reset');
+        // zoom in/out button
+        
+    $(boardSelector).panzoom({
+        $reset: btnReset,
+        // onPan: function(e) {
+        //     // Disable jqueryUI.selectable when panning
+        //     $(boardSelector).selectable('disable');
+        // },
+        // onEnd: function(e) {
+        //     $(boardSelector).selectable('enable');
+        // }
+    });
+};
+
 
 /**  Render entities - media, maps */
 Template.entity.rendered = function () {
