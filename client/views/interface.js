@@ -1,4 +1,5 @@
-var boardSelector = '#board',
+var boardId = 'board',
+    boardSelector = '#'+ boardId,
     plumber,
     dateFormat = "ddd, Do MMM YYYY",
     dateWithTimeFormat = "ddd, Do MMM YYYY - HH:mm";
@@ -29,12 +30,24 @@ Template.freeform.rendered = function () {
     var _self = this,
         board = this.$(boardSelector);
 
+    /* Initial setup and listeners */
     board.selectable({ filter: '.entity-outer' });
-
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
     });
+    // Always expand board's height to window's height
+    $(window).on('resize', function() {
+        var bottomMargin = 15,
+            windowHeight = window.innerHeight,
+            divOffset = getOffsetRect(document.getElementById(boardId));
+
+        var fullHeight = windowHeight - divOffset.top - bottomMargin;
+        board.height(fullHeight);
+        
+    }).trigger('resize');
     
+
+    /** Relations */
     // bind plumber events
     // Bind the event when a new connection is drawn
     plumber.bind('beforeDrop', addRelation);
@@ -66,9 +79,7 @@ Template.freeform.rendered = function () {
         }
 
         return true;
-    });
-    // TODO: Ability to change relationship by dragging
-    
+    });    
 
     /**
      * Observe new or modified relations and (un)draw them
@@ -153,7 +164,6 @@ Template.freeform.rendered = function () {
 Template.freeform.destroyed = function () {
     plumber.detachEveryConnection();
 };
-
 
 Template.freeform.helpers({
     entityWithAttributes: function() {
