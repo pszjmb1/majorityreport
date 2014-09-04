@@ -10,23 +10,31 @@ body.page-home {
 		}
 	}
 	
+
+	.navbar-default {
+		border: 0 none;
+		.navbar-nav {
+			> li > a {
+				color: @gold-primary;
+				
+				&:hover, &:active {
+					color: @gold-secondary;
+					background-color: @navitem-active-bg;
+				}
+			}
+
+			> .open > a {
+				color: @gold-secondary;
+				background-color: @navitem-active-bg;
+			}
+		}
+	}
+
 	a.navbar-brand {
 		color: @purple-light;
 	}	
 
-	.navbar-default .navbar-nav > li > a {
-		color: @gold-primary;
-		
-		&:hover, &:active {
-			color: @gold-secondary;
-			background-color: @navitem-active-bg;
-		}
-	}
 	
-	.navbar-default .navbar-nav > .open > a {
-			color: @gold-secondary;
-			background-color: @navitem-active-bg;
-	}
 
 	.intro {
 		position: absolute;

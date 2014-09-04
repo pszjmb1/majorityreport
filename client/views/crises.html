@@ -2,8 +2,10 @@
   {{#if currentUser}}<p><a href="{{pathFor 'newCrisis'}}" class="btn">Add a Crisis</a></p>{{/if}}
     <div class="crises-list">
       {{#each crises}}
-        <div class="crises-list-item col-md-3">
-          {{> crisisHeading}}
+        <div class="col-md-3">
+            <div class="crises-list-item">
+              {{> crisisHeading }}
+            </div>
         </div>
       {{/each}}
     </div>
@@ -14,8 +16,13 @@
     <h3 class="crisis-title">{{dctermsTitle}}</h3>
         <p class="crisis-description">{{dctermsDescription}}</p>
         <p class="crisis-author">submitted by {{getAgentName agent}}</p>
-        {{#if isOwner agent}}<a href="{{provEditLink}}">Edit</a>{{/if}}      
-    <a href="{{provLink}}" class="btn btn-sm btn-success btn-investigate">Investigate</a>
+        {{#if isOwner agent}}<a href="{{provEditLink}}">Edit</a>{{/if}}
+        {{#if isCrisisContentPage}}
+            <!--  -->
+        {{else}}
+            <a href="{{provLink}}" class="btn btn-sm btn-success btn-investigate">Investigate</a>
+        {{/if}}
+        
   </div>
 </template>
 

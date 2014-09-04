@@ -20,6 +20,12 @@ UI.registerHelper('prettyDate', function(date) {
     }
 });
 
+// Generic
+UI.registerHelper('isCrisisContentPage', function() {
+	var cirisContentTemplateName = 'crisisContent';
+	return Session.equals('currentPage', cirisContentTemplateName);
+});
+
 
 // Agents and Users
 UI.registerHelper('count', function(item) {

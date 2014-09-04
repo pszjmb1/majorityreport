@@ -8,7 +8,7 @@
 
 @purple-primary:		#5f2390;
 @purple-secondary:		#5b5596;
-@purple-light:			lighten(desaturate(@purple-primary, 35%), 50%);
+@purple-light:			lighten(desaturate(@purple-primary, 50%), 55%);
 
 @green-primary:			#579341;
 @green-secondary:		lighten(desaturate(@green-primary, 50%), 50%);
@@ -33,7 +33,7 @@
 @gray-dark:              #34495e;  
 @gray:                   #95a5a6;
 @gray-light:             #bdc3c7;
-@gray-lighter:           #ecf0f1;
+@gray-lighter:           #eee;
 
 @brand-primary:         @purple-primary;
 @brand-success:         @green-primary;
@@ -54,7 +54,7 @@
 //** Global textual link color.
 @link-color:            @green-primary;
 //** Link hover color set via `darken()` function.
-@link-hover-color:      @purple-primary;
+@link-hover-color:      @purple-secondary;
 
 
 //== Typography
@@ -168,7 +168,7 @@
 @btn-default-border:             #ccc;
 
 @btn-primary-color:              #fff;
-@btn-primary-bg:                 @brand-primary;
+@btn-primary-bg:                 @purple-secondary;
 @btn-primary-border:             darken(@btn-primary-bg, 5%);
 
 @btn-success-color:              #fff;
@@ -357,7 +357,7 @@
 //##
 
 // Basics of a navbar
-@navbar-height:                    30px;
+@navbar-height:                    35px;
 @navbar-margin-bottom:             @line-height-computed;
 @navbar-border-radius:             0;
 @navbar-padding-horizontal:        floor((@grid-gutter-width / 2));
@@ -366,7 +366,7 @@
 
 @navbar-default-color:             @gray-light;
 @navbar-default-bg:                transparent;
-@navbar-default-border:            0 none;
+@navbar-default-border:            darken(@body-bg, 5%);
 
 // Navbar links
 @navbar-default-link-color:                @purple-secondary;

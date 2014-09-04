@@ -1,37 +1,50 @@
+/** navbar */
+.navbar {
+	border-width: 0 0 1px;
+}
+
+/* Crisis */
 .crisis-heading { 
 	.crisis-description {
 		font-family: @font-family-serif;
 	}
 }
 
-.crises-list {
-	.crises-list-item {
-		.crisis-heading {
-			border-radius: @border-radius-base;
-			background-color: @gray-lighter;
-			box-shadow: 0 0 5px rgba(0,0,0,0.1);
-			overflow: hidden;
+.crisis-author {
+	font-size: @font-size-small;
+}
 
-			.crisis-title, 
-			.crisis-description, 
-			.crisis-author {
-				padding: 0 10px;
-				display: block;
-			}
+.crises-list-item {
+	border-radius: @border-radius-base;
+	background-color: @gray-lighter;
+	box-shadow: 0 0 5px rgba(0,0,0,0.1);
+	overflow: hidden;
 
-			.crisis-author {
-				font-size: @font-size-small;
-			}
+	.crisis-heading {
 
-			.btn-investigate {
-				margin-top: 20px;
-				display: block;
-				border: 0 none;
-				border-top-right-radius: 0;
-				border-top-left-radius: 0;
-			}
-
+		.crisis-title, 
+		.crisis-description, 
+		.crisis-author {
+			padding: 0 10px;
+			display: block;
 		}
 
+		.btn-investigate {
+			margin-top: 20px;
+			display: block;
+			border: 0 none;
+			border-top-right-radius: 0;
+			border-top-left-radius: 0;
+		}
+
+	}
+}
+
+.crisis-content {
+	.crisis-heading {
+		overflow: hidden;
+		.crisis-title {
+			margin-top: 0;
+		}
 	}
 }

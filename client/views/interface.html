@@ -6,16 +6,20 @@
 </template>
 
 <template name='freeform'>
-    {{> tools}}
-    <div id="board">
-        <ol>
-            {{#each provHadMember}}
-                {{#with entityWithAttributes}}
-                    {{> entity}}
-                {{/with}}
-            {{/each}}
-            
-        </ol>
+    <div class="freeform-tools col-md-12">
+        {{> tools}}
+    </div>
+    <div class="col-md-12">
+        <div class="crisis-workspace">
+            <div id="board" class="workspace-board">
+                {{#each provHadMember}}
+                    {{#with entityWithAttributes}}
+                        {{> entity}}
+                    {{/with}}
+                {{/each}}
+                
+            </div>
+        </div>
     </div>
 </template>
 

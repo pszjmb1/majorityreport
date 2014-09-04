@@ -207,7 +207,7 @@ Template.entity.helpers({
         $(boardSelector).trigger('entityAttributeChange', this.entity.mrOrigin);
 
         var keys = ['width', 'height'],
-            outerOffset = { width: 0, height: 30 };        
+            outerOffset = { width: 0, height: 25 };        
         if(type === 'outer') { keys = keys.concat(['top', 'left', 'z-index']); }
 
         // Convert key/vals to styles 
