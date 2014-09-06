@@ -10,7 +10,7 @@
         {{> tools}}
     </div>
     <div class="col-md-12">
-        <div class="crisis-workspace">
+        <div id="crisis-workspace" class="crisis-workspace">
             <div id="board" class="workspace-board">
                 {{#each provHadMember}}
                     {{#with entityWithAttributes}}
@@ -18,12 +18,13 @@
                     {{/with}}
                 {{/each}}
             </div>
-            {{> panAndZoom}}
         </div>
+        {{> panAndZoom}}
     </div>
 </template>
 
 <template name="panAndZoom">
+    <div id="mini-map-wrapper" class="mini-map-wrapper"></div>
     <button class="btn btn-xs reset">Reset</button>
 </template>
 

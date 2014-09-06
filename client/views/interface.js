@@ -180,19 +180,38 @@ Template.freeform.helpers({
  */
 Template.panAndZoom.rendered = function () {
     var _self = this,
-        btnReset = _self.$('.reset');
+        btnReset = _self.$('.reset'),
+        container = $(boardSelector);
         // zoom in/out button
-        
-    $(boardSelector).panzoom({
+    
+    var mm = new YoMiniMap();
+
+    container.on('entityAttributeChange', function() {
+        mm.drawMap();
+    })
+
+    var $panzoom = container.panzoom({
         $reset: btnReset,
-        // onPan: function(e) {
-        //     // Disable jqueryUI.selectable when panning
-        //     $(boardSelector).selectable('disable');
-        // },
-        // onEnd: function(e) {
-        //     $(boardSelector).selectable('enable');
-        // }
+        pan: {silent: true}
     });
+    container.parent().on('mousewheel.focal', function( e ) {
+            e.preventDefault();
+            container.panzoom('zoom', e.originalEvent.wheelDelta < 0, {
+            increment: 0.025,
+            focal: e
+        });
+    });
+
+    // $(boardSelector).panzoom({
+    //     $reset: btnReset,
+    //     // onPan: function(e) {
+    //     //     // Disable jqueryUI.selectable when panning
+    //     //     $(boardSelector).selectable('disable');
+    //     // },
+    //     // onEnd: function(e) {
+    //     //     $(boardSelector).selectable('enable');
+    //     // }
+    // });
 };
 
 
