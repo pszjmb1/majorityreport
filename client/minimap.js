@@ -18,6 +18,12 @@ function MiniMap() {
 
 	this.mapWrapper = this.mapWrapperInner = this.container = this.mapBox = this.viewArea = null;
 
+	this.filterNodesBy = {
+		tags: ['div'],
+		classes: ['entity-outer'],
+		attributes: ['style']
+	};
+
 	return this;
 }
 
@@ -56,9 +62,6 @@ MiniMap.prototype.drawMap = function() {
 				(mapWrapperRect.height / containerRect.height)
 			);
 
-	if(self.mapBox !== null) { self.mapWrapperInner.removeChild(self.mapBox); }
-	
-	self.mapBox = self.container.cloneNode(true);
 
 	var styles = {
 		width: 					containerRect.width +'px',
@@ -70,10 +73,14 @@ MiniMap.prototype.drawMap = function() {
 		'transform-origin': 	{value: 'top left', autoPrefix: true},
 	}
 
+	if(self.mapBox !== null) { self.mapWrapperInner.removeChild(self.mapBox); }
+
+	self.mapBox = self.container.cloneNode(true);
 	self.mapBox.style.cssText += _generateCssText(styles);
+
+	_cleanNodes(self.mapBox.childNodes, self.filterNodesBy);
 	self.mapWrapperInner.appendChild(self.mapBox);
 };
-
 
 var _generateCssText = function(obj) {
 	if(obj !== null && typeof obj === 'object') {
@@ -94,4 +101,33 @@ var _generateCssText = function(obj) {
 	}
 }
 
+//** returns the minimum top and left positions (useful when -ve values)
+var _cleanNodes = function(nodes, filters) {
+	if(!nodes || nodes.length < 1) return;
+
+	filters.tags = filters.tags || [];
+	filters.classes = filters.classes || [];
+	filters.attributes = filters.attributes || [];
+
+	for (var i=0; i < nodes.length; i++) {
+		if(nodes[i].hasOwnProperty('tagName')) {
+			
+			if(nodes[i].childNodes.length > 0) {
+				_cleanNodes(nodes[i].childNodes, filters);
+			}
+			// Array.indexOf only supoorted in IE9+
+			if((filters.tags.length > 0 && filters.tags.indexOf(nodes[i].tagName) > -1)
+				|| 
+				(filters.classes.length > 0 && checkClasses(filters.classes, nodes[i].className) )) {
+
+				console.log(checkClasses(filters.classes, nodes[i].className), nodes[i].className );
+			}
+			
+		} else {
+			delete nodes[i];
+		}
+	};
+
+	return nodes;
+}
 
