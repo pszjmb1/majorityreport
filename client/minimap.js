@@ -6,7 +6,7 @@
 
 YoMiniMap = MiniMap;
 function MiniMap() {
-	this.containerId = 'crisis-workspace';
+	this.containerId = 'board';
 	this.miniMapWrapperId = 'mini-map-wrapper';
 	this.miniMapWrapperInnerClass = 'mini-map-wrapper-inner';
 	
@@ -31,6 +31,7 @@ MiniMap.prototype.init = function() {
 	if(this.initialised) return; 
 
 	var self = this;
+	self.initialised = true;
 
 	self.container = document.getElementById(self.containerId);
 	self.mapWrapper = document.getElementById(self.miniMapWrapperId);
@@ -47,8 +48,25 @@ MiniMap.prototype.init = function() {
 	self.mapWrapperInner.className = self.miniMapWrapperInnerClass;
 	self.mapWrapper.appendChild(self.mapWrapperInner);
 
-	self.initialised = true;
+	self.clickArea = document.createElement('div');
+	self.clickArea.className = 'click-area';
+	self.mapWrapper.appendChild(self.clickArea);
+};
 
+
+
+MiniMap.prototype.render = function(options) {
+	this.init();
+	var self = this;
+
+	if(self.mapBox !== null && self.mapBox.parentNode === self.mapWrapperInner) { 
+		self.mapWrapperInner.removeChild(self.mapBox); 
+	}
+
+	if(options && options.html) {
+		self.mapBox.innerHTML = options.html;
+	}
+	self.mapWrapperInner.appendChild(self.mapBox);
 };
 
 MiniMap.prototype.drawMap = function() {
@@ -57,32 +75,59 @@ MiniMap.prototype.drawMap = function() {
 	var self = this,
 		containerRect = self.container.getBoundingClientRect(),
 		mapWrapperRect = self.mapWrapper.getBoundingClientRect(),
-		scale = Math.min(
-				(mapWrapperRect.width / containerRect.width),
-				(mapWrapperRect.height / containerRect.height)
-			);
+		mapScale = Math.min(
+			(mapWrapperRect.width / containerRect.width),
+			(mapWrapperRect.height / containerRect.height)
+		);
 
-	if(self.mapBox !== null) { self.mapWrapperInner.removeChild(self.mapBox); }
+	if(self.mapBox !== null && self.mapBox.parentNode === self.mapWrapperInner) { 
+		self.mapWrapperInner.removeChild(self.mapBox); 
+	}
+
+	var mapPostion = {top: 0, left: 0};
 
 	self.mapBox = self.container.cloneNode(true);
-	var processed = _processNodes(self.mapBox, self.filterNodesBy),
-		mapPostion = {};
 
-	mapPostion.top = (processed.minimum.top < 0) ? Math.abs(processed.minimum.top) * scale : 0;
-	mapPostion.left = (processed.minimum.left < 0) ? Math.abs(processed.minimum.left) * scale: 0;
-
-	self.mapbox = processed.nodes;
+	var children = $(self.mapBox).find('[style*="top"]').map(function(index, value) {
+		if(this.style.top) { 
+			var topValue = parseFloat(this.style.top);
+			mapPostion.top = (topValue < mapPostion.top ) ? topValue : mapPostion.top;
+		}
+		if(this.style.left) { 
+			var leftValue = parseFloat(this.style.left);
+			mapPostion.left = (leftValue < mapPostion.left ) ? leftValue : mapPostion.left;
+		}
+	});	
 
 	self.mapBox.style.cssText = '';
 	$(self.mapBox).css({
 		width: 					containerRect.width +'px',
 		position:               'absolute',
-      	top:                    mapPostion.top,
-      	left:                   mapPostion.left,
-		'transform': 			'scale('+scale+')',
+      	top:                    Math.abs(mapPostion.top) * mapScale,
+      	left:                   Math.abs(mapPostion.left) * mapScale,
+		'transform': 			'scale('+mapScale+')',
 		'transform-origin': 	'top left',
 	});
+
 	self.mapWrapperInner.appendChild(self.mapBox);
+
+	$(self.clickArea).on('click', function(e) {
+		var scale = Math.max(
+				(containerRect.width / mapWrapperRect.width),
+				(containerRect.height / mapWrapperRect.height)
+			);
+		var position = {
+				top: e.offsetY * scale,
+				left: e.offsetX * scale,
+			};
+
+		// console.log('position ' , position);
+		position.top = (mapPostion.top < 0) ? (position.top + mapPostion.top) - (containerRect.height/2) : position.top;
+		position.left = (mapPostion.left < 0) ? (position.left + mapPostion.left) - (containerRect.width/2) : position.left;
+
+		self.container.style.top = -(position.top ) + 'px';
+		self.container.style.left = -(position.left )+ 'px';
+	});
 };
 
 //** returns the minimum top and left positions (useful when -ve values)
@@ -99,18 +144,17 @@ var _processNodes = function(nodes, filters) {
 	if(filters.tags.length > 0) { filterSelectors += filters.tags.join(','); }
 	if(filters.classes.length > 0) { filterSelectors += ',.'+ filters.classes.join(',.')}
 
-	if(filters.attributes.length > 0) {
-		$(nodes).find(filterSelectors).each(function(){
+	var output = $(nodes).find(filterSelectors).each(function(){
 		  	var attributes = this.attributes,
 		  		i = attributes.length;
-
+		
 		  	// Remove the attributes using the whitelist
 			while( i-- ){
-				if(!$.inArray(attributes[i], filters.attributes)) {
+				if(filters.attributes.indexOf(attributes[i]) < 0) {
 				  	this.removeAttributeNode(attributes[i]);
 				}
 			}
-			
+
 			if(this.style.top) { 
 				var topValue = parseFloat(this.style.top);
 				minimum.top = (topValue < minimum.top ) ? topValue : minimum.top;
@@ -121,8 +165,7 @@ var _processNodes = function(nodes, filters) {
 			}
 
 		});
-	}
 
-	return { nodes: nodes, minimum: minimum};
+	return { nodes: output.get()[0], minimum: minimum};
 }
 
