@@ -33,7 +33,7 @@ Template.freeform.rendered = function () {
     /* Initial setup, plugins and listeners */
     board.selectable({ 
         filter: '.entity-outer' ,
-        cancel: "svg"
+        cancel: "svg, .timeline .vispanel"
     });
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
