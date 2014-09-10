@@ -184,8 +184,7 @@ Template.panAndZoom.rendered = function () {
         container = $(boardSelector);
         // zoom in/out button
     
-    var mm = new YoMiniMap();
-
+    var mm = new MiniMap();
     container.on('entityAttributeChange', function() {
         mm.drawMap();
     })

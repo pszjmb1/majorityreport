@@ -4,7 +4,7 @@
  * (https://github.com/goldenapples/jquery.minimap)
  */
 
-YoMiniMap = MiniMap;
+window.MiniMap = MiniMap;
 function MiniMap() {
 	this.containerId = 'board';
 	this.miniMapWrapperId = 'mini-map-wrapper';
@@ -74,17 +74,25 @@ MiniMap.prototype.drawMap = function() {
 
 	var self = this,
 		containerRect = self.container.getBoundingClientRect(),
-		mapWrapperRect = self.mapWrapper.getBoundingClientRect(),
-		mapScale = Math.min(
-			(mapWrapperRect.width / containerRect.width),
-			(mapWrapperRect.height / containerRect.height)
-		);
+		mapWrapperRect = self.mapWrapper.getBoundingClientRect();
 
 	if(self.mapBox !== null && self.mapBox.parentNode === self.mapWrapperInner) { 
 		self.mapWrapperInner.removeChild(self.mapBox); 
 	}
 
 	var mapPostion = {top: 0, left: 0};
+
+	var $container = $(self.container);
+	var containerOriginalStyles = $container.css(['transform', 'height', 'top', 'overflow']);
+	// apply temp styles to get full dimension of the container, including overflown elements
+	$container.css({
+		transform: 'scale(1)',
+		height: 0, top: 0, overflow: 'scroll'
+	});
+	var containerOverflowRect = { width: self.container.scrollWidth, height: self.container.scrollHeight }
+
+	// restore origin container style
+	$container.css(containerOriginalStyles);
 
 	self.mapBox = self.container.cloneNode(true);
 
@@ -98,10 +106,18 @@ MiniMap.prototype.drawMap = function() {
 			mapPostion.left = (leftValue < mapPostion.left ) ? leftValue : mapPostion.left;
 		}
 	});	
+	
+
+		console.log('containerOverflowRect ' , containerOverflowRect);
+	var mapScale = Math.min(
+			(mapWrapperRect.width / containerOverflowRect.width),
+			(mapWrapperRect.height / containerOverflowRect.height)
+		) - 0.02;
 
 	self.mapBox.style.cssText = '';
 	$(self.mapBox).css({
-		width: 					containerRect.width +'px',
+		width: 					containerOverflowRect.width +'px',
+		height:					containerOverflowRect.height +'px',
 		position:               'absolute',
       	top:                    Math.abs(mapPostion.top) * mapScale,
       	left:                   Math.abs(mapPostion.left) * mapScale,
@@ -121,7 +137,6 @@ MiniMap.prototype.drawMap = function() {
 				left: e.offsetX * scale,
 			};
 
-		// console.log('position ' , position);
 		position.top = (mapPostion.top < 0) ? (position.top + mapPostion.top) - (containerRect.height/2) : position.top;
 		position.left = (mapPostion.left < 0) ? (position.left + mapPostion.left) - (containerRect.width/2) : position.left;
 
@@ -129,43 +144,3 @@ MiniMap.prototype.drawMap = function() {
 		self.container.style.left = -(position.left )+ 'px';
 	});
 };
-
-//** returns the minimum top and left positions (useful when -ve values)
-var _processNodes = function(nodes, filters) {
-	if(!nodes.childNodes || nodes.childNodes.length < 1) return;
-
-	filters.tags = filters.tags || [];
-	filters.classes = filters.classes || [];
-	filters.attributes = filters.attributes || [];
-
-	var filterSelectors = '', minimum = {top: 0, left: 0};
-
-	// Prepare the selectors based on value from 
-	if(filters.tags.length > 0) { filterSelectors += filters.tags.join(','); }
-	if(filters.classes.length > 0) { filterSelectors += ',.'+ filters.classes.join(',.')}
-
-	var output = $(nodes).find(filterSelectors).each(function(){
-		  	var attributes = this.attributes,
-		  		i = attributes.length;
-		
-		  	// Remove the attributes using the whitelist
-			while( i-- ){
-				if(filters.attributes.indexOf(attributes[i]) < 0) {
-				  	this.removeAttributeNode(attributes[i]);
-				}
-			}
-
-			if(this.style.top) { 
-				var topValue = parseFloat(this.style.top);
-				minimum.top = (topValue < minimum.top ) ? topValue : minimum.top;
-			}
-			if(this.style.left) { 
-				var leftValue = parseFloat(this.style.left);
-				minimum.left = (leftValue < minimum.left ) ? leftValue : minimum.left;
-			}
-
-		});
-
-	return { nodes: output.get()[0], minimum: minimum};
-}
-
