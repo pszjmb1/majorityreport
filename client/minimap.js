@@ -107,8 +107,6 @@ MiniMap.prototype.drawMap = function() {
 		}
 	});	
 	
-
-		console.log('containerOverflowRect ' , containerOverflowRect);
 	var mapScale = Math.min(
 			(mapWrapperRect.width / containerOverflowRect.width),
 			(mapWrapperRect.height / containerOverflowRect.height)
