@@ -31,7 +31,10 @@ Template.freeform.rendered = function () {
         board = this.$(boardSelector);
 
     /* Initial setup, plugins and listeners */
-    board.selectable({ filter: '.entity-outer' });
+    board.selectable({ 
+        filter: '.entity-outer' ,
+        cancel: "svg"
+    });
     board.bind('entityAttributeChange', function(event, entityOrigin) {
         plumber.repaintEverything();
     });
@@ -662,12 +665,12 @@ Template.entityInfo.events({
             Meteor.call('crisisEntityRemove', provAttributes, function (error, result) {
                 if(error)
                     return alert(error.reason);
+
+                var dialog = tpl.$(e.target).closest('.ui-dialog');
+                if(dialog.length > 0) { dialog.remove(); }
             });
-        }
-
-
-        
-    }
+        }        
+    }, 
 });
 
 /**
