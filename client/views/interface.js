@@ -192,6 +192,7 @@ Template.panAndZoom.rendered = function () {
 
     var $panzoom = container.panzoom({
         $reset: btnReset,
+        disablePan: true,
         pan: {silent: true}
     });
     container.parent().on('mousewheel.focal', function( e ) {
@@ -201,17 +202,6 @@ Template.panAndZoom.rendered = function () {
             focal: e
         });
     });
-
-    // $(boardSelector).panzoom({
-    //     $reset: btnReset,
-    //     // onPan: function(e) {
-    //     //     // Disable jqueryUI.selectable when panning
-    //     //     $(boardSelector).selectable('disable');
-    //     // },
-    //     // onEnd: function(e) {
-    //     //     $(boardSelector).selectable('enable');
-    //     // }
-    // });
 };
 
 
