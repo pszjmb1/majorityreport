@@ -604,12 +604,15 @@ Template.entityInfo.helpers({
             return _.extend(latest, extraInfo);
         }
     },
-    isEntityType: function(checkType) {
+    entityType: function(checkType) {
         var type = getEntityType(this);
         if(type === 'media') {
             type = getMediaFormat(this.dctermsFormat);
         }
-        return (type === checkType);
+        return type;
+    },
+    isEditable: function(entityType) {
+        return !(_.contains(['map', 'timeline', 'group'], entityType));
     },
     showRelations: function() {
         var showRelationsFor = ['event', 'marker'],

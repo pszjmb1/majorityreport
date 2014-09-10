@@ -85,7 +85,9 @@
     {{#with latestInfo}}
         {{!-- Entity options --}}
         <div class="entity-info-tools">
-            <button class="btn btn-default btn-xs edit-entity"><i class="fa fa-pen"> Edit Enitty</i></button>
+            {{#if isEditable entityType}}
+                <button class="btn btn-default btn-xs edit-entity"><i class="fa fa-pen"> Edit Enitty</i></button>
+            {{/if}}
             <button class="btn btn-danger btn-xs remove-entity"><i class="fa"></i>Remove Entity</button>
             <button class="btn btn-default btn-xs add-atrribute"><i class="fa"></i>Add Attribute</button>
             <button class="btn btn-default btn-xs add-relation"><i class="fa"></i>Add Relation</button>
@@ -167,21 +169,21 @@
 </template>
 
 <template name="displayThumbnail">
-    {{#if isEntityType "image"}}s
+    {{#if isEntityType "image"}}
         <img src="{{provAtLocation}}" class="entity-thumbnail entity-thumbnail-media">
-    {{else}}{{#if isEntityType "text"}}s
+    {{else}}{{#if isEntityType "text"}}
         <span class="fa-stack fa-lg">
             <i class="fa fa-circle fa-stack-2x"></i>
             <i class="fa fa-paragraph fa-stack-1x fa-inverse"></i>
         </span>
-    {{else}} {{#if isEntityType "video"}}s
+    {{else}} {{#if isEntityType "video"}}
         <span class="fa-stack fa-lg">
             <i class="fa fa-circle fa-stack-2x"></i>
             <i class="fa fa-video-camera fa-stack-1x fa-inverse"></i>
         </span>
-    {{else}} {{#if isEntityType "map"}}s
+    {{else}} {{#if isEntityType "map"}}
         <i class="fa fa-globe fa-3x"></i>
-    {{else}} {{#if isEntityType "timeline"}}s
+    {{else}} {{#if isEntityType "timeline"}}
         <span class="fa-stack fa-lg">
             <i class="fa fa-circle fa-stack-2x"></i>
             <i class="fa fa-exchange fa-stack-1x fa-inverse"></i>
