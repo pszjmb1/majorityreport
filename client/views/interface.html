@@ -235,6 +235,18 @@
     </form>
 </template>
 
+<template name="formMedia">
+    <form name="media">
+        <input type="textfield" class="form-control input-sm" placeholder="Media URL" name="mediaUrl" value="{{mediaUrl}}" />
+        <select class="form-control input-sm" name="mediaFormat">
+            <option value="image/jpeg">Image (.jpg)</option>
+            <option value="video/flv">Video (flv)</option>``
+            <option value="video/fla">Video (fla)</option>
+        </select>
+        <button class="btn btn-success btn-sm btn-block" type="submit"><i class="fa fa-check"></i> Save Media</button>
+    </form>
+</template>
+
 <template name="tools">
     {{!-- Text --}}
     <div class="btn-group">
@@ -250,19 +262,12 @@
     </div>
     {{!-- Media (images/videos/audios) --}}
     <div class="btn-group">
-        <form name="media" class="form-inline">
-            <div class="input-group">
-                <input type="textfield" class="form-control input-sm" placeholder="Media URL" name="mediaUrl" />
-                <div class="input-group-btn">
-                    <select class="form-control input-sm" name="mediaFormat">
-                        <option value="image/jpeg">Image (.jpg)</option>
-                        <option value="video/flv">Video (flv)</option>``
-                        <option value="video/fla">Video (fla)</option>
-                    </select>
-                    <button class="btn btn-sm" type="submit"><i class="fa fa-image"></i>  Add Media</button>
-                </div>      
-            </div>
-        </form> 
+        <button type="button" class="entity-media btn btn-sm dropdown-toggle" data-toggle="dropdown">
+            <i class="fa fa-paragraph"></i> Add Media <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu dropdown-form" role="menu">
+            {{> formMedia}}
+        </div>
     </div>    
     {{!-- Maps --}}
     <button type="button" class="entity-map btn btn-sm"><i class="fa fa-map-marker"></i> Add Map</button>

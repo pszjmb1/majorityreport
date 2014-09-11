@@ -632,10 +632,6 @@ Template.entityInfo.helpers({
     },
     entityFormTemplate: function() {
         var type = getEntityType(this);
-        if(type === 'media') {
-            type = getMediaFormat(this.dctermsFormat);
-        }
-
         type = type.capitalize();
         return "form"+ type;
     }
@@ -1180,6 +1176,32 @@ Template.formEvent.events({
 });
 
 
+Template.formMedia.helpers({
+    mediaUrl: function () {
+        if(this.provAtLocation) return this.provAtLocation;
+    }
+});
+Template.formMedia.events({
+    'submit form[name=media]': function(e, tpl) {
+        e.preventDefault();
+        var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
+            mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
+
+        // Insert appropriate provenances for the entity and the activity: revision, entity, membership
+        var provAttributes = {
+            currentCrisisOrigin: this.mrOrigin,
+            provAtLocation: mediaUrl,
+            dctermsFormat: mediaFormat // Mime type
+        };
+
+        Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
+            if (error)
+                return alert(error.reason);
+        });
+    }
+})
+
+
 /**  Tools */
 Template.tools.rendered = function () {
     var _self = this,
@@ -1207,7 +1229,7 @@ Template.tools.rendered = function () {
         }
     });
 
-    _self.$('.dropdown-menu textarea').on('click', function(e) {
+    _self.$('.dropdown-menu.dropdown-form').children().on('click', function(e) {
         e.stopPropagation();
     });
 };
@@ -1227,23 +1249,6 @@ Template.tools.events({
                 return alert(error.reason);
         });
     },
-    'submit form[name=media]': function (e, tpl) {
-        e.preventDefault();
-        var mediaUrl = $(e.target).find('input[name=mediaUrl]').val(),
-            mediaFormat = $(e.target).find('select[name=mediaFormat]').val();
-
-        // Insert appropriate provenances for the entity and the activity: revision, entity, membership
-        var provAttributes = {
-            currentCrisisOrigin: this.mrOrigin,
-            provAtLocation: mediaUrl,
-            dctermsFormat: mediaFormat // Mime type
-        };
-
-        Meteor.call('crisisReportMedia', provAttributes, function(error, id) {
-            if (error)
-                return alert(error.reason);
-        });
-    }, 
     'click .entity-map': function(e, tpl) {
         e.preventDefault();
 
